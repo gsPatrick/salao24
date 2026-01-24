@@ -308,7 +308,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <button type="button" onClick={handlePrev} className="order-2 sm:order-1 flex-1 py-4 font-bold text-gray-400 hover:text-secondary transition-colors uppercase tracking-widest text-xs">Voltar</button>
-              <button type="submit" disabled={!isStep1Valid} className="order-1 sm:order-2 flex-[2] py-5 bg-secondary text-white font-black rounded-2xl hover:bg-secondary-dark shadow-xl hover:shadow-secondary/30 disabled:opacity-30 transition-all active:scale-[0.98]">Continuar etapa</button>
+              <button type="submit" disabled={!isStep1Valid} className="order-1 sm:order-2 flex-[2] py-5 bg-secondary text-white font-black rounded-2xl hover:bg-secondary-dark shadow-xl hover:shadow-secondary/30 disabled:opacity-30 transition-all active:scale-[0.98]">Finalizar e Criar Conta</button>
             </div>
           </form>
         );

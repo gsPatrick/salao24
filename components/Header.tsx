@@ -45,9 +45,6 @@ const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifi
                   {t('clientArea')}
                 </a>
                 <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="border-2 border-gray-400 hover:bg-gray-700 hover:border-gray-700 text-white font-bold py-2 px-6 rounded-full transition-all duration-300 w-full sm:w-auto active:scale-95">
-                  {t('administrativeAccess')}
-                </a>
-                <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="border-2 border-gray-400 hover:bg-gray-700 hover:border-gray-700 text-white font-bold py-2 px-6 rounded-full transition-all duration-300 w-full sm:w-auto active:scale-95">
                   {t('collaboratorAccess')}
                 </a>
               </div>
