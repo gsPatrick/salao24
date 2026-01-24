@@ -1,0 +1,8 @@
+{
+  "name": "Salão24h - Sua plataforma inteligente para gestão de negócios.",
+  "description": "Uma landing page moderna e profissional para o Salão24h, um aplicativo de gestão para salões de beleza, barbearias e clínicas de estética. Apresenta funcionalidades, preços e perguntas frequentes.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

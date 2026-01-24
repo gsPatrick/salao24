@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salão24h - Gestão para Salão, Barbearia e Estética</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="O Salão24h é o sistema de gestão completo para salões de beleza, barbearias e clínicas de estética. Oferece agenda online, controle financeiro, CRM, gestão de estoque e marketing. Teste grátis por 15 dias!" />
+    <meta name="keywords" content="gestão de salão de beleza, sistema para barbearia, software para clínica de estética, agenda online, controle financeiro salão, crm para salão, gestão de estoque, marketing para salão, salão24h, agendamento online" />
+    <meta name="author" content="Salão24h" />
+    <link rel="canonical" href="https://salao24h.app/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#10b981" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://salao24h.app/" />
+    <meta property="og:title" content="Salão24h - Gestão para Salão, Barbearia e Estética" />
+    <meta property="og:description" content="O sistema de gestão completo para salões de beleza, barbearias e clínicas de estética. Agenda online, financeiro, CRM e mais. Teste grátis!" />
+    <meta property="og:image" content="https://salao24h.app/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://salao24h.app/" />
+    <meta property="twitter:title" content="Salão24h - Gestão para Salão, Barbearia e Estética" />
+    <meta property="twitter:description" content="O sistema de gestão completo para salões de beleza, barbearias e clínicas de estética. Agenda online, financeiro, CRM e mais. Teste grátis!" />
+    <meta property="twitter:image" content="https://salao24h.app/og-image.png" />
+
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Salão24h",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "O Salão24h é o sistema de gestão completo para salões de beleza, barbearias e clínicas de estética. Oferece agenda online, controle financeiro, CRM, gestão de estoque e marketing.",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Plano Individual",
+          "price": "79.87",
+          "priceCurrency": "BRL",
+          "description": "Ideal para quem trabalha sozinho. Nesse plano não é possível cadastrar colaboradores ou parceiros."
+        },
+        {
+          "@type": "Offer",
+          "name": "Plano Empresa Essencial",
+          "price": "199.90",
+          "priceCurrency": "BRL",
+          "description": "Para equipes pequenas com as ferramentas essenciais para crescer."
+        },
+        {
+          "@type": "Offer",
+          "name": "Plano Empresa Pro",
+          "price": "349.90",
+          "priceCurrency": "BRL",
+          "description": "A solução ideal para negócios em expansão, com IA por voz."
+        },
+        {
+          "@type": "Offer",
+          "name": "Plano Empresa Premium",
+          "price": "599.90",
+          "priceCurrency": "BRL",
+          "description": "Para grandes operações e redes, com suporte dedicado."
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "287"
+      },
+      "mainEntity": {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Qual a principal diferença entre o plano Individual e os planos Empresa?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "O plano Individual é perfeito para profissionais autônomos, pois permite apenas um usuário. Os planos Empresa são projetados para equipes, permitindo múltiplos usuários, gestão de várias unidades, comissionamento e funcionalidades avançadas como a assistente de IA por voz."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso fazer upgrade ou downgrade do meu plano?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim! Você pode fazer o upgrade do seu plano a qualquer momento diretamente no painel de configurações, sem perda de dados. Para downgrade ou cancelamento, você pode solicitar a qualquer momento e seu plano permanecerá ativo até o final do ciclo de faturamento."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O que acontece após os 15 dias de teste grátis?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Após o período de 15 dias, a cobrança do plano escolhido será iniciada automaticamente no cartão de crédito cadastrado. Você não perde nenhum dado e pode continuar usando a plataforma sem interrupções."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quais são as funcionalidades de marketing inclusas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Todos os planos incluem CRM para gestão de clientes. Os planos Empresa desbloqueiam canais de marketing avançados, como automação de comentários no Instagram e a possibilidade de criar campanhas de marketing direcionadas via WhatsApp e Mala Direta."
+            }
+          }
+        ]
+      }
+    }
+    </script>
+    
+    <style>
+      /* Custom Scrollbar Styles */
+      /* For Webkit-based browsers (Chrome, Safari, Edge) */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #d1d5db; /* Tailwind gray-300 */
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #9ca3af; /* Tailwind gray-400 */
+      }
+      /* For Firefox */
+      html {
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db transparent; /* thumb and track color */
+      }
+    </style>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#10b981',
+                dark: '#059669',
+              },
+              secondary: '#000000',
+              light: '#f9fafb',
+            },
+            keyframes: {
+              bounceIn: {
+                '0%': { transform: 'scale(0.5)', opacity: '0' },
+                '60%': { transform: 'scale(1.1)', opacity: '1' },
+                '80%': { transform: 'scale(0.95)' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              fadeOut: {
+                'from': { opacity: '1', transform: 'translateX(0)' },
+                'to': { opacity: '0', transform: 'translateX(100%)' },
+              },
+              pulseGlow: {
+                '0%, 100%': { 
+                  transform: 'scale(1)',
+                  boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.7)' 
+                },
+                '70%': { 
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 0 0 10px rgba(16, 185, 129, 0)' 
+                }
+              },
+              pulseLogo: {
+                '0%, 100%': {
+                    transform: 'scale(1)',
+                    opacity: '0.9'
+                },
+                '50%': {
+                    transform: 'scale(1.05)',
+                    opacity: '1'
+                }
+              },
+              scaleIn: {
+                '0%': { transform: 'scale(0.5)', opacity: '0' },
+                '100%': { transform: 'scale(1)', opacity: '1' }
+              },
+              drawCheck: {
+                'to': { strokeDashoffset: 0 }
+              },
+              shimmer: {
+                '0%': { backgroundPosition: '-200% 0' },
+                '100%': { backgroundPosition: '200% 0' },
+              },
+              'fade-slide-up': {
+                '0%': {
+                  opacity: '0',
+                  transform: 'translateY(24px)'
+                },
+                '100%': {
+                  opacity: '1',
+                  transform: 'translateY(0)'
+                }
+              },
+            },
+            animation: {
+              'bounce-in': 'bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'fade-out': 'fadeOut 0.5s ease-out forwards',
+              'pulse-glow': 'pulseGlow 2.5s infinite',
+              'pulse-logo': 'pulseLogo 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'scale-in': 'scaleIn 0.3s ease-out forwards',
+              'draw-check': 'drawCheck 0.4s ease-out forwards 0.3s',
+              'shimmer': 'shimmer 1.5s infinite linear',
+              'fade-slide-up': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) both',
+              'fade-slide-up-1': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) 0.1s both',
+              'fade-slide-up-2': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) 0.2s both',
+              'fade-slide-up-3': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) 0.3s both',
+              'fade-slide-up-4': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) 0.4s both',
+              'fade-slide-up-5': 'fade-slide-up 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) 0.5s both',
+            }
+          }
+        }
+      }
+    </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.22.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-light">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
