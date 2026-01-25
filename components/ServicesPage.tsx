@@ -128,7 +128,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                                     if (type === 'package') toggleFavoritePackage(item.id);
                                     if (type === 'plan') toggleFavoriteSalonPlan(item.id);
                                 }}
-                                className="p-2 rounded-full text-gray-400 hover:bg-yellow-100 hover:text-yellow-500 transition-colors"
+                                className={`p-2 rounded-full transition-colors ${item.isFavorite ? 'text-yellow-500 bg-yellow-50' : 'text-gray-400 hover:bg-yellow-100 hover:text-yellow-500'}`}
                                 title={item.isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                             >
                                 {item.isFavorite ? <StarIconSolid /> : <StarIconOutline />}
