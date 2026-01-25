@@ -308,6 +308,7 @@ export interface DataContextType {
     deleteProduct: (id: number) => Promise<boolean>;
     toggleSuspendProduct: (id: number) => Promise<Product | null>;
     updateStockQuantity: (id: number, change: number) => Promise<Product | null>;
+    toggleFavoriteProduct: (id: number) => Promise<Product | null>;
 
     updateCrmSettings: (data: Partial<CrmSettings>) => Promise<CrmSettings | null>;
     updateClientCrm: (clientId: number, data: any) => Promise<Client | null>;
@@ -400,8 +401,9 @@ const mapProductFromAPI = (apiProduct: any): Product => ({
     ...apiProduct,
     purchaseValue: apiProduct.purchase_price,
     lowStockAlert: apiProduct.min_stock_level,
-    isFavorite: apiProduct.is_favorite,
-    suspended: apiProduct.is_suspended,
+    quantity: apiProduct.stock_quantity !== undefined ? apiProduct.stock_quantity : apiProduct.quantity,
+    isFavorite: apiProduct.is_favorite !== undefined ? apiProduct.is_favorite : apiProduct.isFavorite,
+    suspended: apiProduct.is_suspended !== undefined ? apiProduct.is_suspended : apiProduct.suspended,
 });
 
 const mapTenantFromAPI = (apiTenant: any): Tenant => ({
@@ -1207,6 +1209,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...product,
                 purchase_price: product.purchaseValue,
                 min_stock_level: product.lowStockAlert,
+                stock_quantity: product.quantity,
                 is_favorite: product.isFavorite,
                 is_suspended: product.suspended,
             };
@@ -1251,9 +1254,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await stockAPI.updateQuantity(id, change);
             await refreshProducts();
-            return mapProductFromAPI(response);
+            return mapProductFromAPI(response.data || response);
         } catch (error) {
             console.error('Error updating stock quantity:', error);
+            return null;
+        }
+    };
+
+    const toggleFavoriteProduct = async (id: number): Promise<Product | null> => {
+        try {
+            const response = await stockAPI.toggleFavorite(id);
+            await refreshProducts();
+            return mapProductFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error toggling product favorite:', error);
             return null;
         }
     };
@@ -1386,6 +1400,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 deleteProduct,
                 toggleSuspendProduct,
                 updateStockQuantity,
+                toggleFavoriteProduct,
                 crmSettings,
                 refreshCrmSettings,
                 updateCrmSettings,

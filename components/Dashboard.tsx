@@ -4075,7 +4075,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Profissionais': return <ProfessionalsPage onBack={handleBackToDashboard} professionals={currentUnitData.professionals || []} onSaveProfessional={handleSaveProfessional} onSuspendProfessional={onSuspendProfessional} onArchiveProfessional={onArchiveProfessional} isIndividualPlan={isIndividualPlan} />;
             case 'Registro de Ponto': return <TimeClockPage currentUser={currentUser} onBack={handleBackToDashboard} professional={professionalForTimeClock} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'Serviços': return <ServicesPage onBack={handleBackToDashboard} />;
-            case 'Estoque': return <StockPage onBack={handleBackToDashboard} products={currentUnitData.products || []} onSaveProduct={onSaveProduct} onDeleteProduct={onDeleteProduct} onSuspendProduct={onSuspendProduct} onUpdateQuantity={onUpdateProductQuantity} onToggleFavorite={handleToggleFavoriteProduct} onComingSoon={onComingSoon} />;
+            case 'Estoque': return <StockPage onBack={handleBackToDashboard} />;
             case 'Contratos': return <ContractPage onBack={handleBackToDashboard} currentUser={currentUser} onComingSoon={onComingSoon} />;
             case 'Financeiro': return <FinancialDashboardPage onBack={handleBackToDashboard} clients={currentUnitData.clients || []} transactions={currentUnitData.transactions || []} onSaveTransaction={handleSaveTransaction} onUpdateTransaction={handleUpdateTransaction} onComingSoon={onComingSoon} />;
             case 'Relatórios': return <ReportsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;

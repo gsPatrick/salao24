@@ -222,6 +222,10 @@ export const stockAPI = {
         const response = await api.patch(`/stock/products/${id}/quantity`, { change });
         return response.data;
     },
+    toggleFavorite: async (id: number) => {
+        const response = await api.patch(`/stock/products/${id}/favorite`);
+        return response.data;
+    },
 };
 
 export const crmAPI = {
