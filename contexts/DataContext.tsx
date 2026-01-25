@@ -56,14 +56,34 @@ export interface CrmSettings {
 export interface Professional {
     id: number;
     name: string;
-    photo?: string;
-    occupation?: string;
-    specialties?: string[];
-    phone?: string;
-    email?: string;
-    unit?: string;
+    socialName?: string;
+    photo: string;
+    occupation: string;
+    specialties: string[];
+    cpf?: string;
+    birthdate?: string;
+    phone: string;
+    email: string;
+    maritalStatus?: string;
+    address?: {
+        cep: string;
+        street: string;
+        number: string;
+        complement?: string;
+        neighborhood: string;
+        city: string;
+        state: string;
+    };
+    unit: string;
     suspended?: boolean;
     archived?: boolean;
+    startTime?: string;
+    lunchStart?: string;
+    lunchEnd?: string;
+    endTime?: string;
+    allowOvertime?: boolean;
+    openSchedule?: boolean;
+    documents?: { title: string; fileName: string }[];
     [key: string]: any;
 }
 
@@ -267,6 +287,8 @@ export interface DataContextType {
     deleteClient: (id: number) => Promise<boolean>;
 
     saveProfessional: (professional: Partial<Professional>) => Promise<Professional | null>;
+    suspendProfessional: (id: number) => Promise<Professional | null>;
+    archiveProfessional: (id: number) => Promise<Professional | null>;
     deleteProfessional: (id: number) => Promise<boolean>;
 
     saveService: (service: Partial<Service>) => Promise<Service | null>;
@@ -798,9 +820,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 response = await professionalsAPI.create(apiData);
             }
             await refreshProfessionals();
-            return mapProfessionalFromAPI(response.data);
+            return mapProfessionalFromAPI(response.data || response);
         } catch (error) {
             console.error('Error saving professional:', error);
+            return null;
+        }
+    };
+
+    const suspendProfessional = async (id: number): Promise<Professional | null> => {
+        try {
+            const response = await professionalsAPI.toggleSuspend(id);
+            await refreshProfessionals();
+            return mapProfessionalFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error suspending professional:', error);
+            return null;
+        }
+    };
+
+    const archiveProfessional = async (id: number): Promise<Professional | null> => {
+        try {
+            const response = await professionalsAPI.toggleArchive(id);
+            await refreshProfessionals();
+            return mapProfessionalFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error archiving professional:', error);
             return null;
         }
     };
@@ -1372,6 +1416,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 saveClient,
                 deleteClient,
                 saveProfessional,
+                suspendProfessional,
+                archiveProfessional,
                 deleteProfessional,
                 saveService,
                 deleteService,

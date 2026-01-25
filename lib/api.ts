@@ -97,6 +97,14 @@ export const professionalsAPI = {
         const response = await api.delete(`/professionals/${id}`);
         return response.data;
     },
+    toggleSuspend: async (id: number) => {
+        const response = await api.patch(`/professionals/${id}/suspend`);
+        return response.data;
+    },
+    toggleArchive: async (id: number) => {
+        const response = await api.patch(`/professionals/${id}/archive`);
+        return response.data;
+    },
     getRanking: async (params?: { limit?: number }) => {
         const response = await api.get('/professionals/ranking', { params });
         return response.data;
