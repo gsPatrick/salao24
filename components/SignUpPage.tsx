@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authAPI } from '../lib/api';
 
 interface SignUpPageProps {
   navigate: (page: string) => void;
@@ -155,6 +156,10 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
   const [userType, setUserType] = useState<'salon' | 'client' | null>(null);
 
   // Form States
+  const [establishmentName, setEstablishmentName] = useState('');
+  const [userName, setUserName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -180,18 +185,31 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
     else setPasswordsMatch(true);
   }, [password, confirmPassword]);
 
-  const isStep1Valid = Object.values(validation).every(Boolean) && passwordsMatch && confirmPassword !== '';
+  const isStep1Valid = Object.values(validation).every(Boolean) && passwordsMatch && confirmPassword !== '' && email !== '' && phone !== '' && (userType === 'client' ? userName !== '' : (establishmentName !== '' && userName !== ''));
 
   const handleNext = () => setStep(prev => prev + 1);
   const handlePrev = () => setStep(prev => prev - 1);
 
-  const handleFinalSubmit = (e: React.FormEvent) => {
+  const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await authAPI.register({
+        name: userName,
+        establishment_name: establishmentName,
+        email,
+        phone,
+        password,
+        plan: selectedPlan || 'Individual',
+        user_type: userType
+      });
       setIsLoading(false);
       setStep(4); // Move to success step
-    }, 1500);
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      alert(error.response?.data?.message || 'Erro ao realizar cadastro. Tente novamente.');
+      setIsLoading(false);
+    }
   }
 
   const renderContent = () => {
@@ -234,21 +252,47 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-1">
                 <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider">{userType === 'salon' ? 'Nome do Estabelecimento' : 'Seu Nome'}</label>
-                <input required className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium" placeholder={userType === 'salon' ? 'Ex: Studio Concept' : 'Nome completo'} />
+                <input
+                  required
+                  value={userType === 'salon' ? establishmentName : userName}
+                  onChange={(e) => userType === 'salon' ? setEstablishmentName(e.target.value) : setUserName(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium"
+                  placeholder={userType === 'salon' ? 'Ex: Studio Concept' : 'Nome completo'}
+                />
               </div>
               {userType === 'salon' && (
                 <div className="md:col-span-1">
                   <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider">Seu Nome</label>
-                  <input required className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium" placeholder="Como te chamamos?" />
+                  <input
+                    required
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium"
+                    placeholder="Como te chamamos?"
+                  />
                 </div>
               )}
               <div className={userType === 'client' ? 'md:col-span-2' : 'md:col-span-2'}>
                 <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider">E-mail Profissional</label>
-                <input type="email" required className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium" placeholder="contato@exemplo.com" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium"
+                  placeholder="contato@exemplo.com"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider">WhatsApp com DDD</label>
-                <input type="tel" required className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium" placeholder="(00) 00000-0000" />
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium"
+                  placeholder="(00) 00000-0000"
+                />
               </div>
             </div>
 

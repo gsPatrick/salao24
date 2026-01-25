@@ -44,6 +44,10 @@ import { Schedule } from './ScheduleSettingsModal';
 import NewAcquisitionChannelModal from './NewAcquisitionChannelModal';
 import ContractPage from './ContractPage';
 import ChannelsPage from './ChannelsPage';
+import { SuperAdminTenantsPage, SuperAdminBannersPage } from './SuperAdminDashboard';
+import YouTubeCommentModeration from './YouTubeCommentModeration';
+import TranslationPage from './TranslationPage';
+import TestConnection from './TestConnection';
 
 // Card Icons
 const DollarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0H8v1m4-1v-1m-4 5v1m-2-4h12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2z" /></svg>;
@@ -178,6 +182,11 @@ interface Promotion {
     createdAt: string;
     imageFile?: File; // campo para upload
     clicks?: number; // contador de cliques
+    profileTarget?: string;
+    locationCountry?: string;
+    locationState?: string;
+    locationCity?: string;
+    locationNeighborhood?: string;
 }
 
 interface MonthlyPackage {
@@ -204,8 +213,13 @@ interface PackageSubscription {
     startDate: string;
     endDate: string;
     isActive: boolean;
-    createdAt: string;
-    clicks?: number; // cliques no anúncio
+    imageFile?: File;
+    clicks?: number;
+    profileTarget?: string;
+    locationCountry?: string;
+    locationState?: string;
+    locationCity?: string;
+    locationNeighborhood?: string; // cliques no anúncio
     status?: 'active' | 'expired' | 'archived'; // status detalhado
     archivedAt?: string; // data de arquivamento
     lastModified?: string; // última modificação
@@ -237,7 +251,12 @@ interface ExclusivePromotion {
     isActive: boolean;
     createdAt: string;
     bannerFile?: File; // campo para upload do banner
-    clicks?: number; // contador de cliques
+    clicks?: number;
+    profileTarget?: string;
+    locationCountry?: string;
+    locationState?: string;
+    locationCity?: string;
+    locationNeighborhood?: string; // contador de cliques
 }
 
 interface DashboardProps {
@@ -302,7 +321,14 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
 );
 
 const PerformanceChart: React.FC<{ data: any, labels: string[], period: 'hoje' | 'semana' | 'mes' | 'anual' }> = ({ data, labels, period }) => {
-    if (!data) return null;
+    if (!data || labels.length === 0) return (
+        <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 className="text-2xl font-bold text-secondary mb-4">Desempenho Geral</h2>
+            <div className="h-80 bg-light p-4 rounded-lg flex items-center justify-center text-gray-500">
+                Nenhum dado disponível para o período selecionado.
+            </div>
+        </div>
+    );
 
     const clientMetricName = period === 'hoje' ? 'Clientes Hoje' : 'Novos Clientes';
 
@@ -314,8 +340,28 @@ const PerformanceChart: React.FC<{ data: any, labels: string[], period: 'hoje' |
         { key: 'clientes', name: clientMetricName, color: 'bg-purple-500' },
     ];
 
-    const maxValues = metrics.map(m => Math.max(...(data[m.key] || [0])));
-    const overallMax = Math.max(...maxValues, 1); // Avoid division by zero
+    // Calculate max per metric for individual normalization
+    const metricMaxes: { [key: string]: number } = {};
+    metrics.forEach(m => {
+        metricMaxes[m.key] = Math.max(...(data[m.key] || [0]), 1);
+    });
+
+    // Calculate height for each bar: normalize within its own metric group
+    const getBarHeight = (metricKey: string, index: number) => {
+        const value = data[metricKey]?.[index] || 0;
+        const max = metricMaxes[metricKey];
+        if (value === 0) return '0%';
+        // Minimum 10% height for visibility, max 100%
+        const percentage = Math.max((value / max) * 100, 10);
+        return `${percentage}%`;
+    };
+
+    const formatValue = (metricKey: string, value: number) => {
+        if (metricKey === 'faturamento' || metricKey === 'ticketMedio') {
+            return `R$ ${value.toFixed(2)}`;
+        }
+        return value.toString();
+    };
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-lg">
@@ -329,9 +375,9 @@ const PerformanceChart: React.FC<{ data: any, labels: string[], period: 'hoje' |
                             {metrics.map(metric => (
                                 <div
                                     key={metric.key}
-                                    className={`w-1/5 rounded-t-lg transition-all duration-300 hover:opacity-80 ${metric.color}`}
-                                    style={{ height: `${((data[metric.key]?.[index] || 0) / overallMax) * 100}%` }}
-                                    title={`${metric.name}: ${data[metric.key]?.[index] || 0}`}
+                                    className={`w-2 rounded-t-md transition-all duration-300 hover:opacity-80 ${metric.color}`}
+                                    style={{ height: getBarHeight(metric.key, index) }}
+                                    title={`${metric.name}: ${formatValue(metric.key, data[metric.key]?.[index] || 0)}`}
                                 ></div>
                             ))}
                         </div>
@@ -672,6 +718,11 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     image: imageUrl,
                                     promotionUrl: formData.get('promotionUrl') as string || '',
                                     targetArea: formData.get('targetArea') as 'cliente' | 'painel',
+                                    profileTarget: formData.get('profileTarget') as string,
+                                    locationCountry: formData.get('locationCountry') as string,
+                                    locationState: formData.get('locationState') as string,
+                                    locationCity: formData.get('locationCity') as string,
+                                    locationNeighborhood: formData.get('locationNeighborhood') as string,
                                     actionButton: formData.get('actionButton') as string,
                                     duration: editingPromotion?.duration || 7, // valor padrão
                                     startDate: formData.get('startDate') as string,
@@ -718,6 +769,36 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                 </div>
 
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
+                                    <input
+                                        name="actionButton"
+                                        type="text"
+                                        required
+                                        defaultValue={editingPromotion?.actionButton || ''}
+                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                        placeholder="Ex: Comprar Agora, Saiba Mais"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Perfil de Exibição</label>
+                                    <select
+                                        name="profileTarget"
+                                        defaultValue={editingPromotion?.profileTarget || ''}
+                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                    >
+                                        <option value="">Todos os segmentos</option>
+                                        <option value="salao_beleza">Salão de Beleza</option>
+                                        <option value="bem_estar">Bem-estar e estética</option>
+                                        <option value="estudio_beleza">Estúdio de beleza</option>
+                                        <option value="podologia">Podologia</option>
+                                        <option value="barbearia">Barbearia</option>
+                                        <option value="esmaltaria">Esmaltaria</option>
+                                        <option value="outros">Outros segmentos</option>
+                                    </select>
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
                                     <textarea
                                         name="description"
@@ -730,7 +811,63 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Promoção</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Área de Exibição</label>
+                                    <select
+                                        name="targetArea"
+                                        required
+                                        defaultValue={editingPromotion?.targetArea || 'painel'}
+                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                    >
+                                        <option value="painel">Painel de Controle</option>
+                                        <option value="cliente">Área do Cliente</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Local de Exibição</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">País</label>
+                                            <select name="locationCountry" className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" defaultValue={editingPromotion?.locationCountry || ''}>
+                                                <option value="">Todos</option>
+                                                <option value="BR">Brasil</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                                            <input
+                                                name="locationState"
+                                                type="text"
+                                                placeholder="Ex: SP"
+                                                defaultValue={editingPromotion?.locationState || ''}
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+                                            <input
+                                                name="locationCity"
+                                                type="text"
+                                                placeholder="Ex: São Paulo"
+                                                defaultValue={editingPromotion?.locationCity || ''}
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Bairro</label>
+                                            <input
+                                                name="locationNeighborhood"
+                                                type="text"
+                                                placeholder="Ex: Jardins"
+                                                defaultValue={editingPromotion?.locationNeighborhood || ''}
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
                                     <div className="space-y-2">
                                         <div
                                             onDragOver={handleDragOver}
@@ -740,10 +877,10 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                             className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${imageFile ? 'border-primary bg-primary/10' : 'border-gray-300'
                                                 }`}
                                         >
-                                            {imagePreviewUrl ? (
+                                            {imagePreviewUrl || editingPromotion?.image ? (
                                                 <div className="text-center relative">
                                                     <img
-                                                        src={imagePreviewUrl}
+                                                        src={imagePreviewUrl || editingPromotion?.image}
                                                         alt="Preview"
                                                         className="mx-auto max-h-40 rounded-md shadow-md"
                                                     />
@@ -754,7 +891,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                                     >
                                                         ×
                                                     </button>
-                                                    <p className="text-xs text-gray-600 mt-2 truncate max-w-xs">{imageFile?.name}</p>
+                                                    <p className="text-xs text-gray-600 mt-2 truncate max-w-xs">{imageFile?.name || 'Imagem atual'}</p>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-1 text-center">
@@ -775,46 +912,17 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                                 accept="image/*"
                                             />
                                         </div>
-                                        <p className="text-xs text-gray-500">
-                                            <span className="font-medium">Tamanho recomendado:</span> 80x64px (proporção 5:4)
-                                            <br />
-                                            <span className="text-gray-400">A imagem será redimensionada automaticamente para otimizar o carregamento.</span>
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Link da Promoção</label>
-                                        <input
-                                            name="promotionUrl"
-                                            type="url"
-                                            defaultValue={editingPromotion?.promotionUrl || ''}
-                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                            placeholder="https://exemplo.com/promocao"
-                                        />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Área de Exibição</label>
-                                    <select
-                                        name="targetArea"
-                                        required
-                                        defaultValue={editingPromotion?.targetArea || 'painel'}
-                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                    >
-                                        <option value="painel">Painel de Controle</option>
-                                        <option value="cliente">Área do Cliente</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Link da Campanha</label>
                                     <input
-                                        name="actionButton"
-                                        type="text"
-                                        required
-                                        defaultValue={editingPromotion?.actionButton || ''}
+                                        name="promotionUrl"
+                                        type="url"
+                                        defaultValue={editingPromotion?.promotionUrl || ''}
                                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                        placeholder="Ex: Comprar Agora, Saiba Mais"
+                                        placeholder="https://exemplo.com/promocao"
                                     />
                                 </div>
 
@@ -1060,6 +1168,11 @@ const ExclusivePromotionsPage: React.FC<{
                                         description: formData.get('description') as string,
                                         bannerImage: bannerImageUrl,
                                         bannerLink: formData.get('bannerLink') as string,
+                                        profileTarget: formData.get('profileTarget') as string,
+                                        locationCountry: formData.get('locationCountry') as string,
+                                        locationState: formData.get('locationState') as string,
+                                        locationCity: formData.get('locationCity') as string,
+                                        locationNeighborhood: formData.get('locationNeighborhood') as string,
                                         actionButton: formData.get('actionButton') as string,
                                         startDate: formData.get('startDate') as string,
                                         endDate: formData.get('endDate') as string,
@@ -1116,18 +1229,93 @@ const ExclusivePromotionsPage: React.FC<{
                                         />
                                     </div>
 
+
+
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Imagem do Banner</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
+                                        <input
+                                            name="actionButton"
+                                            type="text"
+                                            required
+                                            defaultValue={editingExclusive?.actionButton || ''}
+                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                            placeholder="Texto do botão de chamada para ação"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Perfil de Exibição</label>
+                                        <select
+                                            name="profileTarget"
+                                            defaultValue={editingExclusive?.profileTarget || ''}
+                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                        >
+                                            <option value="">Todos os segmentos</option>
+                                            <option value="salao_beleza">Salão de Beleza</option>
+                                            <option value="bem_estar">Bem-estar e estética</option>
+                                            <option value="estudio_beleza">Estúdio de beleza</option>
+                                            <option value="podologia">Podologia</option>
+                                            <option value="barbearia">Barbearia</option>
+                                            <option value="esmaltaria">Esmaltaria</option>
+                                            <option value="outros">Outros segmentos</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Local de Exibição</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">País</label>
+                                                <select name="locationCountry" className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" defaultValue={editingExclusive?.locationCountry || ''}>
+                                                    <option value="">Todos</option>
+                                                    <option value="BR">Brasil</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                                                <input
+                                                    name="locationState"
+                                                    type="text"
+                                                    placeholder="Ex: SP"
+                                                    defaultValue={editingExclusive?.locationState || ''}
+                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+                                                <input
+                                                    name="locationCity"
+                                                    type="text"
+                                                    placeholder="Ex: São Paulo"
+                                                    defaultValue={editingExclusive?.locationCity || ''}
+                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">Bairro</label>
+                                                <input
+                                                    name="locationNeighborhood"
+                                                    type="text"
+                                                    placeholder="Ex: Jardins"
+                                                    defaultValue={editingExclusive?.locationNeighborhood || ''}
+                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
                                         <div className="space-y-2">
                                             <div
                                                 onClick={() => fileInputRef.current?.click()}
                                                 className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${bannerFile ? 'border-primary bg-primary/10' : 'border-gray-300'
                                                     }`}
                                             >
-                                                {bannerPreviewUrl ? (
+                                                {bannerPreviewUrl || editingExclusive?.bannerImage ? (
                                                     <div className="text-center relative">
                                                         <img
-                                                            src={bannerPreviewUrl}
+                                                            src={bannerPreviewUrl || editingExclusive?.bannerImage}
                                                             alt="Preview"
                                                             className="mx-auto max-h-40 rounded-md shadow-md"
                                                         />
@@ -1164,7 +1352,7 @@ const ExclusivePromotionsPage: React.FC<{
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Link do Banner</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Link da Campanha</label>
                                         <input
                                             name="bannerLink"
                                             type="url"
@@ -1172,18 +1360,6 @@ const ExclusivePromotionsPage: React.FC<{
                                             defaultValue={editingExclusive?.bannerLink || ''}
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                             placeholder="https://exemplo.com/promocao"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
-                                        <input
-                                            name="actionButton"
-                                            type="text"
-                                            required
-                                            defaultValue={editingExclusive?.actionButton || ''}
-                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                            placeholder="Texto do botão de chamada para ação"
                                         />
                                     </div>
 
@@ -1308,6 +1484,38 @@ const MonthlyPackagesPage: React.FC<{
         const { t } = useLanguage();
         const [view, setView] = useState<'packages' | 'subscriptions' | 'promotions'>('packages');
         const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'active' | 'expiring' | 'expired' | 'archived'>('all');
+        const [imageFile, setImageFile] = useState<File | null>(null);
+        const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+        const fileInputRef = useRef<HTMLInputElement>(null);
+
+        const handleFileSelect = (selectedFile: File | null) => {
+            setImageFile(selectedFile);
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setImagePreviewUrl(event.target?.result as string);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                setImagePreviewUrl(null);
+            }
+        };
+
+        const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+        const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+        const handleDrop = (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) handleFileSelect(files[0]);
+        };
+
+        useEffect(() => {
+            if (!isPromoModalOpen) {
+                setImageFile(null);
+                setImagePreviewUrl(null);
+            }
+        }, [isPromoModalOpen]);
 
         const activePackages = monthlyPackages.filter(p => p.isActive);
         const activeSubscriptions = packageSubscriptions.filter(s => s.isActive);
@@ -1912,10 +2120,10 @@ const MonthlyPackagesPage: React.FC<{
                                             phone: formData.get('phone') as string,
                                             email: formData.get('email') as string,
                                             responsible: formData.get('responsible') as string,
-                                            packageId: parseInt(formData.get('packageId') as string),
-                                            packageName: formData.get('packageName') as string,
-                                            packagePrice: parseFloat(formData.get('packagePrice') as string),
-                                            displayDuration: parseInt(formData.get('displayDuration') as string),
+                                            packageId: parseInt(formData.get('packageId') as string) || 0,
+                                            packageName: formData.get('packageName') as string || '',
+                                            packagePrice: parseFloat(formData.get('packagePrice') as string) || 0,
+                                            displayDuration: parseInt(formData.get('displayDuration') as string) || 30,
                                             startDate: formData.get('startDate') as string,
                                             endDate: formData.get('endDate') as string,
                                             isActive: editingSubscription?.isActive ?? true,
@@ -2101,15 +2309,23 @@ const MonthlyPackagesPage: React.FC<{
                                         const formData = new FormData(e.currentTarget);
 
                                         let imageUrl = formData.get('imageUrl') as string;
+                                        if (imageFile) {
+                                            imageUrl = `data:image/jpeg;base64,${imagePreviewUrl?.split(',')[1] || ''}`;
+                                        }
 
                                         const promotion: any = {
                                             callToAction: formData.get('callToAction') as string,
                                             title: formData.get('title') as string,
                                             subtitle: formData.get('subtitle') as string,
                                             description: formData.get('description') as string,
-                                            image: imageUrl,
+                                            image: imageUrl || editingPromotion?.image || '',
                                             promotionUrl: formData.get('promotionUrl') as string || '',
                                             targetArea: formData.get('targetArea') as 'cliente' | 'painel',
+                                            profileTarget: formData.get('profileTarget') as string,
+                                            locationCountry: formData.get('locationCountry') as string,
+                                            locationState: formData.get('locationState') as string,
+                                            locationCity: formData.get('locationCity') as string,
+                                            locationNeighborhood: formData.get('locationNeighborhood') as string,
                                             actionButton: formData.get('actionButton') as string,
                                             duration: editingPromotion?.duration || 7,
                                             startDate: formData.get('startDate') as string,
@@ -2170,7 +2386,7 @@ const MonthlyPackagesPage: React.FC<{
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">URL da Promoção</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Link da Campanha</label>
                                             <input
                                                 name="promotionUrl"
                                                 type="url"
@@ -2191,6 +2407,114 @@ const MonthlyPackagesPage: React.FC<{
                                                 <option value="painel">Painel de Controle</option>
                                                 <option value="cliente">Área do Cliente</option>
                                             </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Perfil de Exibição</label>
+                                            <select
+                                                name="profileTarget"
+                                                defaultValue={editingPromotion?.profileTarget || ''}
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                            >
+                                                <option value="">Todos os segmentos</option>
+                                                <option value="salao_beleza">Salão de Beleza</option>
+                                                <option value="bem_estar">Bem-estar e estética</option>
+                                                <option value="estudio_beleza">Estúdio de beleza</option>
+                                                <option value="podologia">Podologia</option>
+                                                <option value="barbearia">Barbearia</option>
+                                                <option value="esmaltaria">Esmaltaria</option>
+                                                <option value="outros">Outros segmentos</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Local de Exibição</label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">País</label>
+                                                    <select name="locationCountry" className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm" defaultValue={editingPromotion?.locationCountry || ''}>
+                                                        <option value="">Todos</option>
+                                                        <option value="BR">Brasil</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">Estado</label>
+                                                    <input
+                                                        name="locationState"
+                                                        type="text"
+                                                        placeholder="Ex: SP"
+                                                        defaultValue={editingPromotion?.locationState || ''}
+                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+                                                    <input
+                                                        name="locationCity"
+                                                        type="text"
+                                                        placeholder="Ex: São Paulo"
+                                                        defaultValue={editingPromotion?.locationCity || ''}
+                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">Bairro</label>
+                                                    <input
+                                                        name="locationNeighborhood"
+                                                        type="text"
+                                                        placeholder="Ex: Jardins"
+                                                        defaultValue={editingPromotion?.locationNeighborhood || ''}
+                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
+                                            <div className="space-y-2">
+                                                <div
+                                                    onDragOver={handleDragOver}
+                                                    onDragLeave={handleDragLeave}
+                                                    onDrop={handleDrop}
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${imageFile ? 'border-primary bg-primary/10' : 'border-gray-300'
+                                                        }`}
+                                                >
+                                                    {imagePreviewUrl || editingPromotion?.image ? (
+                                                        <div className="text-center relative">
+                                                            <img
+                                                                src={imagePreviewUrl || editingPromotion?.image}
+                                                                alt="Preview"
+                                                                className="mx-auto max-h-40 rounded-md shadow-md"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); handleFileSelect(null); }}
+                                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1 text-center">
+                                                            <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4M8 32l9.172-9.172a4 4 0 015.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                            <div className="flex text-sm text-gray-600">
+                                                                <p className="pl-1">Arraste e solte ou clique para selecionar</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <input
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                        className="hidden"
+                                                        onChange={e => handleFileSelect(e.target.files ? e.target.files[0] : null)}
+                                                        accept="image/*"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div>
@@ -2308,11 +2632,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
     selectedUnit, onUnitChange, allData, setAllData, users, onUsersChange, onSuspendAcquisitionChannel,
     onArchiveAcquisitionChannel, onUnarchiveAcquisitionChannel, onChannelsChange,
     onSaveProduct, onDeleteProduct, onSuspendProduct, onUpdateProductQuantity, onProductsChange,
-    onSuspendProfessional, onArchiveProfessional, onProfessionalsChange, onComingSoon = () => { }
+    onSuspendProfessional, onArchiveProfessional, onProfessionalsChange,
+    isSuperAdmin, planFeatures, onComingSoon = () => { }
 }) => {
     const { language, setLanguage, t } = useLanguage();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [activeView, setActiveView] = useState('Visão Geral');
+    const initialView = useMemo(() => {
+        if (isSuperAdmin) return 'Super Admin: Salões';
+        if (currentUser?.role === 'profissional' || currentUser?.role === 'Profissional') return 'Minha Agenda';
+        return 'Visão Geral';
+    }, [isSuperAdmin, currentUser?.role]);
+
+    const [activeView, setActiveView] = useState(initialView);
     const [chatClientTarget, setChatClientTarget] = useState<number | null>(null);
     const [derivedPeriod, setDerivedPeriod] = useState<'hoje' | 'semana' | 'mes' | 'anual'>('mes');
     const [topSellersTab, setTopSellersTab] = useState('services');
@@ -2328,7 +2659,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         saveService,
         deleteService,
         toggleSuspendService,
-        toggleFavoriteService
+        toggleFavoriteService,
+        saveClient,
+        deleteClient
     } = useData();
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
     const mainContentRef = useRef<HTMLDivElement>(null);
@@ -2353,7 +2686,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     // --- Promotions & Packages State ---
-    const [promotions, setPromotions] = useState<Promotion[]>([]);
+    const { promotions, savePromotion, deletePromotion, togglePromotion, refreshPromotions } = useData();
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
 
@@ -2372,15 +2705,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     useEffect(() => {
         const loadDashboardData = async () => {
             try {
-                const [promos, pkgs, subs, campaigns, channels, directMail] = await Promise.all([
-                    promotionsAPI.list(),
+                const [pkgs, subs, campaigns, channels, directMail] = await Promise.all([
                     packagesAPI.list(),
                     packagesAPI.listSubscriptions(),
                     marketingAPI.listCampaigns(),
                     marketingAPI.listChannels(),
                     marketingAPI.listDirectMail()
                 ]);
-                setPromotions(promos);
                 setMonthlyPackages(pkgs);
                 setPackageSubscriptions(subs);
                 setMarketingCampaigns(campaigns);
@@ -2407,14 +2738,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     // --- Promotion Handlers ---
     const handleSavePromotion = async (promotion: Promotion) => {
         try {
-            let savedPromo;
-            if (editingPromotion) {
-                savedPromo = await promotionsAPI.update(promotion.id, promotion);
-                setPromotions(prev => prev.map(p => p.id === savedPromo.id ? savedPromo : p));
-            } else {
-                savedPromo = await promotionsAPI.create(promotion);
-                setPromotions(prev => [savedPromo, ...prev]);
-            }
+            await savePromotion(promotion);
             setIsPromoModalOpen(false);
             setEditingPromotion(null);
         } catch (error) {
@@ -2426,8 +2750,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const handleDeletePromotion = async (id: number) => {
         if (window.confirm(t('confirmAction'))) {
             try {
-                await promotionsAPI.delete(id);
-                setPromotions(prev => prev.filter(p => p.id !== id));
+                await deletePromotion(id);
             } catch (error) {
                 console.error("Error deleting promotion:", error);
                 alert("Erro ao excluir promoção.");
@@ -2437,13 +2760,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const handleTogglePromotion = async (id: number) => {
         try {
-            const res = await promotionsAPI.toggle(id);
-            setPromotions(prev => prev.map(p => p.id === id ? { ...p, isActive: res.active } : p));
+            await togglePromotion(id);
         } catch (error) {
             console.error("Error toggling promotion:", error);
+            alert("Erro ao atualizar promoção.");
         }
     };
-
     const handleOpenPromoModal = (promotion?: Promotion) => {
         setEditingPromotion(promotion || null);
         setIsPromoModalOpen(true);
@@ -2581,14 +2903,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const handleSaveExclusive = async (exclusive: Promotion) => {
         try {
             const dataToSave = { ...exclusive, type: 'exclusive' as const };
-            let savedPromo;
             if (editingExclusive) {
-                savedPromo = await promotionsAPI.update(exclusive.id, dataToSave);
-                setPromotions(prev => prev.map(p => p.id === savedPromo.id ? savedPromo : p));
+                await promotionsAPI.update(exclusive.id, dataToSave);
             } else {
-                savedPromo = await promotionsAPI.create(dataToSave);
-                setPromotions(prev => [savedPromo, ...prev]);
+                await promotionsAPI.create(dataToSave);
             }
+            await refreshPromotions();
             setIsExclusiveModalOpen(false);
             setEditingExclusive(null);
         } catch (error) {
@@ -2601,7 +2921,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         if (window.confirm(t('confirmAction'))) {
             try {
                 await promotionsAPI.delete(id);
-                setPromotions(prev => prev.filter(p => p.id !== id));
+                await refreshPromotions();
             } catch (error) {
                 console.error("Error deleting exclusive promotion:", error);
                 alert("Erro ao excluir promoção exclusiva.");
@@ -2611,8 +2931,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const handleToggleExclusive = async (id: number) => {
         try {
-            const res = await promotionsAPI.toggle(id);
-            setPromotions(prev => prev.map(p => p.id === id ? { ...p, isActive: res.active } : p));
+            await promotionsAPI.toggle(id);
+            await refreshPromotions();
         } catch (error) {
             console.error("Error toggling exclusive promotion:", error);
         }
@@ -2730,49 +3050,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }));
     };
 
-    const handleBlockClientDashboard = (clientId: number, reason: string) => {
-        setAllData((prevData: any) => {
-            const unitData = prevData[selectedUnit] || {};
-            const clients = Array.isArray(unitData.clients) ? unitData.clients : [];
-
-            const updatedClients = clients.map((c: any) =>
-                c.id === clientId
-                    ? { ...c, blocked: { status: true, reason } }
-                    : c
-            );
-
-            return {
-                ...prevData,
-                [selectedUnit]: {
-                    ...unitData,
-                    clients: updatedClients,
-                },
-            };
-        });
+    const handleBlockClientDashboard = async (clientId: number, reason: string) => {
+        const client = clients.find(c => c.id === clientId);
+        if (client) {
+            await saveClient({ ...client, blocked: true, blockReason: reason });
+        }
     };
 
-    const handleUnblockClientDashboard = (clientId: number) => {
-        setAllData((prevData: any) => {
-            const unitData = prevData[selectedUnit] || {};
-            const clients = Array.isArray(unitData.clients) ? unitData.clients : [];
-
-            const updatedClients = clients.map((c: any) =>
-                c.id === clientId
-                    ? { ...c, blocked: { status: false, reason: '' } }
-                    : c
-            );
-
-            return {
-                ...prevData,
-                [selectedUnit]: {
-                    ...unitData,
-                    clients: updatedClients,
-                },
-            };
-        });
+    const handleUnblockClientDashboard = async (clientId: number) => {
+        const client = clients.find(c => c.id === clientId);
+        if (client) {
+            await saveClient({ ...client, blocked: false, blockReason: '' });
+        }
     };
 
-    const handleSaveClient = createDataHandler('clients');
+    const handleSaveClientDashboard = async (clientData: any) => {
+        await saveClient(clientData);
+    };
+
+    const handleDeleteClientDashboard = async (clientId: number) => {
+        await deleteClient(clientId);
+    };
     const handleSaveProfessional = createDataHandler('professionals');
     const handleSaveService = createDataHandler('services');
     const handleSavePackage = createDataHandler('packages');
@@ -3255,14 +3553,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
     }, [activeView]);
 
-    const handleSidebarClick = (itemKey: string) => {
-        if (itemKey === 'Agendamento') {
+    const handleSidebarClick = (view: string) => {
+        if (view === 'clientApp') {
+            navigate('clientApp');
+            return;
+        }
+        if (view === 'Agendamento') {
             navigate('scheduling');
         } else {
-            if (itemKey === activeView && mainContentRef.current) {
+            if (view === activeView && mainContentRef.current) {
                 mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                setActiveView(itemKey);
+                setActiveView(view);
             }
         }
         setIsSidebarOpen(false);
@@ -3355,7 +3657,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     const DashboardOverviewContent = () => {
-        const { transactions, appointments, clients, notifications: contextNotifications, refreshNotifications } = useData();
+        const { transactions, appointments, clients, promotions, notifications: contextNotifications, refreshNotifications } = useData();
         const periodKey = derivedPeriod === 'mes' ? 'mensal' : derivedPeriod;
         const [summary, setSummary] = useState<any>(null);
         const [loadingSummary, setLoadingSummary] = useState(false);
@@ -3465,24 +3767,100 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }, [summary, transactions, appointments, clients, derivedPeriod]);
 
         const calculateChartData = () => {
-            if (summary && summary.chartData && summary.chartLabels) {
+            if (summary && summary.chartData && summary.chartLabels && summary.chartLabels.length > 0) {
+                // Transform dataset array back to object format expected by PerformanceChart
+                const dataObj: any = {
+                    faturamento: [],
+                    atendimentos: [],
+                    agendamentos: [],
+                    ticketMedio: [],
+                    clientes: []
+                };
+
+                summary.chartData.forEach((ds: any) => {
+                    if (ds.label === 'Faturamento') dataObj.faturamento = ds.data;
+                    if (ds.label === 'Atendimentos') dataObj.atendimentos = ds.data;
+                    if (ds.label === 'Agendamentos') dataObj.agendamentos = ds.data;
+                    if (ds.label === 'Ticket Médio') dataObj.ticketMedio = ds.data;
+                    if (ds.label === 'Novos Clientes' || ds.label === 'Clientes Hoje') dataObj.clientes = ds.data;
+                });
+
                 return {
                     labels: summary.chartLabels,
-                    datasets: summary.chartData
+                    chartData: dataObj
                 };
             }
-            // Fallback to empty structure if no summary or chartData
-            return {
-                labels: [],
-                datasets: [
-                    { label: 'Faturamento', data: [], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.1)' },
-                    { label: 'Atendimentos', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)' }
-                ]
+
+            // LOCAL FALLBACK: Calculate from local appointments/transactions if API summary is missing
+            const generateLocalChartData = () => {
+                const today = new Date();
+                const labels: string[] = [];
+                const dataObj: any = {
+                    faturamento: [],
+                    atendimentos: [],
+                    agendamentos: [],
+                    ticketMedio: [],
+                    clientes: []
+                };
+
+                if (derivedPeriod === 'hoje') {
+                    // Hourly breakdown for today (8:00 to 20:00)
+                    for (let hour = 8; hour <= 20; hour += 2) {
+                        labels.push(`${hour}:00`);
+                        const hourAppointments = appointments.filter(a => {
+                            const apptDate = new Date(a.date);
+                            const apptHour = parseInt(a.time?.split(':')[0] || '0');
+                            return apptDate.toDateString() === today.toDateString() && apptHour >= hour && apptHour < hour + 2;
+                        });
+                        const hourTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate.toDateString() === today.toDateString() && tDate.getHours() >= hour && tDate.getHours() < hour + 2;
+                        });
+                        const fat = hourTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+                        const atend = hourAppointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                        dataObj.faturamento.push(fat);
+                        dataObj.atendimentos.push(atend);
+                        dataObj.agendamentos.push(hourAppointments.length);
+                        dataObj.ticketMedio.push(atend > 0 ? fat / atend : 0);
+                        dataObj.clientes.push(0);
+                    }
+                } else if (derivedPeriod === 'semana') {
+                    // Daily breakdown for last 7 days
+                    const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date(today);
+                        d.setDate(d.getDate() - i);
+                        labels.push(dayLabels[d.getDay()]);
+                        const dayAppointments = appointments.filter(a => new Date(a.date).toDateString() === d.toDateString());
+                        const dayTransactions = transactions.filter(t => new Date(t.date).toDateString() === d.toDateString());
+                        const fat = dayTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+                        const atend = dayAppointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                        dataObj.faturamento.push(fat);
+                        dataObj.atendimentos.push(atend);
+                        dataObj.agendamentos.push(dayAppointments.length);
+                        dataObj.ticketMedio.push(atend > 0 ? fat / atend : 0);
+                        dataObj.clientes.push(0);
+                    }
+                } else {
+                    // Fallback: show simple metrics for "mes" or "anual"
+                    labels.push('Período');
+                    const fat = transactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+                    const atend = appointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                    dataObj.faturamento.push(fat);
+                    dataObj.atendimentos.push(atend);
+                    dataObj.agendamentos.push(appointments.length);
+                    dataObj.ticketMedio.push(atend > 0 ? fat / atend : 0);
+                    dataObj.clientes.push(clients.length);
+                }
+
+                return { labels, chartData: dataObj };
             };
+
+            return generateLocalChartData();
         };
 
         const chartResult = calculateChartData();
-        const chartData = chartResult.datasets;
+        const chartData = chartResult.chartData;
         const chartLabels = chartResult.labels;
 
         return (
@@ -3516,7 +3894,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <div className={animateContent ? 'animate-fade-slide-up-4' : 'opacity-100'}>
-                        <DashboardPromoCarousel />
+                        <DashboardPromoCarousel promotions={promotions} />
                     </div>
                 </div>
 
@@ -3597,6 +3975,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 promotions={promotions}
                 onOpenPromoModal={handleOpenPromoModal}
             />;
+            case 'Super Admin: Salões': return <SuperAdminTenantsPage />;
+            case 'Super Admin: Banners': return <SuperAdminBannersPage />;
+            case 'Super Admin: YouTube': return (
+                <div className="container mx-auto px-6 py-8">
+                    <h2 className="text-2xl font-bold text-secondary mb-6">Moderação YouTube (GOD MODE)</h2>
+                    <YouTubeCommentModeration
+                        channelId=""
+                        apiKey=""
+                        isEnabled={true}
+                    />
+                </div>
+            );
+            case 'Super Admin: Tradução': return <TranslationPage onBack={handleBackToDashboard} />;
+            case 'Super Admin: Diagnósticos': return <TestConnection />;
+            case 'Super Admin: E-mail': return <EmailServerSettings />;
             case 'Painel de Controle': return <DashboardOverviewContent />;
             case 'Agente IA': return <AIAgentPage currentUser={currentUser} onActivateAI={onActivateAI} activeAIAgent={activeAIAgent} onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} navigate={navigate} onComingSoon={onComingSoon} />;
             case 'Canais': return <ChannelsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} navigate={navigate} onComingSoon={onComingSoon} />;
@@ -3677,17 +4070,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onComingSoon={handleShowComingSoon}
             />;
             case 'Minha Agenda': return currentUser && ['admin', 'gerente', 'concierge', 'Administrador', 'Gerente', 'Concierge'].includes(currentUser.role || '') ? <GeneralAgendaPage onBack={handleBackToDashboard} currentUser={currentUser} isIndividualPlan={isIndividualPlan} professionals={currentUnitData.professionals || []} onComingSoon={onComingSoon} /> : <ProfessionalAgendaPage currentUser={currentUser} onBack={handleBackToDashboard} navigate={navigate} onComingSoon={onComingSoon} />;
-            case 'Clientes': return <ClientListPage onBack={handleBackToDashboard} navigate={navigate} clients={currentUnitData.clients || []} onAddNewClient={handleSaveClient} acquisitionChannels={currentUnitData.acquisitionChannels || []} onOpenChat={handleOpenChatForClient} onDeleteClient={handleClientsChange} onBlockClient={handleBlockClientDashboard} onUnblockClient={handleUnblockClientDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
+            case 'Clientes': return <ClientListPage onBack={handleBackToDashboard} navigate={navigate} clients={clients || []} onAddNewClient={handleSaveClientDashboard} acquisitionChannels={currentUnitData.acquisitionChannels || []} onOpenChat={handleOpenChatForClient} onDeleteClient={handleDeleteClientDashboard} onBlockClient={handleBlockClientDashboard} onUnblockClient={handleUnblockClientDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'CRM': return <CRMPage onBack={handleBackToDashboard} currentUser={currentUser} clients={currentUnitData.clients || []} appointments={currentUnitData.appointments || []} navigate={navigate} onOpenChat={handleOpenChatForClient} onComingSoon={onComingSoon} />;
             case 'Profissionais': return <ProfessionalsPage onBack={handleBackToDashboard} professionals={currentUnitData.professionals || []} onSaveProfessional={handleSaveProfessional} onSuspendProfessional={onSuspendProfessional} onArchiveProfessional={onArchiveProfessional} isIndividualPlan={isIndividualPlan} />;
             case 'Registro de Ponto': return <TimeClockPage currentUser={currentUser} onBack={handleBackToDashboard} professional={professionalForTimeClock} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
-            case 'Serviços': return <ServicesPage onBack={handleBackToDashboard} services={currentUnitData.services || []} packages={currentUnitData.packages || []} plans={currentUnitData.plans || []} onSaveService={saveService} onSavePackage={handleSavePackage} onSavePlan={handleSavePlan} onDeleteService={handleDeleteService} onSuspendService={handleSuspendService} onDeletePackage={handleDeletePackage} onSuspendPackage={handleSuspendPackage} onDeletePlan={handleDeletePlan} onSuspendPlan={handleSuspendPlan} serviceCategories={serviceCategories} onAddServiceCategory={handleAddServiceCategory} onUpdateServiceCategory={handleUpdateServiceCategory} onDeleteServiceCategory={handleDeleteServiceCategory} onToggleFavorite={toggleFavoriteService} onComingSoon={onComingSoon} />;
+            case 'Serviços': return <ServicesPage onBack={handleBackToDashboard} />;
             case 'Estoque': return <StockPage onBack={handleBackToDashboard} products={currentUnitData.products || []} onSaveProduct={onSaveProduct} onDeleteProduct={onDeleteProduct} onSuspendProduct={onSuspendProduct} onUpdateQuantity={onUpdateProductQuantity} onToggleFavorite={handleToggleFavoriteProduct} onComingSoon={onComingSoon} />;
             case 'Contratos': return <ContractPage onBack={handleBackToDashboard} currentUser={currentUser} onComingSoon={onComingSoon} />;
             case 'Financeiro': return <FinancialDashboardPage onBack={handleBackToDashboard} clients={currentUnitData.clients || []} transactions={currentUnitData.transactions || []} onSaveTransaction={handleSaveTransaction} onUpdateTransaction={handleUpdateTransaction} onComingSoon={onComingSoon} />;
             case 'Relatórios': return <ReportsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'Suporte': return <SupportPage onBack={handleBackToDashboard} currentUser={currentUser!} onComingSoon={onComingSoon} />;
-            case 'Configurações': return <SettingsPage onBack={handleBackToDashboard} units={Object.keys(allData).map((name, id) => ({ id, name, ...allData[name].unitDetails }))} onUnitsChange={handleUnitsChange} professionals={currentUnitData.professionals || []} isIndividualPlan={isIndividualPlan} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} users={users} onUsersChange={onUsersChange} onComingSoon={onComingSoon} />;
+            case 'Configurações': return <SettingsPage onBack={handleBackToDashboard} units={Object.keys(allData).map((name, id) => ({ id, name, ...allData[name].unitDetails }))} onUnitsChange={handleUnitsChange} isIndividualPlan={isIndividualPlan} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} users={users} onUsersChange={onUsersChange} onComingSoon={onComingSoon} />;
             // onUsersChange needs real implementation
             default: return <PlaceholderComponent title={activeView} onBack={handleBackToDashboard} />;
         }
@@ -3706,28 +4099,57 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
 
     const sidebarItems = [
-        { name: t('overview'), icon: <HomeIcon />, key: 'Visão Geral' },
-        { name: t('dashboard'), icon: <DashboardIcon />, key: 'Painel de Controle' },
-        { name: t('aiAgent'), icon: <AIIcon />, key: 'Agente IA' },
-        { name: t('channels'), icon: <ChannelsIcon />, key: 'Canais' },
-        { name: t('chat'), icon: <ChatIcon />, key: 'Chat' },
-        { name: 'Promoção', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, key: 'Promoção' },
-        { name: 'Promoção Exclusiva', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>, key: 'Promoção Exclusiva' },
-        { name: t('marketing'), icon: <MarketingIcon />, key: 'Marketing' },
-        { name: t('myAgenda'), icon: <MyAgendaIcon />, key: 'Minha Agenda' },
-        { name: t('scheduling'), icon: <SidebarCalendarIcon />, key: 'Agendamento' },
-        { name: t('clients'), icon: <SidebarUsersIcon />, key: 'Clientes' },
-        { name: t('crm'), icon: <CrmIcon />, key: 'CRM' },
-        { name: t('professionals'), icon: <ProfessionalsIcon />, key: 'Profissionais' },
-        { name: t('timeClock'), icon: <ClockIcon />, key: 'Registro de Ponto' },
-        { name: t('services'), icon: <ServicesIcon />, key: 'Serviços' },
-        { name: t('stock'), icon: <StockIcon />, key: 'Estoque' },
-        { name: t('contracts'), icon: <ContractIcon />, key: 'Contratos' },
-        { name: t('financial'), icon: <SidebarDollarIcon />, key: 'Financeiro' },
-        { name: t('reports'), icon: <ReportsIcon />, key: 'Relatórios' },
-        { name: t('support'), icon: <HeadsetIcon />, key: 'Suporte' },
-        { name: t('settings'), icon: <SettingsIcon />, key: 'Configurações' },
+        { name: t('overview'), icon: <HomeIcon />, key: 'Visão Geral', internalKey: 'dashboard' },
+        { name: t('dashboard'), icon: <DashboardIcon />, key: 'Painel de Controle', internalKey: 'dashboard' },
+        { name: t('aiAgent'), icon: <AIIcon />, key: 'Agente IA', internalKey: 'aiAgent' },
+        { name: t('channels'), icon: <ChannelsIcon />, key: 'Canais', internalKey: 'channels' },
+        { name: 'Promoção', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, key: 'Promoção', internalKey: 'promotions' },
+        { name: 'Promoção Exclusiva', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>, key: 'Promoção Exclusiva', internalKey: 'exclusivePromotions' },
+        { name: t('marketing'), icon: <MarketingIcon />, key: 'Marketing', internalKey: 'marketing' },
+        { name: t('myAgenda'), icon: <MyAgendaIcon />, key: 'Minha Agenda', internalKey: 'minhaAgenda' },
+        { name: t('scheduling'), icon: <SidebarCalendarIcon />, key: 'Agendamento', internalKey: 'agenda' },
+        { name: t('clients'), icon: <SidebarUsersIcon />, key: 'Clientes', internalKey: 'clientes' },
+        { name: t('crm'), icon: <CrmIcon />, key: 'CRM', internalKey: 'crm' },
+        { name: t('professionals'), icon: <ProfessionalsIcon />, key: 'Profissionais', internalKey: 'profissionais' },
+        { name: t('timeClock'), icon: <ClockIcon />, key: 'Registro de Ponto', internalKey: 'registroPonto' },
+        { name: t('services'), icon: <ServicesIcon />, key: 'Serviços', internalKey: 'servicos' },
+        { name: t('stock'), icon: <StockIcon />, key: 'Estoque', internalKey: 'estoque' },
+        { name: t('contracts'), icon: <ContractIcon />, key: 'Contratos', internalKey: 'contratos' },
+        { name: t('financial'), icon: <SidebarDollarIcon />, key: 'Financeiro', internalKey: 'financeiro' },
+        { name: t('reports'), icon: <ReportsIcon />, key: 'Relatórios', internalKey: 'relatorio' },
+        { name: t('support'), icon: <HeadsetIcon />, key: 'Suporte', internalKey: 'suporte' },
+        { name: t('settings'), icon: <SettingsIcon />, key: 'Configurações', internalKey: 'configuracoes' },
+        { name: 'Modo Cliente', icon: <SidebarUsersIcon />, key: 'clientApp', internalKey: 'clientApp' },
     ];
+
+    const superAdminItems = [
+        { name: 'Gestão de Salões', icon: <UnitIcon />, key: 'Super Admin: Salões', internalKey: 'tenants' },
+        { name: 'Banners Globais', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, key: 'Super Admin: Banners', internalKey: 'globalBanners' },
+        { name: 'Moderação YouTube', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" /><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" /></svg>, key: 'Super Admin: YouTube', internalKey: 'youtubeMod' },
+        { name: 'Centro de Tradução', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>, key: 'Super Admin: Tradução', internalKey: 'translation' },
+        { name: 'Diagnósticos', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>, key: 'Super Admin: Diagnósticos', internalKey: 'diagnostics' },
+        { name: 'Servidor de E-mail', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, key: 'Super Admin: E-mail', internalKey: 'emailServer' },
+    ];
+
+    const filteredSidebarItems = isSuperAdmin ? [...superAdminItems, ...sidebarItems] : sidebarItems.filter(item => {
+        const userRole = currentUser?.role || 'Profissional';
+        const rolePerms = rolePermissions[userRole] || rolePermissions['Profissional'];
+        const itemKey = item.internalKey as keyof typeof rolePerms;
+
+        // Special mapping for keys that might differ
+        if (item.key === 'Visão Geral' || item.key === 'Painel de Controle') return rolePerms.dashboard?.view;
+        if (item.key === 'Promoção' || item.key === 'Promoção Exclusiva') return rolePerms.marketing?.view || userRole === 'admin' || userRole === 'gerente';
+
+        // God Mode: Only allow 'clientApp' key for admins
+        if (item.key === 'clientApp') return userRole === 'admin' || userRole === 'Administrador' || isSuperAdmin || userRole === 'Gerente';
+
+        // Strict restriction for Profissional
+        if (userRole === 'profissional' || userRole === 'Profissional') {
+            return ['minhaAgenda', 'registroPonto', 'suporte'].includes(item.internalKey);
+        }
+
+        return rolePerms[itemKey]?.view !== false;
+    });
 
     return (
         <div className="min-h-screen bg-light flex">
@@ -3739,7 +4161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </button>
                 </div>
                 <nav className="flex-grow overflow-y-auto">
-                    <ul>{sidebarItems.map((item, index) => (<li key={index}><a href="#" onClick={(e) => { e.preventDefault(); handleSidebarClick(item.key); }} className={`flex items-center py-3 px-4 my-1 rounded-lg transition-colors duration-200 ${activeView === item.key ? 'bg-primary text-white font-bold' : 'text-gray-300 hover:bg-white/10 hover:text-white'}`}>{item.icon}<span className="ml-3">{item.name}</span></a></li>))}</ul>
+                    <ul>{filteredSidebarItems.map((item, index) => (<li key={index}><a href="#" onClick={(e) => { e.preventDefault(); handleSidebarClick(item.key); }} className={`flex items-center py-3 px-4 my-1 rounded-lg transition-colors duration-200 ${activeView === item.key ? 'bg-primary text-white font-bold' : 'text-gray-300 hover:bg-white/10 hover:text-white'}`}>{item.icon}<span className="ml-3">{item.name}</span></a></li>))}</ul>
                 </nav>
                 <div className="mt-auto pt-4 border-t border-white/10">
                     <div className="px-4 mb-2">

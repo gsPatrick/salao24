@@ -234,24 +234,26 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
         date: string; // YYYY-MM-DD
         time: string; // HH:MM
     }) => {
-        if (!professionalData) return;
+        // 1) Find the professional ID in the context using the professionalName from the payload
+        const selectedProfessional = contextProfessionals.find(p => p.name === payload.professionalName);
+        const targetProfessionalId = selectedProfessional ? selectedProfessional.id : professionalData?.id || 1;
 
-        // 1) Find or Create Client
+        // 2) Find or Create Client
         let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
         if (!client) {
             client = await saveClient({
                 name: payload.clientName,
                 phone: payload.clientPhone,
-                howTheyFoundUs: 'Agendamento Rápido - Agenda Profissional',
+                howTheyFoundUs: 'Agendamento Rápido',
                 registrationDate: new Date().toISOString(),
             }) as any;
         }
 
         if (client && client.id) {
-            // 2) Create Appointment
+            // 3) Create Appointment
             await saveAppointment({
                 clientId: client.id,
-                professionalId: professionalData.id,
+                professionalId: targetProfessionalId,
                 date: payload.date,
                 time: payload.time,
                 service: payload.serviceName,

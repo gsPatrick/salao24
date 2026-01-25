@@ -31,6 +31,7 @@ interface LogEntry {
 interface Punch {
     time: string;
     type: 'entrada' | 'saida_pausa' | 'retorno_pausa' | 'saida';
+    photo?: string;
 }
 
 interface HistoryLog {
@@ -172,6 +173,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const [isOvertimeModalOpen, setIsOvertimeModalOpen] = useState(false);
     const [logToJustify, setLogToJustify] = useState<{ log: HistoryLog; balance: number } | null>(null);
+    const [viewPhoto, setViewPhoto] = useState<string | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -764,15 +766,34 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
                             }
                             // Render regular punch log row
                             const punches = {
-                                entrada: dayLog.punches.find(p => p.type === 'entrada')?.time || '-',
-                                saida_pausa: dayLog.punches.find(p => p.type === 'saida_pausa')?.time || '-',
-                                retorno_pausa: dayLog.punches.find(p => p.type === 'retorno_pausa')?.time || '-',
-                                saida: dayLog.punches.find(p => p.type === 'saida')?.time || '-',
+                                entrada: dayLog.punches.find(p => p.type === 'entrada'),
+                                saida_pausa: dayLog.punches.find(p => p.type === 'saida_pausa'),
+                                retorno_pausa: dayLog.punches.find(p => p.type === 'retorno_pausa'),
+                                saida: dayLog.punches.find(p => p.type === 'saida'),
                             };
+
+                            const PunchCell = ({ punch }: { punch?: Punch }) => (
+                                <div className="flex flex-col items-center gap-1">
+                                    <span>{punch?.time || '-'}</span>
+                                    {punch?.photo && (
+                                        <button
+                                            onClick={() => setViewPhoto(punch.photo!)}
+                                            className="text-primary hover:text-primary-dark"
+                                            title="Ver evidência fotográfica"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            );
+
                             let dailyWorkedMinutes = 0;
-                            if (punches.entrada !== '-' && punches.saida_pausa !== '-' && punches.retorno_pausa !== '-' && punches.saida !== '-') {
-                                const morning = timeStringToMinutes(punches.saida_pausa) - timeStringToMinutes(punches.entrada);
-                                const afternoon = timeStringToMinutes(punches.saida) - timeStringToMinutes(punches.retorno_pausa);
+                            if (punches.entrada && punches.saida_pausa && punches.retorno_pausa && punches.saida) {
+                                const morning = timeStringToMinutes(punches.saida_pausa.time) - timeStringToMinutes(punches.entrada.time);
+                                const afternoon = timeStringToMinutes(punches.saida.time) - timeStringToMinutes(punches.retorno_pausa.time);
                                 dailyWorkedMinutes = morning + afternoon;
                             }
                             const dailyBalanceMinutes = dailyWorkedMinutes > 0 ? dailyWorkedMinutes - (8 * 60) : 0;
@@ -780,10 +801,10 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
                                 <tr key={dayLog.date}>
                                     <td className="px-4 py-3 text-gray-600">{new Date(dayLog.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
                                     <td className="px-4 py-3 text-gray-600">{t(dayNameKeys[new Date(dayLog.date + 'T00:00:00').getDay()])}</td>
-                                    <td className="px-4 py-3 text-center text-gray-600">{punches.entrada}</td>
-                                    <td className="px-4 py-3 text-center text-gray-600">{punches.saida_pausa}</td>
-                                    <td className="px-4 py-3 text-center text-gray-600">{punches.retorno_pausa}</td>
-                                    <td className="px-4 py-3 text-center text-gray-600">{punches.saida}</td>
+                                    <td className="px-4 py-3 text-center text-gray-600"><PunchCell punch={punches.entrada} /></td>
+                                    <td className="px-4 py-3 text-center text-gray-600"><PunchCell punch={punches.saida_pausa} /></td>
+                                    <td className="px-4 py-3 text-center text-gray-600"><PunchCell punch={punches.retorno_pausa} /></td>
+                                    <td className="px-4 py-3 text-center text-gray-600"><PunchCell punch={punches.saida} /></td>
                                     <td className="px-4 py-3 text-center font-semibold text-gray-600">{dailyWorkedMinutes > 0 ? minutesToHoursString(dailyWorkedMinutes, false) : '--'}</td>
                                     <td className={`px-4 py-3 text-center font-semibold ${dailyBalanceMinutes >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {dailyWorkedMinutes > 0 ? minutesToHoursString(dailyBalanceMinutes) : '--'}
@@ -929,6 +950,26 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
             )}
 
             <OvertimeJustificationModal isOpen={isOvertimeModalOpen} onClose={() => setIsOvertimeModalOpen(false)} onSave={handleSaveOvertimeJustification} data={logToJustify} t={t} minutesToHoursString={minutesToHoursString} />
+
+            {/* Photo Viewer Modal */}
+            {viewPhoto && (
+                <div className="fixed inset-0 z-[100] bg-black bg-opacity-75 flex items-center justify-center p-4 animate-fade-in" onClick={() => setViewPhoto(null)}>
+                    <div className="bg-white p-2 rounded-2xl max-w-2xl w-full relative animate-bounce-in shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setViewPhoto(null)}
+                            className="absolute -top-4 -right-4 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary-dark transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <img src={viewPhoto} alt="Evidência fotográfica" className="w-full h-auto rounded-xl shadow-inner" />
+                        <div className="p-4 text-center">
+                            <p className="text-secondary font-bold">Evidência Fotográfica do Ponto</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

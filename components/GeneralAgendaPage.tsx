@@ -276,7 +276,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     time: string; // HH:MM
   }) => {
     const professional = contextProfessionals.find(p => p.name === payload.professionalName);
-    const professionalId = professional ? professional.id : contextProfessionals[0]?.id;
+    const targetProfessionalId = professional ? professional.id : contextProfessionals[0]?.id || 1;
 
     // 1) Find or Create Client
     let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
@@ -293,7 +293,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
       // 2) Create Appointment
       await saveAppointment({
         clientId: client.id,
-        professionalId: professionalId || 1,
+        professionalId: targetProfessionalId,
         date: payload.date,
         time: payload.time,
         service: payload.serviceName,

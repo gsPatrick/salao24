@@ -78,11 +78,11 @@ const App: React.FC = () => {
   const { user: authUser, logout: authLogout, isSuperAdmin, planFeatures, isLoading: authLoading } = useAuth();
   // DataContext Hook
   const {
-    clients, professionals, services, appointments, transactions, units, products,
+    clients, professionals, services, appointments, transactions, units, products, promotions,
     notifications: contextNotifications,
     refreshAll
-  } = useData() || { // Fallback if context is missing (should not happen if wrapped)
-    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], notifications: [], refreshAll: async () => { }
+  } = useData() || {
+    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], promotions: [], notifications: [], refreshAll: async () => { }
   };
 
   const [page, setPage] = useState('home');
@@ -211,7 +211,7 @@ const App: React.FC = () => {
   // Sync local state with AuthContext
   useEffect(() => {
     if (authUser) {
-      if (authUser.role === 'admin' || authUser.role === 'gerente' || authUser.role === 'recepcao' || authUser.role === 'profissional') {
+      if (authUser.role === 'admin' || authUser.role === 'gerente' || authUser.role === 'recepcao' || authUser.role === 'profissional' || authUser.role === 'Administrador' || authUser.role === 'Gerente' || authUser.role === 'Profissional') {
         setCurrentUser(authUser as any);
         setCurrentClient(null);
         if (page === 'home' || page === 'login' || page === 'signup') {
@@ -227,7 +227,7 @@ const App: React.FC = () => {
     } else if (!authLoading) {
       setCurrentUser(null);
       setCurrentClient(null);
-      if (page === 'dashboard' || page === 'clientApp' || page === 'scheduling') {
+      if (page === 'dashboard' || page === 'clientApp' || page === 'scheduling' || page === 'clientScheduling') {
         navigate('home');
       }
     }
@@ -460,9 +460,47 @@ const App: React.FC = () => {
       );
     }
 
-    if (page === 'clientApp' && currentClient) {
-      // FIX: Replaced flatMap with reduce to correctly infer the type of the flattened appointments array, resolving a complex TypeScript type inference issue.
-      return <div key="clientApp" className="animate-fade-in"><ClientAppPage currentClient={currentClient} onLogout={handleLogout} navigate={navigate} appointments={appointments} /></div>;
+    if (page === 'clientApp') {
+      const isAdminView = currentUser && (currentUser.role === 'admin' || currentUser.role === 'Gerente' || isSuperAdmin || currentUser.role === 'Administrador');
+
+      // If admin, create a temporary client object for viewing
+      const clientToDisplay = currentClient || (isAdminView ? {
+        id: -1,
+        name: currentUser?.name || 'Administrador',
+        email: currentUser?.email || '',
+        phone: '',
+        tenant_id: currentUser?.tenant_id
+      } as any : null);
+
+      if (clientToDisplay) {
+        return (
+          <div key="clientApp" className="animate-fade-in relative">
+            {isAdminView && (
+              <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center z-[100]">
+                <span className="text-xs font-bold text-primary flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M2.166 4.9L10 1.554L17.834 4.9c.164.07.164.33 0 .4L10 8.646L2.166 5.3c-.164-.07-.164-.33 0-.4zM1.166 8.9L9 12.246V17.5c0 .276-.224.5-.5.5h-7a.5.5 0 01-.5-.5V9.3c0-.164.1-.31.25-.374l-.084-.026zm17.668 0c.15.064.25.21.25.374V17.5a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5V12.246l7.834-3.346z" clipRule="evenodd" />
+                  </svg>
+                  MODO DEUS: Visualizando como Cliente
+                </span>
+                <button
+                  onClick={() => navigate('dashboard')}
+                  className="bg-primary text-white text-xs px-3 py-1 rounded-full font-bold hover:bg-primary-dark transition-colors"
+                >
+                  Voltar ao Dashboard
+                </button>
+              </div>
+            )}
+            <ClientAppPage
+              currentClient={clientToDisplay}
+              onLogout={handleLogout}
+              navigate={navigate}
+              appointments={appointments}
+              promotions={promotions}
+            />
+          </div>
+        );
+      }
     }
 
     if (page === 'scheduling') {

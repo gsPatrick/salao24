@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface NewPlanModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: any) => void;
-  itemToEdit?: any | null;
-  categories: string[];
-  onAddCategory: (category: string) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: any) => void;
+    itemToEdit?: any | null;
+    categories: string[];
+    onAddCategory: (category: string) => void;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '' };
@@ -20,7 +20,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     const [isExiting, setIsExiting] = useState(false);
     const [newCategory, setNewCategory] = useState('');
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-    
+    const [isFavorite, setIsFavorite] = useState(false);
+
     // FIX: Changed 'name' type from string to keyof typeof formData to prevent type errors when indexing.
     const validateField = (name: keyof typeof formData, value: string) => {
         let error = '';
@@ -36,6 +37,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     useEffect(() => {
         if (isOpen) {
             setFormData(itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData);
+            setIsFavorite(itemToEdit?.isFavorite || false);
             setErrors({});
         } else {
             setIsCreatingCategory(false);
@@ -52,12 +54,12 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
         const name = e.target.name as keyof typeof formData;
         const { value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-         if (errors[name]) {
+        if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
         }
     };
 
-     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setErrors(prev => ({ ...prev, [name]: validateField(name as keyof typeof formData, value) }));
     };
@@ -70,7 +72,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             handleChange(e);
         }
         if (errors.category) {
-            setErrors(prev => ({ ...prev, category: ''}));
+            setErrors(prev => ({ ...prev, category: '' }));
         }
     };
 
@@ -100,18 +102,18 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             setErrors(newErrors);
             return;
         }
-        onSave({ ...itemToEdit, ...formData });
+        onSave({ ...itemToEdit, ...formData, isFavorite });
         handleClose();
     };
-    
+
     const isFormValid = useMemo(() => {
         return Object.values(formData).every(value => !!value) && Object.values(errors).every(error => !error);
     }, [formData, errors]);
-    
+
     if (!isOpen && !isExiting) return null;
-    
+
     const title = itemToEdit ? 'Editar Plano' : 'Novo Plano';
-    
+
     const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text') => (
         <div>
             <input name={name} type={type} value={formData[name as keyof typeof formData]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} required className={`w-full p-2 border rounded ${errors[name] ? 'border-red-500' : 'border-gray-300'}`} />
@@ -137,7 +139,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                     <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar nova categoria --</option>
                                 </select>
-                                 {errors.category && <p className="text-xs text-red-600 mt-1">{errors.category}</p>}
+                                {errors.category && <p className="text-xs text-red-600 mt-1">{errors.category}</p>}
                             </div>
                             {isCreatingCategory && (
                                 <div className="flex items-center gap-2 mt-2 p-3 bg-light rounded-md border animate-fade-in">
@@ -160,7 +162,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                     </button>
                                 </div>
                             )}
-                             <div>
+                            <div>
                                 <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Unidade</option>
                                     <option>Unidade Matriz</option>
@@ -168,7 +170,20 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                     <option>Ambas</option>
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
-                             </div>
+                            </div>
+                            <div className="flex items-center pt-2">
+                                <input
+                                    id="isFavoritePlan"
+                                    name="isFavoritePlan"
+                                    type="checkbox"
+                                    checked={isFavorite}
+                                    onChange={(e) => setIsFavorite(e.target.checked)}
+                                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                />
+                                <label htmlFor="isFavoritePlan" className="ml-2 block text-sm text-gray-900">
+                                    Marcar como favorito
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">

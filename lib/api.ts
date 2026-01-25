@@ -128,6 +128,14 @@ export const servicesAPI = {
         const response = await api.delete(`/services/${id}`);
         return response.data;
     },
+    toggleSuspend: async (id: number) => {
+        const response = await api.patch(`/services/${id}/suspend`);
+        return response.data;
+    },
+    toggleFavorite: async (id: number) => {
+        const response = await api.patch(`/services/${id}/favorite`);
+        return response.data;
+    },
 };
 
 export const appointmentsAPI = {
@@ -264,6 +272,10 @@ export const usersAPI = {
 };
 
 export const tenantsAPI = {
+    list: async () => {
+        const response = await api.get('/tenants');
+        return response.data;
+    },
     getCurrent: async () => {
         const response = await api.get('/tenants/current');
         return response.data;
@@ -318,6 +330,10 @@ export const plansAPI = {
 export const superAdminAPI = {
     getDashboard: async () => {
         const response = await api.get('/super-admin/dashboard');
+        return response.data;
+    },
+    getBanners: async () => {
+        const response = await api.get('/super-admin/banners');
         return response.data;
     }
 };
@@ -530,6 +546,10 @@ export const packagesAPI = {
         const response = await api.patch(`/packages/${id}/toggle`);
         return response.data;
     },
+    toggleFavorite: async (id: number) => {
+        const response = await api.patch(`/packages/${id}/favorite`);
+        return response.data;
+    },
 
     // Subscriptions
     listSubscriptions: async () => {
@@ -571,6 +591,33 @@ export const contractsAPI = {
         const response = await api.delete(`/contracts/templates/${id}`);
         return response.data;
     }
+};
+
+export const salonPlansAPI = {
+    list: async () => {
+        const response = await api.get('/salon-plans');
+        return response.data;
+    },
+    create: async (data: any) => {
+        const response = await api.post('/salon-plans', data);
+        return response.data;
+    },
+    update: async (id: number, data: any) => {
+        const response = await api.put(`/salon-plans/${id}`, data);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/salon-plans/${id}`);
+        return response.data;
+    },
+    toggleSuspend: async (id: number) => {
+        const response = await api.patch(`/salon-plans/${id}/suspend`);
+        return response.data;
+    },
+    toggleFavorite: async (id: number) => {
+        const response = await api.patch(`/salon-plans/${id}/favorite`);
+        return response.data;
+    },
 };
 
 export const supportAPI = {

@@ -13,7 +13,10 @@ import {
     stockAPI,
     crmAPI,
     notificationsAPI,
-    paymentsAPI
+    paymentsAPI,
+    promotionsAPI,
+    packagesAPI,
+    salonPlansAPI
 } from '../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -72,6 +75,33 @@ export interface Service {
     price: string;
     category?: string;
     suspended?: boolean;
+    isFavorite?: boolean;
+    [key: string]: any;
+}
+
+export interface Package {
+    id: number;
+    name: string;
+    description?: string;
+    price: string | number;
+    sessions?: number | string;
+    duration?: string | number;
+    category?: string;
+    suspended?: boolean;
+    isFavorite?: boolean;
+    [key: string]: any;
+}
+
+export interface SalonPlan {
+    id: number;
+    name: string;
+    description?: string;
+    price: string;
+    duration: string;
+    sessions?: string;
+    category?: string;
+    suspended?: boolean;
+    isFavorite?: boolean;
     [key: string]: any;
 }
 
@@ -177,6 +207,10 @@ export interface DataContextType {
     units: Unit[];
     products: Product[];
     crmSettings: CrmSettings | null;
+    promotions: any[];
+    packages: Package[];
+    salonPlans: SalonPlan[];
+    serviceCategories: string[];
 
     // Loading states
     loading: {
@@ -190,6 +224,9 @@ export interface DataContextType {
         units: boolean;
         products: boolean;
         crmSettings: boolean;
+        promotions: boolean;
+        packages: boolean;
+        salonPlans: boolean;
     };
 
     // Error states
@@ -204,6 +241,9 @@ export interface DataContextType {
         units: string | null;
         products: string | null;
         crmSettings: string | null;
+        promotions: string | null;
+        packages: string | null;
+        salonPlans: string | null;
     };
 
     // Refresh functions
@@ -217,6 +257,9 @@ export interface DataContextType {
     refreshUnits: () => Promise<void>;
     refreshProducts: () => Promise<void>;
     refreshCrmSettings: () => Promise<void>;
+    refreshPromotions: () => Promise<void>;
+    refreshPackages: () => Promise<void>;
+    refreshSalonPlans: () => Promise<void>;
     refreshAll: () => Promise<void>;
 
     // CRUD handlers
@@ -230,6 +273,20 @@ export interface DataContextType {
     deleteService: (id: number) => Promise<boolean>;
     toggleSuspendService: (id: number) => Promise<Service | null>;
     toggleFavoriteService: (id: number) => Promise<Service | null>;
+
+    savePackage: (pkg: Partial<Package>) => Promise<Package | null>;
+    deletePackage: (id: number) => Promise<boolean>;
+    toggleSuspendPackage: (id: number) => Promise<Package | null>;
+    toggleFavoritePackage: (id: number) => Promise<Package | null>;
+
+    saveSalonPlan: (plan: Partial<SalonPlan>) => Promise<SalonPlan | null>;
+    deleteSalonPlan: (id: number) => Promise<boolean>;
+    toggleSuspendSalonPlan: (id: number) => Promise<SalonPlan | null>;
+    toggleFavoriteSalonPlan: (id: number) => Promise<SalonPlan | null>;
+
+    addServiceCategory: (category: string) => void;
+    updateServiceCategory: (oldCategory: string, newCategory: string) => void;
+    deleteServiceCategory: (category: string) => void;
 
     saveAppointment: (appointment: Partial<Appointment>) => Promise<Appointment | null>;
     updateAppointmentStatus: (id: number, status: string) => Promise<Appointment | null>;
@@ -254,6 +311,10 @@ export interface DataContextType {
 
     updateCrmSettings: (data: Partial<CrmSettings>) => Promise<CrmSettings | null>;
     updateClientCrm: (clientId: number, data: any) => Promise<Client | null>;
+
+    savePromotion: (promotion: any) => Promise<any | null>;
+    deletePromotion: (id: number) => Promise<boolean>;
+    togglePromotion: (id: number) => Promise<any | null>;
 
     // Notifications
     notifications: any[];
@@ -291,6 +352,9 @@ const mapClientFromAPI = (apiClient: any): Client => ({
     tags: apiClient.tags || [],
     crmColumnId: apiClient.crm_column_id,
     crmData: apiClient.crm_data,
+    isActive: apiClient.is_active,
+    // Add logic for blocked if needed, but since we don't have it in DB, let's keep it as is or map it if it exists
+    blocked: apiClient.blocked || { status: false, reason: '' },
 });
 
 const mapServiceFromAPI = (apiService: any): Service => ({
@@ -343,7 +407,7 @@ const mapProductFromAPI = (apiProduct: any): Product => ({
 const mapTenantFromAPI = (apiTenant: any): Tenant => ({
     ...apiTenant,
     cnpj_cpf: apiTenant.cnpj_cpf,
-    working_hours: apiTenant.working_hours,
+    working_hours: apiTenant.business_hours || apiTenant.working_hours,
     checkin_message: apiTenant.checkin_message,
 });
 
@@ -354,6 +418,18 @@ const mapUnitFromAPI = (apiUnit: any): Unit => ({
     primaryColor: apiUnit.primary_color || apiUnit.primaryColor,
     workingHours: apiUnit.working_hours || apiUnit.workingHours,
     checkinMessage: apiUnit.checkin_message || apiUnit.checkinMessage,
+});
+
+const mapPackageFromAPI = (apiPackage: any): Package => ({
+    ...apiPackage,
+    suspended: apiPackage.is_suspended,
+    isFavorite: apiPackage.is_favorite,
+});
+
+const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
+    ...apiPlan,
+    suspended: apiPlan.is_suspended,
+    isFavorite: apiPlan.is_favorite,
 });
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -370,8 +446,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [units, setUnits] = useState<Unit[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [crmSettings, setCrmSettings] = useState<CrmSettings | null>(null);
+    const [promotions, setPromotions] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [salonPlans, setSalonPlans] = useState<SalonPlan[]>([]);
+    const [serviceCategories, setServiceCategories] = useState<string[]>([]);
+
+    // Automatically update categories from services, packages, and plans
+    useEffect(() => {
+        const categories = new Set<string>();
+        services.forEach(s => s.category && categories.add(s.category));
+        packages.forEach(p => p.category && categories.add(p.category));
+        salonPlans.forEach(p => p.category && categories.add(p.category));
+        setServiceCategories(prev => {
+            const combined = new Set([...prev, ...Array.from(categories)]);
+            return Array.from(combined).sort();
+        });
+    }, [services, packages, salonPlans]);
 
     // Loading state
     const [loading, setLoading] = useState({
@@ -385,6 +477,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         units: false,
         products: false,
         crmSettings: false,
+        promotions: false,
+        packages: false,
+        salonPlans: false,
     });
 
     // Error state
@@ -399,6 +494,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         units: null as string | null,
         products: null as string | null,
         crmSettings: null as string | null,
+        promotions: null as string | null,
+        packages: null as string | null,
+        salonPlans: null as string | null,
     });
 
     // Refresh functions
@@ -408,7 +506,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setErrors(prev => ({ ...prev, clients: null }));
         try {
             const response = await clientsAPI.getAll();
-            const mapped = (response.data || []).map(mapClientFromAPI);
+            const mapped = (response.data || []).map(mapClientFromAPI).filter((c: any) => c.isActive !== false);
             setClients(mapped);
         } catch (error: any) {
             console.error('Error fetching clients:', error);
@@ -565,6 +663,50 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [isAuthenticated]);
 
+    const refreshPromotions = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, promotions: true }));
+        try {
+            const response = await promotionsAPI.list();
+            setPromotions(response || []);
+        } catch (error: any) {
+            console.error('Error fetching promotions:', error);
+            setErrors(prev => ({ ...prev, promotions: error.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, promotions: false }));
+        }
+    }, [isAuthenticated]);
+
+    const refreshPackages = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, packages: true }));
+        try {
+            const response = await packagesAPI.list();
+            const mapped = (response.data || response || []).map(mapPackageFromAPI);
+            setPackages(mapped);
+        } catch (error: any) {
+            console.error('Error fetching packages:', error);
+            setErrors(prev => ({ ...prev, packages: error.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, packages: false }));
+        }
+    }, [isAuthenticated]);
+
+    const refreshSalonPlans = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, salonPlans: true }));
+        try {
+            const response = await salonPlansAPI.list();
+            const mapped = (response.data || response || []).map(mapSalonPlanFromAPI);
+            setSalonPlans(mapped);
+        } catch (error: any) {
+            console.error('Error fetching salon plans:', error);
+            setErrors(prev => ({ ...prev, salonPlans: error.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, salonPlans: false }));
+        }
+    }, [isAuthenticated]);
+
     const refreshAll = useCallback(async () => {
         await Promise.all([
             refreshClients(),
@@ -578,8 +720,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             refreshProducts(),
             refreshCrmSettings(),
             refreshNotifications(),
+            refreshPromotions(),
+            refreshPackages(),
+            refreshSalonPlans(),
         ]);
-    }, [refreshClients, refreshProfessionals, refreshServices, refreshAppointments, refreshTransactions, refreshUsers, refreshTenant, refreshUnits, refreshProducts, refreshCrmSettings, refreshNotifications]);
+    }, [refreshClients, refreshProfessionals, refreshServices, refreshAppointments, refreshTransactions, refreshUsers, refreshTenant, refreshUnits, refreshProducts, refreshCrmSettings, refreshNotifications, refreshPromotions, refreshPackages, refreshSalonPlans]);
 
     // Initial data fetch when authenticated
     useEffect(() => {
@@ -711,14 +856,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const toggleSuspendService = async (id: number): Promise<Service | null> => {
         try {
-            const service = services.find(s => s.id === id);
-            if (!service) return null;
-
-            const response = await servicesAPI.update(id, {
-                is_suspended: !service.suspended
-            });
+            const response = await servicesAPI.toggleSuspend(id);
             await refreshServices();
-            return mapServiceFromAPI(response.data);
+            return mapServiceFromAPI(response.data || response);
         } catch (error) {
             console.error('Error toggling service suspension:', error);
             return null;
@@ -727,18 +867,142 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const toggleFavoriteService = async (id: number): Promise<Service | null> => {
         try {
-            const service = services.find(s => s.id === id);
-            if (!service) return null;
-
-            const response = await servicesAPI.update(id, {
-                is_favorite: !service.isFavorite
-            });
+            const response = await servicesAPI.toggleFavorite(id);
             await refreshServices();
-            return mapServiceFromAPI(response.data);
+            return mapServiceFromAPI(response.data || response);
         } catch (error) {
             console.error('Error toggling service favorite:', error);
             return null;
         }
+    };
+
+    const savePackage = async (pkg: Partial<Package>): Promise<Package | null> => {
+        try {
+            const apiData = {
+                ...pkg,
+                is_suspended: pkg.suspended,
+                is_favorite: pkg.isFavorite,
+            };
+            let response;
+            if (pkg.id) {
+                response = await packagesAPI.update(pkg.id, apiData);
+            } else {
+                response = await packagesAPI.create(apiData);
+            }
+            await refreshPackages();
+            return mapPackageFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error saving package:', error);
+            return null;
+        }
+    };
+
+    const deletePackage = async (id: number): Promise<boolean> => {
+        try {
+            await packagesAPI.delete(id);
+            await refreshPackages();
+            return true;
+        } catch (error) {
+            console.error('Error deleting package:', error);
+            return false;
+        }
+    };
+
+    const toggleSuspendPackage = async (id: number): Promise<Package | null> => {
+        try {
+            const response = await packagesAPI.toggle(id);
+            await refreshPackages();
+            return mapPackageFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error toggling package suspension:', error);
+            return null;
+        }
+    };
+
+    const toggleFavoritePackage = async (id: number): Promise<Package | null> => {
+        try {
+            const response = await packagesAPI.toggleFavorite(id);
+            await refreshPackages();
+            return mapPackageFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error toggling package favorite:', error);
+            return null;
+        }
+    };
+
+    const saveSalonPlan = async (plan: Partial<SalonPlan>): Promise<SalonPlan | null> => {
+        try {
+            const apiData = {
+                ...plan,
+                is_suspended: plan.suspended,
+                is_favorite: plan.isFavorite,
+            };
+            let response;
+            if (plan.id) {
+                response = await salonPlansAPI.update(plan.id, apiData);
+            } else {
+                response = await salonPlansAPI.create(apiData);
+            }
+            await refreshSalonPlans();
+            return mapSalonPlanFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error saving salon plan:', error);
+            return null;
+        }
+    };
+
+    const deleteSalonPlan = async (id: number): Promise<boolean> => {
+        try {
+            await salonPlansAPI.delete(id);
+            await refreshSalonPlans();
+            return true;
+        } catch (error) {
+            console.error('Error deleting salon plan:', error);
+            return false;
+        }
+    };
+
+    const toggleSuspendSalonPlan = async (id: number): Promise<SalonPlan | null> => {
+        try {
+            const response = await salonPlansAPI.toggleSuspend(id);
+            await refreshSalonPlans();
+            return mapSalonPlanFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error toggling salon plan suspension:', error);
+            return null;
+        }
+    };
+
+    const toggleFavoriteSalonPlan = async (id: number): Promise<SalonPlan | null> => {
+        try {
+            const response = await salonPlansAPI.toggleFavorite(id);
+            await refreshSalonPlans();
+            return mapSalonPlanFromAPI(response.data || response);
+        } catch (error) {
+            console.error('Error toggling salon plan favorite:', error);
+            return null;
+        }
+    };
+
+    const addServiceCategory = (category: string) => {
+        setServiceCategories(prev => {
+            if (prev.includes(category)) return prev;
+            return [...prev, category].sort();
+        });
+    };
+
+    const updateServiceCategory = (oldCategory: string, newCategory: string) => {
+        setServiceCategories(prev => {
+            const filtered = prev.filter(c => c !== oldCategory);
+            if (filtered.includes(newCategory)) return filtered.sort();
+            return [...filtered, newCategory].sort();
+        });
+        // We could also update all services/packages/plans using this category
+        // but for now we follow the user's localized management logic.
+    };
+
+    const deleteServiceCategory = (category: string) => {
+        setServiceCategories(prev => prev.filter(c => c !== category));
     };
 
     const saveAppointment = async (appointment: Partial<Appointment>): Promise<Appointment | null> => {
@@ -826,11 +1090,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const saveUser = async (user: Partial<SystemUser>): Promise<SystemUser | null> => {
         try {
+            // Map frontend fields to API fields
+            const apiData = {
+                ...user,
+                avatar_url: user.avatarUrl,
+            };
+
             let response;
             if (user.id) {
-                response = await usersAPI.update(user.id, user);
+                response = await usersAPI.update(user.id, apiData);
             } else {
-                response = await usersAPI.create(user);
+                response = await usersAPI.create(apiData);
             }
             await refreshUsers();
             return response.data;
@@ -858,7 +1128,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const apiData = {
                 ...data,
                 cnpj_cpf: data.cnpj_cpf,
-                working_hours: data.working_hours,
+                business_hours: data.working_hours,
                 checkin_message: data.checkin_message,
                 primary_color: data.primary_color,
                 logo_url: data.logo_url
@@ -1009,6 +1279,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    // CRUD handlers for Promotions implemented above or using these:
+    const savePromotion = async (promotion: any): Promise<any | null> => {
+        try {
+            let response;
+            if (promotion.id && promotion.id > 1000000000) { // New promo with Date.now() ID
+                delete promotion.id;
+            }
+
+            if (promotion.id) {
+                response = await promotionsAPI.update(promotion.id, promotion);
+            } else {
+                response = await promotionsAPI.create(promotion);
+            }
+            await refreshPromotions();
+            return response;
+        } catch (error) {
+            console.error('Error saving promotion:', error);
+            return null;
+        }
+    };
+
+    const deletePromotion = async (id: number): Promise<boolean> => {
+        try {
+            await promotionsAPI.delete(id);
+            await refreshPromotions();
+            return true;
+        } catch (error) {
+            console.error('Error deleting promotion:', error);
+            return false;
+        }
+    };
+
+    const togglePromotion = async (id: number): Promise<any | null> => {
+        try {
+            const response = await promotionsAPI.toggle(id);
+            await refreshPromotions();
+            return response;
+        } catch (error) {
+            console.error('Error toggling promotion:', error);
+            return null;
+        }
+    };
+
     // Utility functions
     const getClientById = (id: number) => clients.find(c => c.id === id);
     const getProfessionalById = (id: number) => professionals.find(p => p.id === id);
@@ -1082,6 +1395,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 selectedUnitId,
                 setSelectedUnitId,
                 subscribeToPlan,
+                promotions,
+                refreshPromotions,
+                savePromotion,
+                deletePromotion,
+                togglePromotion,
+                packages,
+                salonPlans,
+                serviceCategories,
+                refreshPackages,
+                refreshSalonPlans,
+                savePackage,
+                deletePackage,
+                toggleSuspendPackage,
+                toggleFavoritePackage,
+                saveSalonPlan,
+                deleteSalonPlan,
+                toggleSuspendSalonPlan,
+                toggleFavoriteSalonPlan,
+                addServiceCategory,
+                updateServiceCategory,
+                deleteServiceCategory,
             }}
         >
             {children}

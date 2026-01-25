@@ -740,7 +740,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Partial<Record<keyof typeof initialFormData, string>> = {};
-    const requiredFields: (keyof typeof initialFormData)[] = ['fullName', 'phone', 'cpf', 'birthdate', 'email', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'howTheyFoundUs',];
+    const requiredFields: (keyof typeof initialFormData)[] = ['fullName', 'phone'];
     requiredFields.forEach(field => {
       const error = validateField(field, formData[field]);
       if (error) {
@@ -853,7 +853,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               <label htmlFor="useSocialName" className="ml-2 block text-sm text-gray-900">{t('useSocialNameAsPrimary')}</label>
             </div>
             <InputField label={`${t('contactPhone')} *`} name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} type="tel" required maxLength={15} error={errors.phone} />
-            <InputField label={`${t('email')} *`} name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} type="email" required error={errors.email} />
+            <InputField label={t('email')} name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} type="email" error={errors.email} />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('additionalContacts')}</label>
               <div className="space-y-3">
@@ -903,11 +903,11 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
         <CollapsibleSection title="Documentos Pessoais">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField label="CPF *" name="cpf" value={formData.cpf} onChange={handleChange} onBlur={handleBlur} required maxLength={14} error={errors.cpf} />
+            <InputField label="CPF" name="cpf" value={formData.cpf} onChange={handleChange} onBlur={handleBlur} maxLength={14} error={errors.cpf} />
             <InputField label="RG" name="rg" value={formData.rg} onChange={handleChange} />
-            <InputField label={`${t('birthDate')} *`} name="birthdate" value={formData.birthdate} onChange={handleChange} onBlur={handleBlur} type="date" required error={errors.birthdate} />
+            <InputField label={t('birthDate')} name="birthdate" value={formData.birthdate} onChange={handleChange} onBlur={handleBlur} type="date" error={errors.birthdate} />
             <SelectField
-              label={`${t('maritalStatus')} *`}
+              label={t('maritalStatus')}
               name="maritalStatus"
               value={formData.maritalStatus}
               onChange={handleChange}
@@ -918,7 +918,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                 { value: 'Divorciado(a)', label: t('maritalStatusDivorced') },
                 { value: 'Viúvo(a)', label: t('maritalStatusWidowed') },
               ]}
-              required
               error={errors.maritalStatus}
             />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
@@ -1017,19 +1016,19 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         <CollapsibleSection title="Endereço">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
-              <label htmlFor="cep" className="block text-sm font-medium text-gray-700">CEP *</label>
+              <label htmlFor="cep" className="block text-sm font-medium text-gray-700">CEP</label>
               <div className="mt-1 relative rounded-md shadow-sm">
-                <input type="text" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} required maxLength={9} placeholder="00000-000" className={`block w-full px-3 py-2 border rounded-md ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
+                <input type="text" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} maxLength={9} placeholder="00000-000" className={`block w-full px-3 py-2 border rounded-md ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">{isFetchingCep && <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}</div>
               </div>
               {errors.cep && <p className="mt-1 text-xs text-red-600">{errors.cep}</p>}
             </div>
-            <div className="md:col-span-2"><InputField label="Rua *" name="street" value={formData.street} onChange={handleChange} onBlur={handleBlur} required error={errors.street} /></div>
-            <div className="md:col-span-1"><InputField label="Número *" name="number" value={formData.number} onChange={handleChange} onBlur={handleBlur} required error={errors.number} /></div>
+            <div className="md:col-span-2"><InputField label="Rua" name="street" value={formData.street} onChange={handleChange} onBlur={handleBlur} error={errors.street} /></div>
+            <div className="md:col-span-1"><InputField label="Número" name="number" value={formData.number} onChange={handleChange} onBlur={handleBlur} error={errors.number} /></div>
             <div className="md:col-span-2"><InputField label="Complemento" name="complement" value={formData.complement} onChange={handleChange} /></div>
-            <div className="md:col-span-1"><InputField label="Bairro *" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} required error={errors.neighborhood} /></div>
-            <div className="md:col-span-1"><InputField label="Cidade *" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} required error={errors.city} /></div>
-            <div className="md:col-span-1"><InputField label="Estado *" name="state" value={formData.state} onChange={handleChange} onBlur={handleBlur} required error={errors.state} /></div>
+            <div className="md:col-span-1"><InputField label="Bairro" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} error={errors.neighborhood} /></div>
+            <div className="md:col-span-1"><InputField label="Cidade" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} error={errors.city} /></div>
+            <div className="md:col-span-1"><InputField label="Estado" name="state" value={formData.state} onChange={handleChange} onBlur={handleBlur} error={errors.state} /></div>
           </div>
         </CollapsibleSection>
 
@@ -1037,24 +1036,22 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField label="Time do Coração" name="team" value={formData.team} onChange={handleChange} />
             <SelectField
-              label="Unidade de Preferência *"
+              label="Unidade de Preferência"
               name="preferredUnit"
               value={formData.preferredUnit}
               onChange={handleChange}
               onBlur={handleBlur}
               options={isIndividualPlan ? [{ value: 'Unidade Matriz', label: 'Unidade Matriz' }] : [{ value: 'Unidade Matriz', label: 'Unidade Matriz' }, { value: 'Unidade Filial', label: 'Unidade Filial' }]}
-              required
               disabled={isIndividualPlan}
               error={errors.preferredUnit}
             />
             <SelectField
-              label={`${t('acquisitionChannelLabel')} *`}
+              label={t('acquisitionChannelLabel')}
               name="howTheyFoundUs"
               value={formData.howTheyFoundUs}
               onChange={handleChange}
               onBlur={handleBlur}
               options={acquisitionChannels.map(c => ({ value: c.name, label: c.name }))}
-              required
               error={errors.howTheyFoundUs}
             />
             {formData.howTheyFoundUs === 'Indicação' && (

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
 
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -22,20 +21,33 @@ interface LoginPageProps {
   onLoginSuccess: (user: any) => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ navigate, onLoginSuccess }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess }) => {
   const { t } = useLanguage();
   const { login } = useAuth();
+  const [rememberedUser, setRememberedUser] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userType, setUserType] = useState<'salon' | 'client'>('salon');
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const rememberMeRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Check localStorage on component mount
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('rememberedUser');
+      if (storedUser) {
+        setRememberedUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Failed to parse remembered user from localStorage", error);
+      localStorage.removeItem('rememberedUser');
+    }
+  }, []);
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
     setIsLoading(true);
     setError(null);
 
@@ -51,203 +63,205 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, onLoginSuccess }) => {
         onLoginSuccess(JSON.parse(storedUser));
       }
     } else {
-      setError(result.error || 'Credenciais inválidas');
+      setError(result.error || t('loginInvalidCredentials'));
       setIsLoading(false);
     }
   };
 
+  const handleRememberedLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!rememberedUser) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const password = (event.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
+    const result = await login(rememberedUser.email, password, true);
+
+    if (result.success) {
+      const storedUser = localStorage.getItem('authUser');
+      if (storedUser) {
+        onLoginSuccess(JSON.parse(storedUser));
+      }
+    } else {
+      setError(result.error || t('loginIncorrectPassword'));
+      setIsLoading(false);
+    }
+  }
+
+  const handleSwitchAccount = () => {
+    try {
+      localStorage.removeItem('rememberedUser');
+      setRememberedUser(null);
+    } catch (error) {
+      console.error("Failed to remove user from localStorage", error);
+    }
+  };
+
+  const SubmitButtonContent = () => (
+    <>
+      {isLoading ? (
+        <>
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{t('loginEntering') || 'Entrando...'}</span>
+        </>
+      ) : (
+        t('loginEnter') || 'Entrar'
+      )}
+    </>
+  );
+
   return (
-    <div className="min-h-screen flex bg-gray-50 font-sans selection:bg-primary/20">
-      {/* Left side: Premium Image/Brand Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-secondary overflow-hidden items-center justify-center">
-        {/* Animated background elements */}
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-          className="relative z-10 w-full h-full flex flex-col justify-between p-16"
-        >
-          {/* Logo / Brand */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('home')}>
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-2xl shadow-white/20">
-              <span className="text-secondary font-black text-2xl">S</span>
-            </div>
-            <span className="text-2xl font-black text-white tracking-tight">Salão24h</span>
-          </div>
-
-          <div className="max-w-xl">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-6xl font-black text-white leading-[1.1] mb-8"
-            >
-              {t('loginImpactFrase') || 'A revolução na gestão do seu salão.'}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-xl text-white/70 font-medium leading-relaxed mb-12"
-            >
-              Do agendamento ao financeiro, controle tudo em um só lugar com o poder da inteligência artificial.
-            </motion.p>
-
-            <div className="grid grid-cols-2 gap-6 bg-white/5 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/10">
-              <div className="space-y-1">
-                <p className="text-3xl font-black text-white">99%</p>
-                <p className="text-sm text-white/50 uppercase tracking-widest font-bold">Produtividade</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-3xl font-black text-white">24/7</p>
-                <p className="text-sm text-white/50 uppercase tracking-widest font-bold">Assistênia IA</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-white/40 text-sm font-medium">
-            © 2024 Salão24h. Todos os direitos reservados.
-          </div>
-        </motion.div>
-
-        {/* Decorative Image with Glass effect */}
-        <div className="absolute right-[-10%] top-[20%] w-[450px] h-[600px] opacity-40 mix-blend-overlay">
-          <img
-            src="/assets/login-bg.png"
-            alt="Decoration"
-            className="w-full h-full object-cover rounded-[4rem]"
-          />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline">
+            Salão24h
+          </a>
         </div>
-      </div>
 
-      {/* Right side: Login Form with Premium Feel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white lg:bg-transparent">
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-[440px] w-full lg:bg-white lg:p-12 lg:rounded-[3rem] lg:shadow-[0_20px_80px_-20px_rgba(0,0,0,0.08)] lg:border lg:border-gray-100"
-        >
-          <div className="mb-12 text-center lg:text-left">
-            <h2 className="text-3xl font-black text-secondary mb-3 tracking-tight">Bem-vindo de volta</h2>
-            <p className="text-gray-400 font-medium italic">Acesse sua conta para gerenciar seu espaço.</p>
-          </div>
-
-          {/* Improved User Type Selector */}
-          <div className="flex p-1.5 bg-gray-100/80 rounded-2xl mb-10">
-            <button
-              onClick={() => setUserType('salon')}
-              className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${userType === 'salon' ? 'bg-white text-secondary shadow-sm scale-[1.02]' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              Salão
-            </button>
-            <button
-              onClick={() => setUserType('client')}
-              className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${userType === 'client' ? 'bg-white text-secondary shadow-sm scale-[1.02]' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              Cliente
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-5">
-              <div className="group">
-                <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider group-focus-within:text-primary transition-colors">E-mail</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" /></svg>
-                  </span>
-                  <input
-                    ref={emailRef}
-                    type="email"
-                    required
-                    placeholder="email@exemplo.com"
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all outline-none font-medium placeholder:text-gray-300"
-                  />
-                </div>
-              </div>
-
-              <div className="group">
-                <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider group-focus-within:text-primary transition-colors">Senha</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                  </span>
-                  <input
-                    ref={passwordRef}
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    className="w-full pl-12 pr-12 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all outline-none font-medium placeholder:text-gray-300"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-secondary transition-colors"
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
+        {rememberedUser ? (
+          // --- Remembered User View ---
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6 text-center animate-bounce-in">
+            <img src={rememberedUser.avatarUrl} alt={t('userPhotoAlt', { name: rememberedUser.name })} className="w-24 h-24 mx-auto rounded-full ring-4 ring-primary/20" />
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-secondary">{(t('loginWelcomeBack') || 'Bem-vindo de volta, {name}').replace('{name}', rememberedUser.name.split(' ')[0])}</h2>
+              <p className="text-sm text-gray-500">{rememberedUser.email}</p>
             </div>
-
-            <div className="flex items-center justify-between ml-1">
-              <label className="flex items-center space-x-2.5 cursor-pointer group">
-                <div className="relative flex items-center">
-                  <input
-                    ref={rememberMeRef}
-                    type="checkbox"
-                    className="peer hidden"
-                  />
-                  <div className="w-5 h-5 border-2 border-gray-200 rounded-lg group-hover:border-primary/30 peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
-                  <svg className="absolute w-3 h-3 text-white m-1 opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <span className="text-sm text-gray-500 font-semibold select-none group-hover:text-gray-700 transition-colors">Manter conectado</span>
-              </label>
-              <button type="button" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
-                Esqueceu a senha?
-              </button>
-            </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 text-red-500 text-sm font-bold py-4 px-4 rounded-2xl text-center border border-red-100"
+            <form className="space-y-4" onSubmit={handleRememberedLogin}>
+              <div className="relative">
+                <label htmlFor="password-remembered" className="sr-only">{t('loginPassword') || 'Senha'}</label>
+                <input
+                  id="password-remembered"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300 pr-10"
+                  placeholder={t('loginPassword') || 'Senha'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                  aria-label={showPassword ? t('loginHidePassword') : t('loginShowPassword')}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <div className="text-sm text-right">
+                <a href="#" className="font-medium text-primary hover:text-primary-dark">
+                  {t('loginForgotPassword') || 'Esqueceu a senha?'}
+                </a>
+              </div>
+              {error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
               >
-                {error}
-              </motion.div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-5 bg-secondary text-white font-black rounded-2xl hover:bg-secondary-dark shadow-xl hover:shadow-secondary/20 transition-all duration-300 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center space-x-3 group"
-            >
-              {isLoading ? (
-                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span>Entrar na conta</span>
-                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-10 text-center text-gray-400 font-medium">
-            <span>Não tem conta? </span>
-            <button
-              onClick={() => navigate('signup')}
-              className="text-primary font-bold hover:underline underline-offset-4"
-            >
-              Comece agora gratuitamente
+                <SubmitButtonContent />
+              </button>
+            </form>
+            <button onClick={handleSwitchAccount} className="font-medium text-sm text-primary hover:text-primary-dark">
+              {t('loginNotYou') || 'Não é você?'}
             </button>
           </div>
-        </motion.div>
+        ) : (
+          // --- Default Login View ---
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+            <div>
+              <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-secondary">
+                {t('loginTitle') || 'Acesse sua Conta'}
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                {t('loginNoAccount') || 'Não tem uma conta?'}{' '}
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('signup'); }} className="font-medium text-primary hover:text-primary-dark">
+                  {t('loginCreateNow') || 'Crie agora'}
+                </a>
+              </p>
+            </div>
+            <form className="space-y-6" onSubmit={handleLogin}>
+              <div>
+                <label htmlFor="email-address" className="sr-only">{t('loginEmailAddress') || 'E-mail'}</label>
+                <input
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  ref={emailRef}
+                  autoComplete="email"
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                  placeholder={t('loginYourEmail') || 'Seu e-mail'}
+                  defaultValue="admin@salao24h.com"
+                />
+              </div>
+              <div className="relative">
+                <label htmlFor="password" className="sr-only">{t('password') || 'Senha'}</label>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  ref={passwordRef}
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
+                  placeholder={t('loginPassword') || 'Senha'}
+                  defaultValue="admin"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                  aria-label={showPassword ? t('loginHidePassword') : t('loginShowPassword')}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    ref={rememberMeRef}
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-600 rounded bg-gray-700"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                    {t('loginRememberMe') || 'Lembrar-me'}
+                  </label>
+                </div>
+                <div className="text-sm">
+                  <a href="#" className="font-medium text-primary hover:text-primary-dark">
+                    {t('loginForgotPassword') || 'Esqueceu a senha?'}
+                  </a>
+                </div>
+              </div>
+
+              {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+              >
+                <SubmitButtonContent />
+              </button>
+            </form>
+            <div className="pt-4 text-center text-xs text-gray-500">
+              <p>{(t('loginHintAdmin') || 'Dica: use admin@salao24h.com / admin para o admin.').replace('{email}', 'admin@salao24h.com').replace('{password}', 'admin')}</p>
+              <p>{(t('loginHintProfessional') || 'Use fernanda@salao24h.com / 123 para um profissional.').replace('{email}', 'fernanda@salao24h.com').replace('{password}', '123')}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="text-center text-sm text-gray-500">
+          <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+        </div>
       </div>
     </div>
   );

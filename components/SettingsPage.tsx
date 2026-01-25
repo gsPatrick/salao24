@@ -149,9 +149,9 @@ const rolePermissions: { [key in User['role']]: { [key: string]: PermissionDetai
     profissional: { ...defaultPermissions, minhhAgenda: { create: true, view: true, delete: false, export: true } }
 };
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, professionals, isIndividualPlan, onPayInstallment, currentUser, onLogout, navigate }) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividualPlan, onPayInstallment, currentUser, onLogout, navigate }) => {
     const { t } = useLanguage();
-    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo } = useData(); // Use DataContext
+    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals } = useData(); // Use DataContext
     const [activeTab, setActiveTab] = useState('conta');
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -518,6 +518,8 @@ interface SpaceSettingsProps {
 }
 
 const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, updateTenant }) => {
+    const { uploadTenantLogo } = useData();
+    const logoFileInputRef = useRef<HTMLInputElement>(null);
     // ... State for this section ...
     const [salonName, setSalonName] = useState(tenant?.name || '');
     const [description, setDescription] = useState(tenant?.description || '');
@@ -527,6 +529,22 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
     const [phone, setPhone] = useState(tenant?.phone || '');
     const [email, setEmail] = useState(tenant?.email || '');
     const [address, setAddress] = useState(tenant?.address || { street: '', number: '', neighborhood: '', city: '', state: '', cep: '' });
+
+    const handleLogoButtonClick = () => {
+        logoFileInputRef.current?.click();
+    };
+
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const url = await uploadTenantLogo(file);
+            if (url) {
+                setLogo(url);
+            } else {
+                alert('Erro ao fazer upload da logo.');
+            }
+        }
+    };
 
     // Booking Preferences
     const [appointmentInterval, setAppointmentInterval] = useState(tenant?.settings?.appointment_interval || 30);
@@ -616,7 +634,23 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                         <div><label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelDescription')}</label><textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea><p className="text-xs text-gray-500 mt-1">{t('settingsSpaceDescDescription')}</p></div>
                     </div>
                     <div className="space-y-4">
-                        <div className="flex items-center gap-4"><label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelLogo')}</label><button className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">{t('settingsSpaceButtonChange')}</button></div>
+                        <div className="flex items-center gap-4">
+                            <label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelLogo')}</label>
+                            <input
+                                type="file"
+                                ref={logoFileInputRef}
+                                onChange={handleLogoChange}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleLogoButtonClick}
+                                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            >
+                                {t('settingsSpaceButtonChange')}
+                            </button>
+                        </div>
                         <div className="flex items-center gap-4"><label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelPrimaryColor')}</label><input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 border-none rounded cursor-pointer" /><div className="p-2 rounded-md font-bold text-white shadow-sm" style={{ backgroundColor: primaryColor }}>{t('settingsSpaceExample')}</div></div>
                     </div>
                 </div>

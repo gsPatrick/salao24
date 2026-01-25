@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { NewClientModal } from './NewClientModal';
 import ClientDetailModal from './ClientDetailModal';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,10 +13,135 @@ interface Client {
     totalVisits?: number;
     howTheyFoundUs?: string;
     registrationDate?: string;
+    birthdate?: string;
     blocked?: boolean;
     tags?: string[];
     [key: string]: any;
 }
+
+// --- Icons ---
+const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
+const WhatsAppIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.433-9.89-9.889-9.89-5.452 0-9.887 4.434-9.889 9.89.001 2.228.651 4.39 1.849 6.22l-1.072 3.912 3.995-1.045zM9.266 8.39c-.195-.315-.315-.32-1.125-.32h-.125c-.25 0-.5.063-.75.315-.25.25-.938.938-.938 2.25s.938 2.625 1.063 2.75c.125.125.938 1.438 2.313 2.063.315.125.563.25.75.315.5.125.938.063 1.313-.19.438-.315.938-.938 1.125-1.25.19-.315.19-.563.063-.69-.125-.125-.25-.19-.5-.315s-.938-.438-1.063-.5c-.125-.063-.19-.063-.25 0-.063.063-.25.315-.313.375-.063.063-.125.063-.25 0-.125-.063-.5-.19-1-1.25C8.313 9.77 7.938 9.27 7.813 9.145c-.125-.125-.063-.19 0-.25.063-.063.25-.25.313-.313.063-.062.125-.125.19-.19.063-.062.063-.125 0-.19s-.25-.625-.313-.75z" />
+    </svg>
+);
+const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
+const CakeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V8a1 1 0 011-1h12a1 1 0 011 1v7.546zM12 12.5a.5.5 0 110-1 .5.5 0 010 1zM3 21h18v-1a1 1 0 00-1-1H4a1 1 0 00-1 1v1z" /></svg>;
+
+// --- Helper Functions ---
+const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
+    const today = new Date();
+    const birthDate = birthdate ? new Date(birthdate) : null;
+    const lastVisitDate = lastVisit ? new Date(lastVisit) : null;
+
+    const isBirthdayToday = birthDate ? (today.getDate() === birthDate.getDate() && today.getMonth() === birthDate.getMonth()) : false;
+    const isBirthdayMonth = birthDate ? (today.getMonth() === birthDate.getMonth()) : false;
+
+    const daysSinceLastVisit = lastVisitDate ? Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+
+    let classification: 'Nova' | 'Recorrente' | 'VIP' | 'Inativa' = 'Nova';
+    if (daysSinceLastVisit > 60) {
+        classification = 'Inativa';
+    } else if (totalVisits > 5) {
+        classification = 'VIP';
+    } else if (totalVisits >= 2) {
+        classification = 'Recorrente';
+    }
+
+    return { isBirthdayToday, isBirthdayMonth, classification };
+};
+
+const Confetti: React.FC = () => (
+    <>
+        <span className="absolute top-[15%] left-[10%] w-1 h-2 bg-red-400 rotate-45 opacity-70"></span>
+        <span className="absolute top-[5%] left-[50%] w-1.5 h-1.5 bg-blue-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[20%] left-[85%] w-1 h-2.5 bg-green-400 -rotate-45 opacity-70"></span>
+        <span className="absolute top-[50%] left-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[70%] left-[5%] w-1 h-1 bg-pink-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[85%] left-[35%] w-1.5 h-1 bg-indigo-400 rotate-12 opacity-70"></span>
+        <span className="absolute top-[60%] left-[90%] w-1.5 h-1.5 bg-teal-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[95%] left-[70%] w-1 h-2 bg-orange-400 -rotate-12 opacity-70"></span>
+        <span className="absolute top-[40%] left-[60%] w-1 h-1 bg-purple-400 rounded-full opacity-70"></span>
+    </>
+);
+
+const ClassificationBadge: React.FC<{ classification: string }> = ({ classification }) => {
+    const colors: { [key: string]: string } = {
+        'Nova': 'bg-blue-100 text-blue-800',
+        'Recorrente': 'bg-green-100 text-green-800',
+        'VIP': 'bg-purple-100 text-purple-800',
+        'Inativa': 'bg-yellow-100 text-yellow-800',
+    };
+    const icons: { [key: string]: string } = { 'Nova': '👤', 'Recorrente': '💎', 'VIP': '👑', 'Inativa': '⏳' };
+    return <span className={`text-[10px] font-semibold mr-2 px-2 py-0.5 rounded-full ${colors[classification] || 'bg-gray-100 text-gray-800'}`}>{icons[classification] || '👤'} {classification}</span>;
+};
+
+const ClientCard: React.FC<{ client: Client, onClick: () => void, onOpenChat?: (clientId: number) => void }> = ({ client, onClick, onOpenChat }) => {
+    const { isBirthdayMonth, classification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
+
+    const cardClasses = `p-4 rounded-xl shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 hover:shadow-lg w-full text-left cursor-pointer relative overflow-hidden ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
+        } ${client.blocked ? 'opacity-60' : ''}`;
+
+    const formattedBirthdate = client.birthdate ? new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '--/--';
+
+    return (
+        <div onClick={onClick} className={cardClasses}>
+            {isBirthdayMonth && <Confetti />}
+            <div className="flex items-start space-x-4 relative z-10">
+                <div className="relative flex-shrink-0">
+                    <img
+                        src={client.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(client.name)}&background=random`}
+                        alt={client.name}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
+                    />
+                    {isBirthdayMonth && (
+                        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-3xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className={`font-bold truncate ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
+                        <ClassificationBadge classification={classification} />
+                    </div>
+                    <div className={`text-xs space-y-1.5 mt-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-500'}`}>
+                        <div className="flex items-center justify-between">
+                            <a href={`tel:${client.phone.replace(/\D/g, '')}`} onClick={(e) => e.stopPropagation()} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-bold hover:text-primary transition-colors">
+                                <PhoneIcon />
+                                <span>{client.phone}</span>
+                            </a>
+                            <div className="flex items-center gap-2">
+                                {onOpenChat && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenChat?.(client.id);
+                                        }}
+                                        title="WhatsApp"
+                                        className="text-current hover:text-green-600 transition-colors"
+                                    >
+                                        <WhatsAppIcon />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {client.email && (
+                            <a href={`mailto:${client.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 text-current hover:text-primary transition-colors truncate">
+                                <MailIcon /><span>{client.email}</span>
+                            </a>
+                        )}
+                        <p className="flex items-center gap-2"><CakeIcon /><span>{formattedBirthdate}</span></p>
+                    </div>
+                </div>
+            </div>
+            {client.blocked && (
+                <div className="absolute top-2 right-2">
+                    <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">Bloqueado</span>
+                </div>
+            )}
+        </div>
+    );
+};
 
 interface ClientListPageProps {
     onBack?: () => void;
@@ -58,7 +183,8 @@ const ClientListPage: React.FC<ClientListPageProps> = ({
             const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 client.phone?.includes(searchQuery) ||
                 client.email?.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesView = view === 'all' ? !client.blocked : client.blocked;
+
+            const matchesView = view === 'all' ? !client.blocked?.status : client.blocked?.status;
             return matchesSearch && matchesView;
         });
 
@@ -86,6 +212,7 @@ const ClientListPage: React.FC<ClientListPageProps> = ({
     const handleDeleteConfirm = (clientId: number) => {
         if (window.confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
             onDeleteClient(clientId);
+            setSelectedClient(null);
         }
     };
 
@@ -167,63 +294,14 @@ const ClientListPage: React.FC<ClientListPageProps> = ({
 
                 {/* Client List */}
                 {filteredClients.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredClients.map(client => (
-                            <div
+                            <ClientCard
                                 key={client.id}
-                                className={`bg-light p-4 rounded-xl border border-transparent hover:border-primary transition-all cursor-pointer group ${client.blocked ? 'opacity-60' : ''}`}
+                                client={client}
                                 onClick={() => setSelectedClient(client)}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <img
-                                        src={client.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(client.name)}&background=random`}
-                                        alt={client.name}
-                                        className="w-14 h-14 rounded-full object-cover border-2 border-white shadow"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-secondary truncate">{client.name}</h3>
-                                        <p className="text-sm text-gray-500 truncate">{client.phone}</p>
-                                        {client.email && <p className="text-xs text-gray-400 truncate">{client.email}</p>}
-                                    </div>
-                                </div>
-                                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-                                    <span>{client.totalVisits || 0} visitas</span>
-                                    {client.lastVisit && (
-                                        <span>Última: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}</span>
-                                    )}
-                                </div>
-                                <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}
-                                        className="flex-1 py-1 px-2 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                    >
-                                        Editar
-                                    </button>
-                                    {onOpenChat && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onOpenChat(client.id); }}
-                                            className="flex-1 py-1 px-2 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                                        >
-                                            Chat
-                                        </button>
-                                    )}
-                                    {!client.blocked ? (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleBlock(client.id); }}
-                                            className="flex-1 py-1 px-2 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
-                                        >
-                                            Bloquear
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onUnblockClient(client.id); }}
-                                            className="flex-1 py-1 px-2 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                                        >
-                                            Desbloquear
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                                onOpenChat={onOpenChat}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -286,6 +364,10 @@ const ClientListPage: React.FC<ClientListPageProps> = ({
                     onEdit={handleEditClient}
                     onDelete={handleDeleteConfirm}
                     onOpenChat={onOpenChat}
+                    onBlock={onBlockClient}
+                    onUnblock={onUnblockClient}
+                    existingClients={clients}
+                    navigate={navigate}
                 />
             )}
         </div>

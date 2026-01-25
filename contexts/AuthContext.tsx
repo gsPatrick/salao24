@@ -21,7 +21,7 @@ interface AuthUser {
     name: string;
     email: string;
     avatarUrl?: string;
-    role: 'admin' | 'gerente' | 'recepcao' | 'profissional' | 'cliente';
+    role: 'admin' | 'gerente' | 'recepcao' | 'profissional' | 'cliente' | 'Administrador' | 'Gerente' | 'Profissional' | 'Concierge';
     tenant_id: number | null;
     is_super_admin: boolean;
     plan?: Plan;

@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { Client, Professional } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { professionalsAPI } from '../lib/api';
@@ -17,6 +18,7 @@ interface ClientAppPageProps {
   onLogout: () => void;
   navigate: (page: string) => void;
   appointments: Appointment[];
+  promotions: any[];
 }
 
 // --- Icons ---
@@ -28,8 +30,20 @@ const QRCodeIcon = () => <svg className="w-6 h-6" viewBox="0 0 20 20" fill="curr
 
 
 // --- Client Promo Carousel ---
-const ClientPromoCarousel: React.FC = () => {
-  const cards = [
+const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) => {
+  const activePromotions = promotions.filter(p => p.isActive && p.targetArea === 'cliente');
+
+  const cards = activePromotions.length > 0 ? activePromotions.map((p, idx) => ({
+    id: p.id,
+    tag: p.callToAction || 'Oferta Especial',
+    title: p.title,
+    highlight: p.subtitle,
+    description: p.description,
+    cta: p.actionButton || 'Aproveitar',
+    imageUrl: p.image,
+    accentColor: idx % 3 === 0 ? 'from-emerald-500 to-teal-400' : idx % 3 === 1 ? 'from-indigo-500 to-sky-500' : 'from-amber-500 to-rose-500',
+    link: p.promotionUrl
+  })) : [
     {
       id: 0,
       tag: 'Oferta Especial',
@@ -41,6 +55,7 @@ const ClientPromoCarousel: React.FC = () => {
       imageUrl:
         'https://images.pexels.com/photos/3738341/pexels-photo-3738341.jpeg?auto=compress&cs=tinysrgb&w=600',
       accentColor: 'from-emerald-500 to-teal-400',
+      link: '#'
     },
     {
       id: 1,
@@ -53,19 +68,8 @@ const ClientPromoCarousel: React.FC = () => {
       imageUrl:
         'https://images.pexels.com/photos/3738364/pexels-photo-3738364.jpeg?auto=compress&cs=tinysrgb&w=600',
       accentColor: 'from-indigo-500 to-sky-500',
-    },
-    {
-      id: 2,
-      tag: 'Linha Premium',
-      title: 'Tratamento Capilar de Alta Performance',
-      highlight: 'Resultados de antes e depois que fidelizam clientes',
-      description:
-        'Ofereça cronogramas completos com foco em brilho, maciez e redução de frizz.',
-      cta: 'Comprar Agora',
-      imageUrl:
-        'https://images.pexels.com/photos/3738342/pexels-photo-3738342.jpeg?auto=compress&cs=tinysrgb&w=600',
-      accentColor: 'from-amber-500 to-rose-500',
-    },
+      link: '#'
+    }
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -121,7 +125,10 @@ const ClientPromoCarousel: React.FC = () => {
           {activeCard.description}
         </p>
 
-        <button className="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors">
+        <button
+          onClick={() => activeCard.link !== '#' && window.open(activeCard.link, '_blank')}
+          className="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+        >
           {activeCard.cta}
         </button>
 
@@ -293,7 +300,7 @@ const ServiceReviewModal: React.FC<{ serviceToReview: any; onReviewSubmit: (feed
 
 
 // --- Component ---
-const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, navigate, appointments }) => {
+const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, navigate, appointments, promotions }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('inicio');
   const [activeSubTab, setActiveSubTab] = useState('servicos');
@@ -441,14 +448,14 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                       </div>
                     ))}
                   </div>
-                  <ClientPromoCarousel />
+                  <ClientPromoCarousel promotions={promotions} />
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="text-gray-500 text-center py-4 bg-gray-100 rounded-lg">
                     Você não tem agendamentos futuros.
                   </p>
-                  <ClientPromoCarousel />
+                  <ClientPromoCarousel promotions={promotions} />
                 </div>
               )}
             </div>

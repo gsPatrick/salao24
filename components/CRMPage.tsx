@@ -1,192 +1,1435 @@
-import React, { useState, useEffect } from 'react';
-import { crmAPI } from '../lib/api';
-import { Lead } from '../types';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import CRMSettingsModal from './CRMSettingsModal';
+import ClientDetailModal from './ClientDetailModal';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData, SystemUser } from '../contexts/DataContext';
+import { Client, Professional, Service, Appointment } from '../types';
 
-interface CRMPageProps {
-    onBack?: () => void;
-    [key: string]: any;
-}
+// --- Helper Functions ---
+const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
+    const today = new Date();
+    const birthDate = birthdate ? new Date(birthdate) : null;
+    const lastVisitDate = lastVisit ? new Date(lastVisit) : null;
 
-const CRMPage: React.FC<CRMPageProps> = ({ onBack }) => {
-    const { t } = useLanguage();
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [newLeadName, setNewLeadName] = useState('');
-    const [newLeadPhone, setNewLeadPhone] = useState('');
+    const isBirthdayToday = birthDate ? (today.getDate() === birthDate.getDate() && today.getMonth() === birthDate.getMonth()) : false;
+    const isBirthdayMonth = birthDate ? (today.getMonth() === birthDate.getMonth()) : false;
 
-    const stages = [
-        { id: 'novo', label: 'Novo', color: 'bg-blue-100 text-blue-800' },
-        { id: 'em_atendimento', label: 'Em Atendimento', color: 'bg-yellow-100 text-yellow-800' },
-        { id: 'agendado', label: 'Agendado', color: 'bg-purple-100 text-purple-800' },
-        { id: 'arquivado', label: 'Arquivado', color: 'bg-gray-100 text-gray-800' }
-    ];
+    const daysSinceLastVisit = lastVisitDate ? Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
 
-    useEffect(() => {
-        loadLeads();
-    }, []);
+    let classification: 'Nova' | 'Recorrente' | 'VIP' | 'Inativa' = 'Nova';
+    if (daysSinceLastVisit > 60) {
+        classification = 'Inativa';
+    } else if (totalVisits > 5) {
+        classification = 'VIP';
+    } else if (totalVisits >= 2) {
+        classification = 'Recorrente';
+    }
 
-    const loadLeads = async () => {
-        setIsLoading(true);
-        try {
-            const result = await crmAPI.listLeads();
-            setLeads(result);
-        } catch (error) {
-            console.error("Error loading leads:", error);
-        } finally {
-            setIsLoading(false);
+    return { isBirthdayToday, isBirthdayMonth, classification };
+};
+
+// --- Icons ---
+const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
+const WhatsAppIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.433-9.89-9.889-9.89-5.452 0-9.887 4.434-9.889 9.89.001 2.228.651 4.39 1.849 6.22l-1.072 3.912 3.995-1.045zM9.266 8.39c-.195-.315-.315-.32-1.125-.32h-.125c-.25 0-.5.063-.75.315-.25.25-.938.938-.938 2.25s.938 2.625 1.063 2.75c.125.125.938 1.438 2.313 2.063.315.125.563.25.75.315.5.125.938.063 1.313-.19.438-.315.938-.938 1.125-1.25.19-.315.19-.563.063-.69-.125-.125-.25-.19-.5-.315s-.938-.438-1.063-.5c-.125-.063-.19-.063-.25 0-.063.063-.25.315-.313.375-.063.063-.125.063-.25 0-.125-.063-.5-.19-1-1.25C8.313 9.77 7.938 9.27 7.813 9.145c-.125-.125-.063-.19 0-.25.063-.063.25-.25.313-.313.063-.062.125-.125.19-.19.063-.062.063-.125 0-.19s-.25-.625-.313-.75z" />
+    </svg>
+);
+const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
+const CakeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V8a1 1 0 011-1h12a1 1 0 011 1v7.546zM12 12.5a.5.5 0 110-1 .5.5 0 010 1zM3 21h18v-1a1 1 0 00-1-1H4a1 1 0 00-1 1v1z" /></svg>;
+const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
+const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-500 mb-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>;
+const ClientsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+const ContractIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const SortIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M3 10h12M3 16h6" /></svg>;
+
+
+// --- Components ---
+const Confetti: React.FC = () => (
+    <>
+        <span className="absolute top-[15%] left-[10%] w-1 h-2 bg-red-400 rotate-45 opacity-70"></span>
+        <span className="absolute top-[5%] left-[50%] w-1.5 h-1.5 bg-blue-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[20%] left-[85%] w-1 h-2.5 bg-green-400 -rotate-45 opacity-70"></span>
+        <span className="absolute top-[50%] left-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[70%] left-[5%] w-1 h-1 bg-pink-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[85%] left-[35%] w-1.5 h-1 bg-indigo-400 rotate-12 opacity-70"></span>
+        <span className="absolute top-[60%] left-[90%] w-1.5 h-1.5 bg-teal-400 rounded-full opacity-70"></span>
+        <span className="absolute top-[95%] left-[70%] w-1 h-2 bg-orange-400 -rotate-12 opacity-70"></span>
+        <span className="absolute top-[40%] left-[60%] w-1 h-1 bg-purple-400 rounded-full opacity-70"></span>
+    </>
+);
+
+
+const ClassificationBadge: React.FC<{ classification: string }> = ({ classification }) => {
+    const colors: { [key: string]: string } = {
+        'Nova': 'bg-blue-100 text-blue-800',
+        'Recorrente': 'bg-green-100 text-green-800',
+        'VIP': 'bg-purple-100 text-purple-800',
+        'Inativa': 'bg-yellow-100 text-yellow-800',
+    };
+    const icons: { [key: string]: string } = { 'Nova': '👤', 'Recorrente': '💎', 'VIP': '👑', 'Inativa': '⏳' };
+    return <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${colors[classification]}`}>{icons[classification]} {classification}</span>;
+};
+
+const ClientCard: React.FC<{
+    client: any;
+    onClick: () => void;
+    onDragStart: (e: React.DragEvent) => void;
+    isDragging: boolean;
+    onOpenChat?: (clientId: number) => void;
+    appointments: any[];
+    services: Service[];
+    professionals: Professional[];
+}> = ({ client, onClick, onDragStart, isDragging, onOpenChat, appointments, services, professionals }) => {
+    const { isBirthdayMonth, classification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
+
+    const cardClasses = `p-4 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-xl w-full text-left cursor-grab relative overflow-hidden ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
+        } ${isDragging ? 'opacity-50' : ''}`;
+    const formattedBirthdate = client.birthdate ? new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'N/A';
+
+    return (
+        <button
+            onClick={onClick}
+            className={cardClasses}
+            draggable="true"
+            onDragStart={onDragStart}
+        >
+            {isBirthdayMonth && <Confetti />}
+            <div className="flex items-start space-x-4 relative z-10">
+                <div className="relative flex-shrink-0">
+                    <img src={client.photo} alt={client.name} className="w-16 h-16 rounded-full object-cover" />
+                    {isBirthdayMonth && (
+                        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-3xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
+                    )}
+                </div>
+                <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                        <h3 className={`font-bold ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
+                        <ClassificationBadge classification={classification} />
+                    </div>
+                    <div className={`text-xs space-y-2 mt-2 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
+                        <div className="flex items-center justify-between">
+                            <a href={`tel:${client.phone.replace(/\D/g, '')}`} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-current hover:text-primary transition-colors">
+                                <PhoneIcon />
+                                <span>{client.phone}</span>
+                            </a>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenChat?.(client.id);
+                                }}
+                                title="WhatsApp"
+                                className="text-current hover:text-green-500 transition-colors"
+                            >
+                                <WhatsAppIcon />
+                            </button>
+                        </div>
+                        <a href={`mailto:${client.email}`} className="flex items-center gap-2 text-current hover:text-primary transition-colors">
+                            <MailIcon /><span>{client.email}</span>
+                        </a>
+                        <p className="flex items-center gap-2"><CakeIcon /><span>{formattedBirthdate}</span></p>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-4 border-t pt-3 relative z-10">
+                <h4 className={`text-sm font-semibold mb-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Próximo Agendamento:</h4>
+                <div className={`text-xs ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-700'} space-y-1`}>
+                    {(() => {
+                        const today = new Date();
+                        const formatDateForLookup = (date: Date): string => {
+                            const year = date.getFullYear();
+                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                            const day = date.getDate().toString().padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                        };
+                        const todayKey = formatDateForLookup(today);
+                        const clientAppointments = appointments.filter(a => a.clientId === client.id && a.date >= todayKey).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                        if (clientAppointments.length > 0) {
+                            const nextAppointment = clientAppointments[0];
+                            const service = (services as Service[]).find(s => s.name === nextAppointment.service);
+                            const professional = (professionals as Professional[]).find(p => p.id === nextAppointment.professionalId);
+
+                            return (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Data:</span>
+                                        <span>{new Date(nextAppointment.date).toLocaleDateString('pt-BR')}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Hora:</span>
+                                        <span>{nextAppointment.time}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Serviço:</span>
+                                        <span>{nextAppointment.service}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Profissional:</span>
+                                        <span>{professional?.name || 'Não definido'}</span>
+                                    </div>
+                                </div>
+                            );
+                        } else {
+                            return <span className="text-gray-500">Nenhum agendamento futuro</span>;
+                        }
+                    })()}
+                </div>
+            </div>
+            {client.packages && client.packages.length > 0 && (
+                <div className="mt-4">
+                    <h4 className={`text-sm font-semibold mb-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Pacotes Ativos</h4>
+                    {client.packages.map((pkg: any, index: number) => {
+                        const needsRenewal = typeof pkg.totalSessions === 'number' && pkg.completedSessions === pkg.totalSessions - 1;
+                        return (
+                            <div key={index} className="mb-2">
+                                <div className="flex justify-between items-center text-xs mb-1">
+                                    <span className={`font-medium ${isBirthdayMonth ? 'text-black' : 'text-gray-800'}`}>{pkg.name}</span>
+                                    <span className={`font-semibold ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>{pkg.completedSessions} / {pkg.totalSessions}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div
+                                        className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                                        style={{ width: `${(pkg.completedSessions / pkg.totalSessions) * 100}%` }}
+                                    ></div>
+                                </div>
+                                {needsRenewal && (
+                                    <div className="mt-2 flex items-center bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-md animate-pulse">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 12.5M20 20l-1.5-1.5A9 9 0 013.5 11.5" />
+                                        </svg>
+                                        RENOVAR PACOTE
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </button>
+    );
+};
+
+
+const KanbanColumn: React.FC<{
+    columnId: string;
+    title: string;
+    icon: string;
+    clients: any[];
+    config: CrmColumnConfig;
+    isConfigOpen: boolean;
+    onToggleConfig: (id: string) => void;
+    onConfigChange: (id: string, field: keyof CrmColumnConfig, value: any) => void;
+    onCardClick: (client: any) => void;
+    onDragStart: (e: React.DragEvent, clientId: number) => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+    onDragEnter: (e: React.DragEvent) => void;
+    onDragLeave: (e: React.DragEvent) => void;
+    isDropTarget: boolean;
+    draggedClientId: number | null;
+    isIndividualPlan: boolean;
+    currentUser: SystemUser | null;
+    navigate: (page: string) => void;
+    onOpenChat?: (clientId: number) => void;
+    appointments: any[];
+    services: Service[];
+    professionals: Professional[];
+}> = ({ columnId, title, icon, clients, config, isConfigOpen, onToggleConfig, onConfigChange, onCardClick, onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave, isDropTarget, draggedClientId, isIndividualPlan, currentUser, navigate, onOpenChat, appointments, services, professionals }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
+    const isPlanRestricted = currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial';
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const fileName = e.target.files[0].name;
+            onConfigChange(columnId, 'attachmentName', fileName);
         }
     };
 
-    const handleStageChange = async (leadId: number, newStage: string) => {
-        // Optimistic update
-        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStage as any } : l));
-        try {
-            await crmAPI.updateLeadStatus(leadId, newStage);
-        } catch (error) {
-            console.error("Error updating lead status:", error);
-            loadLeads();
+    const handleRemoveFile = () => {
+        onConfigChange(columnId, 'attachmentName', undefined);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset the input so the same file can be selected again
         }
-    };
-
-    const handleAddLead = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const newLead = await crmAPI.createLead({
-                name: newLeadName,
-                phone: newLeadPhone,
-                status: 'novo',
-                source: 'Manual'
-            });
-            setLeads(prev => [...prev, newLead]);
-            setIsAddModalOpen(false);
-            setNewLeadName('');
-            setNewLeadPhone('');
-        } catch (error) {
-            console.error("Error adding lead:", error);
-            alert("Erro ao adicionar lead.");
-        }
-    };
-
-    const getLeadsByStage = (stageId: string) => {
-        return leads.filter(l => (l.status || 'novo') === stageId);
     };
 
     return (
-        <div className="container mx-auto px-6 py-8 h-full flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    {onBack && (
-                        <button onClick={onBack} className="mb-2 text-primary hover:underline flex items-center gap-1">
-                            <span>←</span> Voltar
-                        </button>
-                    )}
-                    <h1 className="text-3xl font-bold text-secondary">CRM & Pipeline de Vendas</h1>
-                    <p className="text-gray-500">Gerencie seus potenciais clientes visualmente.</p>
-                </div>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow transition"
-                >
-                    + Novo Lead
+        <div
+            className={`flex-1 min-w-[300px] bg-light rounded-xl p-4 transition-all duration-300 ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+        >
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-secondary flex items-center">{icon} <span className="ml-2">{title} ({clients.length})</span></h2>
+                <button onClick={() => onToggleConfig(columnId)} className="text-gray-400 hover:text-primary p-1 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </button>
             </div>
-
-            <div className="flex-1 overflow-x-auto">
-                <div className="flex gap-4 min-w-max h-full pb-4">
-                    {stages.map(stage => (
-                        <div key={stage.id} className="w-80 bg-gray-50 rounded-xl flex flex-col h-full border border-gray-200">
-                            <div className={`p-4 border-b border-gray-200 rounded-t-xl font-bold flex justify-between items-center ${stage.color.replace('text', 'border').split(' ')[0]}`}>
-                                <span>{stage.label}</span>
-                                <span className="bg-white/50 px-2 py-0.5 rounded-full text-xs">
-                                    {getLeadsByStage(stage.id).length}
-                                </span>
-                            </div>
-                            <div className="p-3 flex-1 overflow-y-auto space-y-3">
-                                {isLoading ? (
-                                    <div className="animate-pulse space-y-3">
-                                        <div className="h-24 bg-gray-200 rounded-lg"></div>
-                                        <div className="h-24 bg-gray-200 rounded-lg"></div>
-                                    </div>
-                                ) : (
-                                    getLeadsByStage(stage.id).map(lead => (
-                                        <div key={lead.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
-                                            <div className="font-bold text-gray-800">{lead.name}</div>
-                                            <div className="text-sm text-gray-500 mb-3">{lead.phone || 'Sem telefone'}</div>
-
-                                            <div className="flex flex-wrap gap-2 mt-2">
-                                                {stages.filter(s => s.id !== stage.id).map(s => (
-                                                    <button
-                                                        key={s.id}
-                                                        onClick={() => handleStageChange(lead.id, s.id)}
-                                                        className={`text-[10px] px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 ${s.color}`}
-                                                        title={`Mover para ${s.label}`}
-                                                    >
-                                                        {s.label.split(' ')[0]}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                                {getLeadsByStage(stage.id).length === 0 && !isLoading && (
-                                    <div className="text-center py-8 text-gray-400 text-sm italic">
-                                        Nenhum lead nesta etapa
-                                    </div>
-                                )}
+            {isConfigOpen && (
+                isIndividualPlan ? (
+                    <div className="relative bg-gray-100 p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in text-center">
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-4 rounded-md">
+                            <LockIcon />
+                            <h4 className="font-bold text-gray-800">Exclusivo do Plano Empresa</h4>
+                            <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade do seu plano.</p>
+                            <button
+                                onClick={() => navigate('upgrade_to_empresa')}
+                                className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
+                            >
+                                Fazer Upgrade
+                            </button>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-1">Título da Ação</label>
+                            <input type="text" disabled className="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 mb-1">Descrição (Instrução para IA)</label>
+                            <div className="relative">
+                                <textarea rows={3} disabled className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
+                                <div className="absolute bottom-2 right-2 p-1 text-gray-400 cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Add Lead Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-                    <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-                        <h2 className="text-xl font-bold text-secondary mb-4">Adicionar Novo Lead</h2>
-                        <form onSubmit={handleAddLead} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newLeadName}
-                                    onChange={e => setNewLeadName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
+                        <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-200' : 'bg-gray-200'}`}>
+                            <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-gray-400'}`}>Executar Ação com IA</label>
+                            <div className="w-11 h-6 bg-gray-300 rounded-full relative">
+                                <div className="absolute top-0.5 left-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 transition-all"></div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
-                                <input
-                                    type="tel"
-                                    required
-                                    value={newLeadPhone}
-                                    onChange={e => setNewLeadPhone(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Título da Ação</label>
+                            <input
+                                type="text"
+                                value={config.configTitle || ''}
+                                onChange={(e) => onConfigChange(columnId, 'configTitle', e.target.value)}
+                                className="w-full p-2 text-sm border border-gray-300 rounded-md"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor={`config-desc-${columnId}`} className="block text-xs font-bold text-gray-600 mb-1">Descrição (Instrução para IA)</label>
+                            <div className="relative">
+                                <textarea
+                                    id={`config-desc-${columnId}`}
+                                    value={config.configDescription || ''}
+                                    onChange={(e) => onConfigChange(columnId, 'configDescription', e.target.value)}
+                                    rows={3}
+                                    className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md"
+                                    placeholder="Ex: Enviar mensagem de boas-vindas com o cupom BOASVINDAS10..."
                                 />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    aria-hidden="true"
+                                />
                                 <button
                                     type="button"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute bottom-2 right-2 p-1 text-gray-400 hover:text-primary rounded-full transition-colors"
+                                    title="Anexar imagem ou documento"
                                 >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-bold shadow-lg"
-                                >
-                                    Adicionar
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    </svg>
                                 </button>
                             </div>
-                        </form>
+                            {config.attachmentName && (
+                                <div className="mt-2 p-2 bg-gray-100 rounded-md text-xs flex items-center justify-between animate-fade-in border">
+                                    <span className="truncate text-gray-700 font-medium">{config.attachmentName}</span>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveFile}
+                                        className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                                        title="Remover anexo"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-100' : 'bg-primary/10'}`}>
+                            <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-primary'}`}>
+                                Executar Ação com IA
+                                {isPlanRestricted && (
+                                    <svg className="w-4 h-4 ml-1 inline" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                                    </svg>
+                                )}
+                            </label>
+                            {isPlanRestricted ? (
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-xs text-gray-500">Plano limitado</span>
+                                    <button
+                                        onClick={() => navigate('upgrade_to_empresa')}
+                                        className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-full transition-colors"
+                                    >
+                                        Upgrade
+                                    </button>
+                                </div>
+                            ) : (
+                                <label htmlFor={`ai-toggle-${columnId}`} className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        id={`ai-toggle-${columnId}`}
+                                        className="sr-only peer"
+                                        checked={config.isAIActionActive || false}
+                                        onChange={(e) => onConfigChange(columnId, 'isAIActionActive', e.target.checked)}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                </label>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            className="w-full text-center font-semibold py-2 px-4 rounded-md border-2 border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition-colors text-sm flex items-center justify-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                            Criar Nova Ação
+                        </button>
+                    </div>
+                )
+            )}
+            <div className="space-y-4 h-[calc(100vh-380px)] overflow-y-auto pr-2">
+                {clients.map(client => (
+                    <ClientCard
+                        key={client.id}
+                        client={client}
+                        onClick={() => onCardClick(client)}
+                        onDragStart={(e) => onDragStart(e, client.id)}
+                        isDragging={draggedClientId === client.id}
+                        onOpenChat={onOpenChat}
+                        appointments={appointments}
+                        services={services}
+                        professionals={professionals}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+const PlaceholderView: React.FC<{ title: string; icon: React.ReactNode }> = ({ title, icon }) => (
+    <div className="text-center p-16 bg-light rounded-lg animate-fade-in border-2 border-dashed">
+        <div className="mx-auto h-12 w-12 text-gray-400">
+            {icon}
+        </div>
+        <h2 className="mt-6 text-xl font-semibold text-gray-700">{title}</h2>
+        <p className="text-gray-500 mt-2">Esta seção está em desenvolvimento e estará disponível em breve.</p>
+    </div>
+);
+
+interface CrmColumnConfig {
+    id: string;
+    title: string;
+    icon: string;
+    visible: boolean;
+    deletable?: boolean;
+    configTitle?: string;
+    configDescription?: string;
+    isAIActionActive?: boolean;
+    attachmentName?: string;
+}
+
+interface Classification {
+    text: string;
+    icon: string;
+}
+
+interface CRMPageProps {
+    onBack?: () => void;
+    currentUser: SystemUser | null;
+    clients: Client[];
+    appointments: any[];
+    navigate: (page: string) => void;
+    onOpenChat?: (clientId: number) => void;
+}
+
+const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpenChat }) => {
+    const { clients, appointments, services, professionals } = useData();
+    const { t } = useLanguage();
+
+    // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
+    const isPlanRestricted = currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial';
+
+    const [activeTab, setActiveTab] = useState('clientes');
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [columnFilter, setColumnFilter] = useState<string[]>([]);
+    const [isColumnFilterOpen, setIsColumnFilterOpen] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
+
+    const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'last-visit-desc' | 'last-visit-asc'>('last-visit-desc');
+    const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+    const sortRef = useRef<HTMLDivElement>(null);
+
+
+    const [columnsConfig, setColumnsConfig] = useState<CrmColumnConfig[]>([
+        { id: 'new', title: 'Novos Clientes', icon: '✨', visible: true, deletable: true, configTitle: 'Boas-vindas', configDescription: 'Enviar mensagem de boas-vindas via WhatsApp e agendar primeiro contato.', isAIActionActive: true },
+        { id: 'birthday', title: 'Aniversariante do Dia', icon: '🎂', visible: true, deletable: false, configTitle: 'Mensagem de Aniversário', configDescription: 'Enviar mensagem automática de feliz aniversário com um cupom de 10% de desconto.', isAIActionActive: true },
+        { id: 'scheduled', title: 'Agendados Hoje', icon: '✅', visible: true, deletable: false, configTitle: 'Lembrete de Agendamento', configDescription: 'Enviar lembrete 1 hora antes do horário. Confirmar com cliente se ele vem.', isAIActionActive: false },
+        { id: 'absent', title: 'Faltantes', icon: '❌', visible: true, deletable: false, configTitle: 'Contato Pós-Falta', configDescription: 'Entrar em contato para entender o motivo da falta e oferecer reagendamento.', isAIActionActive: false },
+        { id: 'rescheduled', title: 'Reagendados', icon: '🔄', visible: true, deletable: false, configTitle: 'Confirmar Reagendamento', configDescription: 'Enviar confirmação do novo horário para o cliente.', isAIActionActive: true },
+        { id: 'inactive', title: 'Inativas (60+ dias)', icon: '⏳', visible: true, deletable: false, configTitle: 'Campanha de Reativação', configDescription: 'Enviar mensagem com oferta especial para clientes que não retornam há mais de 60 dias.', isAIActionActive: false },
+    ]);
+
+    const [classifications, setClassifications] = useState<Classification[]>([
+        { text: 'VIP', icon: '👑' },
+        { text: 'Potencial', icon: '💡' },
+        { text: 'Retorno', icon: '🔄' }
+    ]);
+
+    // State for drag and drop
+    const [cardPositions, setCardPositions] = useState<{ [key: string]: any[] } | null>(null);
+    const [draggedClientId, setDraggedClientId] = useState<number | null>(null);
+    const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
+    const [openConfigColumnId, setOpenConfigColumnId] = useState<string | null>(null);
+
+    // State and ref for drag-to-scroll
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [isDraggingScroll, setIsDraggingScroll] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+
+    const isIndividualPlan = currentUser?.plan === 'Individual';
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+                setIsColumnFilterOpen(false);
+            }
+            if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+                setIsSortDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleColumnFilterChange = (columnId: string) => {
+        setColumnFilter(prev => {
+            if (prev.includes(columnId)) {
+                return prev.filter(id => id !== columnId);
+            } else {
+                return [...prev, columnId];
+            }
+        });
+    };
+
+    const handleToggleConfig = (columnId: string) => {
+        setOpenConfigColumnId(prev => (prev === columnId ? null : columnId));
+    };
+
+    const handleColumnConfigChange = (columnId: string, field: keyof CrmColumnConfig, value: any) => {
+        setColumnsConfig(prev =>
+            prev.map(col =>
+                col.id === columnId ? { ...col, [field]: value } : col
+            )
+        );
+    };
+
+
+    const clientGroups = useMemo(() => {
+        const today = new Date();
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const formatDateForLookup = (date: Date): string => {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const todayKey = formatDateForLookup(today);
+        const scheduledClientIds = new Set(appointments.filter(a => a.date === todayKey).map(a => a.clientId));
+
+        const groups: { [key: string]: any[] } = {
+            new: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
+        };
+
+        const filteredClients = clients.filter(client => {
+            // Text Search
+            const textSearchMatch = (() => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase().replace(/[.\-/() ]/g, '');
+                if (!query) return true;
+                const name = client.name.toLowerCase();
+                const phone = (client.phone || '').replace(/[.\-/() ]/g, '');
+                const cpf = (client.cpf || '').replace(/[.\-/() ]/g, '');
+                return name.includes(searchQuery.toLowerCase()) || phone.includes(query) || cpf.includes(query);
+            })();
+
+            if (!textSearchMatch) return false;
+
+            // Date Filter
+            const dateMatch = (() => {
+                if (!startDate && !endDate) return true;
+
+                const start = startDate ? new Date(startDate + 'T00:00:00') : null;
+                const end = endDate ? new Date(endDate + 'T23:59:59') : null;
+
+                return appointments.some(appt => {
+                    if (appt.clientId !== client.id) return false;
+
+                    const apptDate = new Date(appt.date + 'T00:00:00'); // Use T00:00:00 to avoid timezone issues
+
+                    if (start && end) {
+                        return apptDate >= start && apptDate <= end;
+                    }
+                    if (start) {
+                        return apptDate >= start;
+                    }
+                    if (end) {
+                        return apptDate <= end;
+                    }
+                    return false; // Should not happen
+                });
+            })();
+
+            return dateMatch;
+        });
+
+        filteredClients.forEach(client => {
+            // Priority 1: Birthday
+            if (client.birthdate) {
+                const birthDate = new Date(client.birthdate);
+                if (birthDate.getDate() === today.getDate() && birthDate.getMonth() === today.getMonth()) {
+                    groups.birthday.push(client);
+                    return; // Client is classified, move to next
+                }
+            }
+
+            // Priority 2: Scheduled Today
+            if (scheduledClientIds.has(client.id)) {
+                groups.scheduled.push(client);
+                return;
+            }
+
+            // Priority 3: Specific Statuses
+            if (client.status === 'Faltante') {
+                groups.absent.push(client);
+                return;
+            }
+            if (client.status === 'Reagendado') {
+                groups.rescheduled.push(client);
+                return;
+            }
+
+            // Priority 4: New Client (last 7 days)
+            if (client.registrationDate) {
+                const regDate = new Date(client.registrationDate);
+                const diffTime = Math.abs(startOfToday.getTime() - regDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays <= 7) {
+                    groups.new.push(client);
+                    return;
+                }
+            }
+
+            // Priority 5: Inactive Client
+            if (client.lastVisit) {
+                const lastVisitDate = new Date(client.lastVisit);
+                const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSinceLastVisit > 60) {
+                    groups.inactive.push(client);
+                    return;
+                }
+            }
+        });
+
+        // Sorting logic
+        for (const key in groups) {
+            if (Array.isArray(groups[key])) {
+                groups[key].sort((a, b) => {
+                    switch (sortOrder) {
+                        case 'name-asc':
+                            return a.name.localeCompare(b.name);
+                        case 'name-desc':
+                            return b.name.localeCompare(a.name);
+                        case 'last-visit-asc':
+                            const dateAscA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
+                            const dateAscB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+                            if (dateAscA === 0) return 1;
+                            if (dateAscB === 0) return -1;
+                            return dateAscA - dateAscB;
+                        case 'last-visit-desc':
+                        default:
+                            const dateDescA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
+                            const dateDescB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+                            if (dateDescA === 0) return 1;
+                            if (dateDescB === 0) return -1;
+                            return dateDescB - dateDescA;
+                    }
+                });
+            }
+        }
+
+        return groups;
+    }, [clients, appointments, searchQuery, startDate, endDate, sortOrder]);
+
+    // Initialize/reset manual positions when automatic groups change.
+    useEffect(() => {
+        setCardPositions(clientGroups);
+    }, [clientGroups]);
+
+
+    const handleDragStart = (e: React.DragEvent, clientId: number) => {
+        e.dataTransfer.setData('clientId', String(clientId));
+        setDraggedClientId(clientId);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDragEnter = (e: React.DragEvent, columnId: string) => {
+        e.preventDefault();
+        setDragOverColumnId(columnId);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOverColumnId(null);
+    };
+
+    const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
+        e.preventDefault();
+        setDragOverColumnId(null);
+        setDraggedClientId(null);
+        const clientId = parseInt(e.dataTransfer.getData('clientId'), 10);
+
+        setCardPositions(currentPositions => {
+            if (!clientId || !currentPositions) return currentPositions;
+
+            let sourceColumnId: string | null = null;
+            let draggedClient: any = null;
+
+            // Find the client and its source column
+            for (const colId in currentPositions) {
+                const clientIndex = currentPositions[colId].findIndex(c => c.id === clientId);
+                if (clientIndex !== -1) {
+                    sourceColumnId = colId;
+                    draggedClient = currentPositions[colId][clientIndex];
+                    break;
+                }
+            }
+
+            if (!sourceColumnId || !draggedClient || sourceColumnId === targetColumnId) {
+                return currentPositions;
+            }
+
+            // Immutable update
+            const newPositions = { ...currentPositions };
+            newPositions[sourceColumnId] = newPositions[sourceColumnId].filter(c => c.id !== clientId);
+            newPositions[targetColumnId] = [...newPositions[targetColumnId], draggedClient];
+
+            return newPositions;
+        });
+    };
+
+    const columnsToRender = useMemo(() => {
+        const currentPositions = cardPositions || clientGroups;
+        return columnsConfig.map(config => ({
+            ...config,
+            clients: currentPositions[config.id] || [],
+        }));
+    }, [columnsConfig, cardPositions, clientGroups]);
+
+    const handleSaveSettings = (updatedConfig: CrmColumnConfig[]) => {
+        setColumnsConfig(updatedConfig);
+    };
+
+    const handleCardClick = (client: any) => {
+        setSelectedClient(client);
+        setIsDetailModalOpen(true);
+    };
+
+    // --- Drag-to-scroll handlers ---
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('button')) {
+            return;
+        }
+        if (scrollContainerRef.current) {
+            setIsDraggingScroll(true);
+            setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+            setScrollLeft(scrollContainerRef.current.scrollLeft);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setIsDraggingScroll(false);
+    };
+
+    const handleMouseUp = () => {
+        setIsDraggingScroll(false);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingScroll || !scrollContainerRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - scrollContainerRef.current.offsetLeft;
+        const walk = (x - startX);
+        scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+    };
+
+    const TabButton: React.FC<{ tabId: string, label: string, icon: React.ReactNode }> = ({ tabId, label, icon }) => (
+        <button
+            onClick={() => setActiveTab(tabId)}
+            className={`flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 focus:outline-none ${activeTab === tabId
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+        >
+            {icon}
+            {label}
+        </button>
+    );
+
+    const ClientAppointmentsView = () => {
+        const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+        const [searchQuery, setSearchQuery] = useState('');
+        const [showSearchResults, setShowSearchResults] = useState(false);
+        const searchRef = useRef<HTMLDivElement>(null);
+
+        const [appointmentFilters, setAppointmentFilters] = useState({
+            startDate: '',
+            endDate: '',
+            status: 'all',
+        });
+
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                    setShowSearchResults(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+
+        const searchResults = useMemo(() => {
+            if (searchQuery.length < 2) return [];
+            const query = searchQuery.toLowerCase();
+            return clients.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))
+            );
+        }, [searchQuery, clients]);
+
+        const clientAppointments = useMemo(() => {
+            if (!selectedClient) return [];
+            return appointments
+                .filter(a => a.clientId === selectedClient.id)
+                .map(a => {
+                    const service = (services as Service[]).find(s => s.name === a.service);
+                    const professional = (professionals as Professional[]).find(p => p.id === a.professionalId);
+                    return {
+                        ...a,
+                        price: service?.price || 'N/A',
+                        professionalName: professional?.name || 'N/A',
+                    };
+                })
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }, [selectedClient, appointments]);
+
+        const filteredAppointments = useMemo(() => {
+            return clientAppointments.filter(appt => {
+                const apptDate = new Date(appt.date);
+                if (appointmentFilters.startDate && apptDate < new Date(appointmentFilters.startDate)) return false;
+                if (appointmentFilters.endDate && apptDate > new Date(appointmentFilters.endDate)) return false;
+                if (appointmentFilters.status !== 'all' && appt.status !== appointmentFilters.status) return false;
+                return true;
+            });
+        }, [clientAppointments, appointmentFilters]);
+
+        const clientSummary = useMemo(() => {
+            if (!selectedClient) return null;
+            const attendedAppointments = clientAppointments.filter(a => a.status === 'Atendido' || a.status === 'concluído');
+            const totalSpent = attendedAppointments.reduce((sum, a) => {
+                const price = parseFloat(String(a.price).replace(',', '.'));
+                return sum + (isNaN(price) ? 0 : price);
+            }, 0);
+            return {
+                totalAppointments: clientAppointments.length,
+                totalSpent: totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                lastVisit: attendedAppointments.length > 0 ? new Date(attendedAppointments[0].date).toLocaleDateString('pt-BR') : 'N/A',
+            };
+        }, [selectedClient, clientAppointments]);
+
+        const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+            setAppointmentFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        };
+
+        if (!selectedClient) {
+            return (
+                <div className="text-center p-8 bg-light rounded-lg">
+                    <h2 className="text-xl font-semibold text-gray-700">Selecione um Cliente</h2>
+                    <p className="text-gray-500 mt-2">Busque por nome ou telefone para ver o histórico de agendamentos.</p>
+                    <div ref={searchRef} className="relative max-w-lg mx-auto mt-6">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setShowSearchResults(true)}
+                            placeholder="Buscar cliente..."
+                            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm"
+                        />
+                        {showSearchResults && searchResults.length > 0 && (
+                            <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {searchResults.map(client => (
+                                    <li key={client.id}>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedClient(client);
+                                                setSearchQuery('');
+                                                setShowSearchResults(false);
+                                            }}
+                                            className="w-full text-left flex items-start p-3 hover:bg-gray-100"
+                                        >
+                                            <img src={client.photo} alt={client.name} className="w-10 h-10 rounded-full mr-3 flex-shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-black truncate">{client.name}</p>
+                                                {client.history && client.history.length > 0 ? (
+                                                    <div className="mt-1 text-xs space-y-0.5">
+                                                        {client.history.slice(0, 2).map(h => (
+                                                            <p key={h.id} className="truncate text-black">
+                                                                {new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR')}	{h.name}	{h.professional}	R$ {h.price}	{h.status}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-gray-500 truncate">{client.phone}</p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
-            )}
-        </div>
+            );
+        }
+
+        return (
+            <div className="space-y-6">
+                <div className="bg-white p-4 rounded-lg shadow-md flex flex-col sm:flex-row items-center gap-4">
+                    <img src={selectedClient.photo} alt={selectedClient.name} className="w-20 h-20 rounded-full" />
+                    <div className="flex-1 text-center sm:text-left">
+                        <h2 className="text-2xl font-bold text-secondary">{selectedClient.name}</h2>
+                        <p className="text-gray-500">{selectedClient.email}</p>
+                    </div>
+                    <div className="flex gap-4 text-center">
+                        <div>
+                            <p className="text-xl font-bold text-black">{clientSummary?.totalAppointments}</p>
+                            <p className="text-sm text-gray-500">Agendamentos</p>
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-black">{clientSummary?.totalSpent}</p>
+                            <p className="text-sm text-gray-500">Total Gasto</p>
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-black">{clientSummary?.lastVisit}</p>
+                            <p className="text-sm text-gray-500">Última Visita</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <button onClick={() => navigate('scheduling')} className="py-2 px-4 bg-primary text-white text-sm font-semibold rounded-md">Novo Agendamento</button>
+                        <button onClick={() => setSelectedClient(null)} className="py-2 px-4 bg-gray-200 text-gray-700 text-sm font-semibold rounded-md">Trocar Cliente</button>
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg shadow-md">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                        <input type="date" name="startDate" value={appointmentFilters.startDate} onChange={handleFilterChange} className="p-2 border rounded-md" />
+                        <input type="date" name="endDate" value={appointmentFilters.endDate} onChange={handleFilterChange} className="p-2 border rounded-md" />
+                        <select name="status" value={appointmentFilters.status} onChange={handleFilterChange} className="p-2 border border-gray-300 rounded-md">
+                            <option value="all">Todos os Status</option>
+                            <option value="Atendido">Atendido</option>
+                            <option value="Agendado">Agendado</option>
+                            <option value="Faltou">Faltou</option>
+                            <option value="Desmarcou">Desmarcou</option>
+                        </select>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profissional</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredAppointments.map(appt => (
+                                    <tr key={appt.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-black">{new Date(appt.date).toLocaleDateString('pt-BR')}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-black">{appt.service}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-black">{appt.professionalName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-black">R$ {appt.price}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${appt.status === 'Atendido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{appt.status}</span></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const ClientCompleteHistoryView = () => {
+        const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+        const [searchQuery, setSearchQuery] = useState('');
+        const [showSearchResults, setShowSearchResults] = useState(false);
+        const searchRef = useRef<HTMLDivElement>(null);
+
+        const ServiceIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a1 1 0 000-2H4a1 1 0 000 2zm1.5 8.5A.5.5 0 016 12v4a1 1 0 001 1h6a1 1 0 001-1v-4a.5.5 0 011 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4a.5.5 0 01.5-.5z" /><path d="M10 12a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zM15 4h-3a1 1 0 100 2h3a1 1 0 100-2zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" /></svg>;
+        const RegistrationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>;
+
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                    setShowSearchResults(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+
+        const searchResults = useMemo(() => {
+            if (searchQuery.length < 2) return [];
+            const query = searchQuery.toLowerCase();
+            return clients.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))
+            );
+        }, [searchQuery, clients]);
+
+        const timelineEvents = useMemo(() => {
+            if (!selectedClient) return [];
+
+            const events: any[] = [];
+
+            events.push({
+                type: 'registration',
+                date: selectedClient.registrationDate,
+                title: 'Cliente Cadastrado',
+                description: `Cliente cadastrado via ${selectedClient.howTheyFoundUs}.`
+            });
+
+            selectedClient.history.forEach(item => {
+                events.push({
+                    type: 'service',
+                    date: item.date,
+                    title: item.name,
+                    description: `Com ${item.professional} às ${item.time}.`,
+                    status: item.status
+                });
+            });
+
+            selectedClient.documents.forEach(doc => {
+                if (doc.signed) {
+                    // Faking date as it's not available in the mock data
+                    const firstServiceDate = selectedClient.history[0]?.date || selectedClient.registrationDate;
+                    events.push({
+                        type: 'document',
+                        date: firstServiceDate,
+                        title: 'Documento Assinado',
+                        description: `${doc.type}: ${doc.name}`
+                    });
+                }
+            });
+
+            return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }, [selectedClient]);
+
+        const getStatusInfo = (status: string) => {
+            switch (status) {
+                case 'Atendido':
+                case 'concluído':
+                    return { icon: '✅', color: 'text-green-600', text: status };
+                case 'Agendado':
+                case 'a realizar':
+                    return { icon: '🗓️', color: 'text-blue-600', text: status };
+                case 'Faltou':
+                    return { icon: '❌', color: 'text-red-600', text: status };
+                case 'Desmarcou':
+                case 'Reagendado':
+                    return { icon: '🔄', color: 'text-yellow-600', text: status };
+                default:
+                    return { icon: '❔', color: 'text-gray-600', text: status };
+            }
+        };
+
+        if (!selectedClient) {
+            return (
+                <div className="text-center p-8 bg-light rounded-lg">
+                    <h2 className="text-xl font-semibold text-gray-700">Selecione um Cliente</h2>
+                    <p className="text-gray-500 mt-2">Busque por nome ou telefone para ver o histórico completo.</p>
+                    <div ref={searchRef} className="relative max-w-lg mx-auto mt-6">
+                        <input
+                            type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setShowSearchResults(true)} placeholder="Buscar cliente..."
+                            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm"
+                        />
+                        {showSearchResults && searchResults.length > 0 && (
+                            <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {searchResults.map(client => (
+                                    <li key={client.id}>
+                                        <button onClick={() => { setSelectedClient(client); setSearchQuery(''); setShowSearchResults(false); }}
+                                            className="w-full text-left flex items-center p-3 hover:bg-gray-100"
+                                        >
+                                            <img src={client.photo} alt={client.name} className="w-10 h-10 rounded-full mr-3" />
+                                            <div>
+                                                <p className="font-semibold text-black">{client.name}</p>
+                                                <p className="text-sm text-gray-500">{client.phone}</p>
+                                            </div>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-6">
+                <div className="bg-white p-4 rounded-lg shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <img src={selectedClient.photo} alt={selectedClient.name} className="w-20 h-20 rounded-full" />
+                        <div className="text-center sm:text-left">
+                            <h2 className="text-2xl font-bold text-secondary">{selectedClient.name}</h2>
+                            <p className="text-gray-500">{selectedClient.email}</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setSelectedClient(null)} className="py-2 px-4 bg-gray-200 text-gray-700 text-sm font-semibold rounded-md hover:bg-gray-300">Trocar Cliente</button>
+                </div>
+
+                <div className="relative pl-8">
+                    <div className="absolute left-4 top-0 h-full w-0.5 bg-gray-200"></div>
+                    <div className="space-y-8">
+                        {timelineEvents.map((event, index) => {
+                            let icon, iconBg;
+                            if (event.type === 'registration') {
+                                icon = <RegistrationIcon />;
+                                iconBg = 'bg-blue-500';
+                            } else if (event.type === 'document') {
+                                icon = <ContractIcon />;
+                                iconBg = 'bg-purple-500';
+                            } else {
+                                icon = <ServiceIcon />;
+                                iconBg = 'bg-primary';
+                            }
+                            return (
+                                <div key={index} className="relative">
+                                    <div className={`absolute -left-8 top-1 z-10 w-8 h-8 rounded-full flex items-center justify-center text-white ${iconBg}`}>
+                                        {React.cloneElement(icon, { className: "h-5 w-5" })}
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg shadow-md border">
+                                        <p className="text-xs text-gray-500 font-semibold">{
+                                            (() => {
+                                                const date = new Date(event.date + 'T00:00:00');
+                                                return !isNaN(date.getTime())
+                                                    ? date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })
+                                                    : 'data invalida';
+                                            })()
+                                        }</p>
+                                        <h4 className="font-bold text-gray-800 mt-1">{event.title}</h4>
+                                        <p className="text-sm text-gray-600">{event.description}</p>
+                                        {event.status && (
+                                            <div className="mt-2 flex items-center text-sm">
+                                                <span className="mr-2">{getStatusInfo(event.status).icon}</span>
+                                                <span className={`font-semibold ${getStatusInfo(event.status).color}`}>{getStatusInfo(event.status).text}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const sortOptions = [
+        { key: 'last-visit-desc', label: 'Última Visita (Recente)' },
+        { key: 'last-visit-asc', label: 'Última Visita (Antiga)' },
+        { key: 'name-asc', label: 'Nome (A-Z)' },
+        { key: 'name-desc', label: 'Nome (Z-A)' },
+    ];
+
+    const handleSortChange = (newSortOrder: 'name-asc' | 'name-desc' | 'last-visit-desc' | 'last-visit-asc') => {
+        setSortOrder(newSortOrder);
+        setIsSortDropdownOpen(false);
+    };
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'clientes':
+                return (
+                    <div
+                        className={`flex space-x-6 overflow-x-auto pb-4 ${isDraggingScroll ? 'cursor-grabbing' : 'cursor-grab'}`}
+                        ref={scrollContainerRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeave}
+                        onMouseUp={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                    >
+                        {columnsToRender
+                            .filter(c => c.visible && (columnFilter.length === 0 ? true : columnFilter.includes(c.id)))
+                            .map(column => (
+                                <KanbanColumn
+                                    key={column.id}
+                                    columnId={column.id}
+                                    title={column.title}
+                                    clients={column.clients}
+                                    icon={column.icon}
+                                    config={column}
+                                    isConfigOpen={openConfigColumnId === column.id}
+                                    onToggleConfig={handleToggleConfig}
+                                    onConfigChange={handleColumnConfigChange}
+                                    onCardClick={handleCardClick}
+                                    onDragStart={handleDragStart}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, column.id)}
+                                    onDragEnter={(e) => handleDragEnter(e, column.id)}
+                                    onDragLeave={handleDragLeave}
+                                    isDropTarget={dragOverColumnId === column.id}
+                                    draggedClientId={draggedClientId}
+                                    isIndividualPlan={isIndividualPlan}
+                                    currentUser={currentUser}
+                                    navigate={navigate}
+                                    onOpenChat={onOpenChat}
+                                    appointments={appointments}
+                                    services={services}
+                                    professionals={professionals}
+                                />
+                            ))}
+                    </div>
+                );
+            case 'agendamentos':
+                return <ClientAppointmentsView />;
+            case 'historico':
+                return <ClientCompleteHistoryView />;
+            default:
+                return null;
+        }
+    };
+
+
+    return (
+        <>
+            <div className="container mx-auto px-6 py-8">
+                {onBack && (
+                    <button onClick={onBack} className="mb-8 flex items-center text-primary hover:text-primary-dark font-semibold transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                        Voltar ao Dashboard
+                    </button>
+                )}
+
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <div className="text-center sm:text-left">
+                        <h1 className="text-3xl font-bold text-secondary">CRM</h1>
+                        <div className="flex items-center mt-1">
+                            <p className="text-gray-600">Visualize e organize o funil de clientes.</p>
+                            <div className="relative group ml-2">
+                                <InfoIcon />
+                                <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
+                                    Clientes são classificados automaticamente, mas você pode movê-los entre as colunas arrastando os cards.
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row gap-4 items-center flex-wrap">
+                    <div className="relative flex-grow w-full sm:w-auto">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <SearchIcon />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Buscar cliente..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full sm:w-64 p-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="start-date-crm" className="text-sm font-medium text-gray-700">De:</label>
+                        <input
+                            id="start-date-crm"
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-sm"
+                            aria-label="Filtrar por data de início do agendamento"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="end-date-crm" className="text-sm font-medium text-gray-700">Até:</label>
+                        <input
+                            id="end-date-crm"
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-sm"
+                            aria-label="Filtrar por data final do agendamento"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-4 sm:ml-auto">
+                        {(searchQuery || startDate || endDate) && (
+                            <button
+                                onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
+                                className="text-sm text-primary hover:underline font-semibold"
+                            >
+                                Limpar Filtros
+                            </button>
+                        )}
+                        <div ref={filterRef} className="relative group">
+                            <button
+                                type="button"
+                                onClick={() => setIsColumnFilterOpen(prev => !prev)}
+                                className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 p-2 rounded-lg flex items-center justify-center transition-colors duration-300 relative"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                {columnFilter.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
+                                        {columnFilter.length}
+                                    </span>
+                                )}
+                            </button>
+                            <div className="absolute bottom-full mb-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
+                                Colunas
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                            </div>
+                            {isColumnFilterOpen && (
+                                <div className="absolute z-20 mt-2 w-64 bg-white rounded-md shadow-lg border right-0">
+                                    <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
+                                        <p className="font-semibold text-sm">Filtrar colunas visíveis</p>
+                                        {columnsConfig.filter(c => c.visible).map(col => (
+                                            <label key={col.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-100 rounded-md">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={columnFilter.includes(col.id)}
+                                                    onChange={() => handleColumnFilterChange(col.id)}
+                                                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                                />
+                                                <span className="text-sm text-gray-700">{col.icon} {col.title}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <div className="px-4 py-2 bg-gray-50 border-t">
+                                        <button onClick={() => setColumnFilter([])} className="text-xs text-primary hover:underline">
+                                            Limpar Filtro
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div ref={sortRef} className="relative group">
+                            <button
+                                type="button"
+                                onClick={() => setIsSortDropdownOpen(prev => !prev)}
+                                className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 p-2 rounded-lg flex items-center transition-colors duration-300"
+                            >
+                                <SortIcon />
+                            </button>
+                            <div className="absolute bottom-full mb-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
+                                Ordenar
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                            </div>
+                            {isSortDropdownOpen && (
+                                <div className="absolute z-20 mt-2 w-56 bg-white rounded-md shadow-lg border right-0 animate-fade-in-down">
+                                    <div className="p-2" role="menu">
+                                        {sortOptions.map(option => (
+                                            <button
+                                                key={option.key}
+                                                onClick={() => handleSortChange(option.key as any)}
+                                                className={`w-full text-left p-2 rounded-md text-sm ${sortOrder === option.key ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+                                                role="menuitem"
+                                            >
+                                                {option.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {(currentUser?.role === 'admin' || currentUser?.role === 'Administrador' || currentUser?.role === 'Gerente') && (
+                            <div className="relative group">
+                                <button
+                                    onClick={() => setIsSettingsModalOpen(true)}
+                                    className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 p-2 rounded-lg flex items-center transition-colors duration-300 flex-shrink-0">
+                                    <SettingsIcon />
+                                </button>
+                                <div className="absolute bottom-full mb-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
+                                    Configurar
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+
+                <div className="border-b border-gray-200 mb-6">
+                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                        <TabButton tabId="clientes" label="Clientes" icon={<ClientsIcon />} />
+                        <TabButton tabId="agendamentos" label="Agendamentos" icon={<CalendarIcon />} />
+                        <TabButton tabId="historico" label="Histórico" icon={<HistoryIcon />} />
+                    </nav>
+                </div>
+
+                {renderContent()}
+
+            </div>
+            <CRMSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
+                columns={columnsConfig}
+                onSave={handleSaveSettings}
+                classifications={classifications}
+                onClassificationsChange={setClassifications}
+            />
+            <ClientDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                client={selectedClient}
+                navigate={navigate}
+                existingClients={clients}
+            />
+        </>
     );
 };
 
