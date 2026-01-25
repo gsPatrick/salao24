@@ -359,8 +359,8 @@ const mapClientFromAPI = (apiClient: any): Client => ({
 
 const mapServiceFromAPI = (apiService: any): Service => ({
     ...apiService,
-    suspended: apiService.is_suspended,
-    isFavorite: apiService.is_favorite,
+    suspended: apiService.is_suspended !== undefined ? apiService.is_suspended : apiService.suspended,
+    isFavorite: apiService.is_favorite !== undefined ? apiService.is_favorite : apiService.isFavorite,
 });
 
 const mapProfessionalFromAPI = (apiProfessional: any): Professional => ({
@@ -422,14 +422,14 @@ const mapUnitFromAPI = (apiUnit: any): Unit => ({
 
 const mapPackageFromAPI = (apiPackage: any): Package => ({
     ...apiPackage,
-    suspended: apiPackage.is_suspended,
-    isFavorite: apiPackage.is_favorite,
+    suspended: apiPackage.is_suspended !== undefined ? apiPackage.is_suspended : apiPackage.suspended,
+    isFavorite: apiPackage.is_favorite !== undefined ? apiPackage.is_favorite : apiPackage.isFavorite,
 });
 
 const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
     ...apiPlan,
-    suspended: apiPlan.is_suspended,
-    isFavorite: apiPlan.is_favorite,
+    suspended: apiPlan.is_suspended !== undefined ? apiPlan.is_suspended : apiPlan.suspended,
+    isFavorite: apiPlan.is_favorite !== undefined ? apiPlan.is_favorite : apiPlan.isFavorite,
 });
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -538,7 +538,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setErrors(prev => ({ ...prev, services: null }));
         try {
             const response = await servicesAPI.getAll();
-            setServices(response.data || []);
+            const mapped = (response.data || response || []).map(mapServiceFromAPI);
+            setServices(mapped);
         } catch (error: any) {
             console.error('Error fetching services:', error);
             setErrors(prev => ({ ...prev, services: error.message }));
