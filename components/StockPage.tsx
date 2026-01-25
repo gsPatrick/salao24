@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NewProductModal from './NewProductModal';
-import { useData } from '../contexts/DataContext';
-
-// Interfaces
-interface Product {
-    id: number;
-    name: string;
-    category: string;
-    purchaseValue: string;
-    quantity: number;
-    lowStockAlert: number;
-    suspended: boolean;
-    isFavorite?: boolean;
-}
+import { useData, Product } from '../contexts/DataContext';
 
 interface StockPageProps {
     onBack?: () => void;

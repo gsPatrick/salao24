@@ -1,30 +1,7 @@
 import React, { useState } from 'react';
 import NewProfessionalModal from './NewProfessionalModal';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useData } from '../contexts/DataContext';
-
-interface Professional {
-    id: number;
-    name: string;
-    photo: string;
-    occupation: string;
-    specialties: string[];
-    cpf: string;
-    birthdate: string;
-    phone: string;
-    email: string;
-    address: any;
-    unit: string;
-    suspended?: boolean;
-    archived?: boolean;
-    socialName?: string;
-    startTime?: string;
-    lunchStart?: string;
-    lunchEnd?: string;
-    endTime?: string;
-    allowOvertime?: boolean;
-    openSchedule?: boolean;
-}
+import { useData, Professional } from '../contexts/DataContext';
 
 interface ProfessionalsPageProps {
     onBack?: () => void;
