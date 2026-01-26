@@ -3,8 +3,34 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase URL ou ANON KEY não configurados em VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY');
+let supabaseInstance;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn('⚠️ Supabase credentials missing. Using MOCK client to prevent crash.');
+  supabaseInstance = {
+    from: () => ({
+      select: () => Promise.resolve({ data: [], error: null }),
+      insert: () => Promise.resolve({ data: [], error: null }),
+      update: () => Promise.resolve({ data: [], error: null }),
+      delete: () => Promise.resolve({ data: [], error: null }),
+      eq: function () { return this; },
+      single: function () { return this; },
+      order: function () { return this; }
+    }),
+    auth: {
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    },
+    storage: {
+      from: () => ({
+        upload: () => Promise.resolve({ data: null, error: null }),
+        getPublicUrl: () => ({ data: { publicUrl: '' } })
+      })
+    }
+  } as any;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = supabaseInstance;
