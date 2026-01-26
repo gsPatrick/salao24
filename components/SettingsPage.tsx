@@ -65,6 +65,7 @@ interface PlanSettingsProps {
     currentUser: User | null;
     onLogout: () => void;
     navigate: (page: string) => void;
+    tenant: Tenant | null;
 }
 
 // --- New Modal Component for Cancellation ---
@@ -162,12 +163,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividual
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
     const [draggedTab, setDraggedTab] = useState<string | null>(null);
 
-    const canAddMultipleUnits = currentUser?.plan &&
-        ['Empresa Essencial', 'Empresa Pro', 'Empresa Premium', 'Vitalício'].includes(currentUser.plan);
+    const currentPlanName = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
+
+    const canAddMultipleUnits = ['Empresa Essencial', 'Empresa Pro', 'Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentPlanName);
+
+    const canRegisterNewUnit = canAddMultipleUnits || units.length === 0;
 
     // Overdue Block Logic
     const isOverdue = tenant?.subscription_status === 'OVERDUE';
-    const currentPlanName = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
 
     const handleTabReorder = (dragged: string, target: string) => {
         const newOrder = [...tabOrder];
@@ -272,9 +275,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividual
             case 'conta':
                 return <AccountDataSettings t={t} onSave={() => showNotification(t('settingsAccountDataSavedSuccess'))} />;
             case 'usuario':
-                const usersToDisplay = isIndividualPlan && currentUser
-                    ? users.filter(user => user.email === currentUser.email)
-                    : users;
+                const usersToDisplay = users;
                 return (
                     <div className="animate-fade-in">
                         <div className="flex justify-between items-center mb-6">
@@ -355,12 +356,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividual
                             <div className="relative group">
                                 <button
                                     onClick={() => { setUnitToEdit(null); setIsUnitModalOpen(true); }}
-                                    disabled={!canAddMultipleUnits}
+                                    disabled={!canRegisterNewUnit}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
                                     {t('settingsUnitButtonAdd')}
                                 </button>
-                                {!canAddMultipleUnits && (
+                                {!canRegisterNewUnit && (
                                     <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
                                         {t('planEnterprise')}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
@@ -413,7 +414,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividual
             case 'visual':
                 return <SpaceSettings t={t} onSave={() => showNotification(t('settingsSpaceSavedSuccess'))} tenant={tenant} updateTenant={updateTenant} />;
             case 'plano':
-                return <PlanSettings t={t} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} />;
+                return <PlanSettings t={t} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} tenant={tenant} />;
             case 'historico':
                 return (
                     <div className="animate-fade-in">
@@ -529,6 +530,7 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
     const [phone, setPhone] = useState(tenant?.phone || '');
     const [email, setEmail] = useState(tenant?.email || '');
     const [address, setAddress] = useState(tenant?.address || { street: '', number: '', neighborhood: '', city: '', state: '', cep: '' });
+    const [termsAndConditions, setTermsAndConditions] = useState(tenant?.termsAndConditions || '');
 
     const handleLogoButtonClick = () => {
         logoFileInputRef.current?.click();
@@ -551,7 +553,7 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
     const [cancelAdvanceNotice, setCancelAdvanceNotice] = useState(tenant?.settings?.cancel_advance_notice || 24);
     const [notifications, setNotifications] = useState(tenant?.settings?.notifications || { whatsapp: true, email: true });
 
-    const [workingHours, setWorkingHours] = useState<WorkingHour[]>(tenant?.working_hours || [
+    const [workingHours, setWorkingHours] = useState<WorkingHour[]>(Array.isArray(tenant?.working_hours) ? tenant.working_hours : [
         { day: 'Segunda-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
         { day: 'Terça-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
         { day: 'Quarta-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
@@ -575,7 +577,8 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
             setPhone(tenant.phone || '');
             setEmail(tenant.email || '');
             if (tenant.address) setAddress(tenant.address);
-            if (tenant.working_hours) setWorkingHours(tenant.working_hours);
+            if (Array.isArray(tenant.working_hours)) setWorkingHours(tenant.working_hours);
+            setTermsAndConditions(tenant.termsAndConditions || '');
             setSavedCheckinMessage(tenant.checkin_message || '');
             setEditableCheckinMessage(tenant.checkin_message || '');
 
@@ -598,6 +601,7 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
             primary_color: primaryColor,
             working_hours: workingHours,
             checkin_message: savedCheckinMessage,
+            terms_and_conditions: termsAndConditions,
             settings: {
                 ...tenant?.settings,
                 appointment_interval: appointmentInterval,
@@ -797,6 +801,22 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                 )}
             </div>
 
+            {/* Terms and Conditions (New) */}
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 className="text-xl font-bold text-secondary">Termos e Condições do Salão</h2>
+                <p className="text-gray-500 text-sm mb-6">Defina o termo principal que seus clientes devem aceitar.</p>
+                <div className="space-y-4">
+                    <textarea
+                        value={termsAndConditions}
+                        onChange={e => setTermsAndConditions(e.target.value)}
+                        rows={10}
+                        className="mt-1 w-full p-3 border border-gray-300 rounded-md shadow-sm font-serif"
+                        placeholder="Escreva aqui o contrato ou termo de uso do seu salão..."
+                    />
+                    <p className="text-xs text-gray-500 italic">Este termo será exibido automaticamente para novos clientes durante o cadastro ou agendamento.</p>
+                </div>
+            </div>
+
             {/* Global Save Button */}
             <div className="sticky bottom-6 flex justify-end">
                 <button
@@ -926,7 +946,7 @@ const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => 
     );
 };
 
-const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, currentUser, onLogout, navigate }) => {
+const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, currentUser, onLogout, navigate, tenant }) => {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     const invoices = [
@@ -944,12 +964,12 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
         'Empresa': { name: t('pricingEnterprisePlanName'), desc: t('pricingEnterprisePlanDesc') },
     };
 
-    const planKey = currentUser?.plan || 'Individual';
-    const currentPlanName = planDetailsMap[planKey as keyof typeof planDetailsMap]?.name || 'Plano não especificado';
-    const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || '';
+    const planKey = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
+    const currentPlanName = planKey;
+    const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || (tenant?.plan?.name ? `Acesso ao plano ${tenant.plan.name}` : '');
     const businessSegmentLabel = currentUser?.businessSegmentLabel;
 
-    const canUpgrade = !['Empresa Premium', 'Vitalício'].includes(planKey);
+    const canUpgrade = !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(planKey);
 
     const handleCancelSubscription = () => {
         setIsCancelModalOpen(true);
@@ -1168,12 +1188,12 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 <div className="mt-4 space-y-4">
                     <div className="flex justify-between items-center p-3 bg-light rounded-md">
                         <span className="font-medium text-gray-700">{t('nextBillingDateLabel')}:</span>
-                        <span className="font-bold text-secondary">01/11/2024</span>
+                        <span className="font-bold text-secondary">{tenant?.nextBillingDate ? new Date(tenant.nextBillingDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-light rounded-md">
                         <span className="font-medium text-gray-700">{t('paymentMethodLabel')}:</span>
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-secondary">Cartão de Crédito final **** 4242</span>
+                            <span className="font-bold text-secondary">{tenant?.asaas_customer_id ? 'Gateway de Pagamento Asaas' : 'Não configurado'}</span>
                             <button onClick={() => navigate('updatePaymentMethod')} className="text-xs text-primary hover:underline">{t('changePaymentMethodButton')}</button>
                         </div>
                     </div>
@@ -1192,18 +1212,26 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {invoices.map((invoice, index) => (
-                                    <tr key={index}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{invoice.date}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{invoice.value}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{t('invoiceStatusPaid')}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="#" onClick={e => { e.preventDefault(); handleDownloadInvoice(invoice); }} className="text-primary hover:text-primary-dark">{t('downloadInvoice')}</a>
-                                        </td>
+                                {tenant?.invoices && tenant.invoices.length > 0 ? (
+                                    tenant.invoices.map((invoice: any, index: number) => (
+                                        <tr key={index}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{new Date(invoice.date).toLocaleDateString('pt-BR')}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">R$ {invoice.value}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                    {invoice.status === 'paid' ? t('invoiceStatusPaid') : invoice.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <a href="#" onClick={e => { e.preventDefault(); handleDownloadInvoice(invoice); }} className="text-primary hover:text-primary-dark">{t('downloadInvoice')}</a>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-10 text-center text-gray-500">{t('noInvoicesFound') || 'Nenhuma fatura encontrada.'}</td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>

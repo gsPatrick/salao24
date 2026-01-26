@@ -5,7 +5,7 @@ import DirectMailDetailsModal from './DirectMailDetailsModal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Client, DirectMailCampaignData } from '../types';
 import ScheduleSettingsModal, { Schedule } from './ScheduleSettingsModal';
-import { GoogleGenAI } from '@google/genai';
+
 // FIX: Add missing imports for DirectMailCampaign and EmailServerSettings.
 import { DirectMailCampaign } from './DirectMailCampaign';
 import { EmailServerSettings } from './EmailServerSettings';
@@ -355,10 +355,10 @@ const NewCampaignModal: React.FC<{
         if (!messageText.trim()) { alert('Por favor, escreva um texto antes de pedir para a IA melhorar.'); return; }
         setIsImprovingText(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '' });
-            const prompt = `Você é um especialista em marketing para salões de beleza. Melhore a seguinte mensagem para ser mais engajadora, persuasiva e profissional. Mantenha a mensagem central, mas aprimore a redação. Retorne apenas o texto melhorado em português do Brasil. A mensagem é: "${messageText}"`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setMessageText(response.text);
+            const response = await aiAPI.improveText(messageText);
+            if (response && response.text) {
+                setMessageText(response.text);
+            }
         } catch (error) { console.error("Erro ao melhorar o texto com IA:", error); alert("Ocorreu um erro ao tentar melhorar o texto. Tente novamente."); }
         finally { setIsImprovingText(false); }
     };

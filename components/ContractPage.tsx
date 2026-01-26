@@ -1,114 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData, ContractTemplate } from '../contexts/DataContext';
 import AddDocumentModal from './AddDocumentModal';
-import { contractsAPI } from '../lib/api';
-// --- Interfaces ---
-
-// Interface para os modelos de documento
-interface DocumentTemplate {
-    id: number;
-    name: string;
-    type: 'Contrato' | 'Termo';
-    content: string;
-    logo?: string | null;
-}
-
-interface Contract {
-    planName: string;
-    price: string;
-    date: string;
-    contractText: string;
-    signatureImg: string;
-    userPhoto: string;
-    userName: string;
-    userCpf: string;
-}
-
-interface User {
-    name: string;
-    email: string;
-    avatarUrl: string;
-    contracts?: Contract[];
-}
 
 interface ContractPageProps {
     onBack?: () => void;
-    currentUser: User | null;
 }
 
-// Default document templates (previously from mockData)
-export const defaultContractsAndTerms: DocumentTemplate[] = [
-    {
-        id: 1,
-        name: 'Contrato Padrão de Serviços',
-        type: 'Contrato',
-        content: 'Este contrato estabelece os termos e condições para a prestação de serviços de beleza entre o salão e o cliente...',
-        logo: null,
-    },
-    {
-        id: 2,
-        name: 'Termo de Responsabilidade para Procedimentos Químicos',
-        type: 'Termo',
-        content: 'Eu, [NOME DO CLIENTE], CPF [CPF DO CLIENTE], declaro estar ciente dos riscos associados a procedimentos químicos...',
-        logo: null,
-    },
-];
-
-// --- Icons ---
 const DocumentAddIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 
-
-const ContractPage: React.FC<ContractPageProps> = ({ onBack, currentUser }) => {
+const ContractPage: React.FC<ContractPageProps> = ({ onBack }) => {
     const { t } = useLanguage();
+    const {
+        contractTemplates: customDocuments,
+        saveContractTemplate,
+        deleteContractTemplate
+    } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'Contrato' | 'Termo'>('Contrato');
-    const [documentToEdit, setDocumentToEdit] = useState<DocumentTemplate | null>(null);
-    const [customDocuments, setCustomDocuments] = useState<DocumentTemplate[]>([]);
+    const [documentToEdit, setDocumentToEdit] = useState<ContractTemplate | null>(null);
 
-    useEffect(() => {
-        loadTemplates();
-    }, []);
-
-    const loadTemplates = async () => {
-        try {
-            const data = await contractsAPI.list();
-            setCustomDocuments(data);
-        } catch (error) {
-            console.error('Error loading templates:', error);
-        }
-    };
-
-    const handleOpenModal = (type: 'Contrato' | 'Termo', doc: DocumentTemplate | null = null) => {
+    const handleOpenModal = (type: 'Contrato' | 'Termo', doc: ContractTemplate | null = null) => {
         setModalType(type);
         setDocumentToEdit(doc);
         setIsModalOpen(true);
     };
 
     const handleSaveDocument = async (data: { title: string; content: string; logo: string | null }) => {
-        try {
-            if (documentToEdit) { // Editing
-                await contractsAPI.update(documentToEdit.id, { title: data.title, content: data.content });
-            } else { // Creating new
-                await contractsAPI.create({ title: data.title, type: modalType, content: data.content });
-            }
-            await loadTemplates();
+        const success = await saveContractTemplate({
+            id: documentToEdit?.id,
+            name: data.title,
+            type: modalType,
+            content: data.content
+        });
+
+        if (success) {
             setIsModalOpen(false);
             setDocumentToEdit(null);
-        } catch (error) {
-            console.error('Error saving document:', error);
+        } else {
             alert('Erro ao salvar documento. Tente novamente.');
         }
     };
 
     const handleDeleteDocument = async (docId: number) => {
         if (window.confirm(t('confirmAction') + ' ' + t('irreversibleAction'))) {
-            try {
-                await contractsAPI.delete(docId);
-                await loadTemplates();
-            } catch (error) {
-                console.error('Error deleting document:', error);
+            const success = await deleteContractTemplate(docId);
+            if (!success) {
                 alert('Erro ao excluir documento.');
             }
         }

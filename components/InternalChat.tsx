@@ -121,7 +121,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
         if (!selectedUser) return;
         setAiActiveStatus(prev => ({
             ...prev,
-            [selectedUser.id]: !(prev[selectedUser.id] ?? true)
+            [selectedUser.id]: !(prev[selectedUser.id] ?? false)
         }));
     };
 
@@ -136,7 +136,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
         e.preventDefault();
         if ((!inputValue.trim() && !attachment) || !selectedUser) return;
 
-        const isAiActive = aiActiveStatus[selectedUser.id] ?? true;
+        const isAiActive = aiActiveStatus[selectedUser.id] ?? false;
         if (isAiActive) return;
 
         const currentInputValue = inputValue;
@@ -217,7 +217,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-sm font-semibold transition-colors ${aiActiveStatus[selectedUser.id] ?? true ? 'text-primary' : 'text-gray-400'}`}>
+                                    <span className={`text-sm font-semibold transition-colors ${aiActiveStatus[selectedUser.id] ?? false ? 'text-primary' : 'text-gray-400'}`}>
                                         Agente IA
                                     </span>
                                     <label htmlFor={`ai-toggle-${selectedUser.id}`} className="relative inline-flex items-center cursor-pointer">
@@ -225,7 +225,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
                                             type="checkbox"
                                             id={`ai-toggle-${selectedUser.id}`}
                                             className="sr-only peer"
-                                            checked={aiActiveStatus[selectedUser.id] ?? true}
+                                            checked={aiActiveStatus[selectedUser.id] ?? false}
                                             onChange={handleToggleAi}
                                         />
                                         <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
@@ -275,7 +275,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        disabled={aiActiveStatus[selectedUser.id] ?? true}
+                                        disabled={aiActiveStatus[selectedUser.id] ?? false}
                                         className="p-3 rounded-full text-gray-500 hover:bg-gray-200 transition-colors disabled:text-gray-300 disabled:cursor-not-allowed"
                                         aria-label="Anexar arquivo"
                                     >
@@ -287,11 +287,11 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
                                         type="text"
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder={(aiActiveStatus[selectedUser.id] ?? true) ? "Agente IA está respondendo..." : "Digite sua mensagem..."}
+                                        placeholder={(aiActiveStatus[selectedUser.id] ?? false) ? "Agente IA está respondendo..." : "Digite sua mensagem..."}
                                         className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-gray-100"
-                                        disabled={aiActiveStatus[selectedUser.id] ?? true}
+                                        disabled={aiActiveStatus[selectedUser.id] ?? false}
                                     />
-                                    <button type="submit" className="bg-primary hover:bg-primary-dark text-white p-3 rounded-full transition-colors disabled:bg-gray-400" disabled={(aiActiveStatus[selectedUser.id] ?? true) || (!inputValue.trim() && !attachment)}>
+                                    <button type="submit" className="bg-primary hover:bg-primary-dark text-white p-3 rounded-full transition-colors disabled:bg-gray-400" disabled={(aiActiveStatus[selectedUser.id] ?? false) || (!inputValue.trim() && !attachment)}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transform rotate-90" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
                                     </button>
                                 </form>

@@ -111,32 +111,52 @@ const App: React.FC = () => {
     return { appointments: 0, messages: count }; // TODO: Separate appointment notifications
   }, [contextNotifications]);
 
-  const [selectedUnit, setSelectedUnit] = useState('Unidade Matriz');
-  const [systemUsers, setSystemUsers] = useState<User[]>([]); // Removed usePersistentState
+  const [selectedUnit, setSelectedUnit] = useState('Carregando...');
+  const [systemUsers, setSystemUsers] = useState<User[]>([]);
+  const [allData, setAllData] = useState<any>({});
 
-  // Construct allData for Dashboard compatibility
-  const allData = useMemo(() => {
-    // Create an object where the key is the selectedUnit (or all units)
-    // For now, we map all data to the currently selected unit for simplicity, 
-    // or we creates keys for each unit if we had unit IDs.
-    return {
-      [selectedUnit]: {
-        clients: clients,
-        professionals: professionals,
-        services: services,
-        packages: [], // Add packages to DataContext if needed
-        plans: [], // Add plans to DataContext if needed
-        products: products,
-        transactions: transactions,
-        appointments: appointments,
-        marketingCampaigns: [], // Add to DataContext
-        directMailCampaigns: [],
-        acquisitionChannels: [],
+  // Sync selectedUnit and allData with real units from DataContext
+  useEffect(() => {
+    if (Array.isArray(units) && units.length > 0) {
+      const unitNames = units.map(u => u.name);
+
+      // Update selectedUnit if needed
+      if (selectedUnit === 'Carregando...' || !unitNames.includes(selectedUnit)) {
+        setSelectedUnit(units[0].name);
       }
-    };
-  }, [selectedUnit, clients, professionals, services, products, transactions, appointments]);
 
-  const currentUnitData = allData[selectedUnit];
+      // Initialize or update allData structure for all units
+      setAllData((prev: any) => {
+        const newData = { ...prev };
+        units.forEach(unit => {
+          if (!newData[unit.name]) {
+            newData[unit.name] = {
+              clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
+              transactions: [], appointments: [], marketingCampaigns: [], directMailCampaigns: [],
+              acquisitionChannels: [], unitDetails: unit
+            };
+          }
+          // Merge base context data into each unit (currently sharing global data)
+          newData[unit.name] = {
+            ...newData[unit.name],
+            clients, professionals, services, products, transactions, appointments,
+            unitDetails: unit
+          };
+        });
+        return newData;
+      });
+    } else if (Array.isArray(units) && units.length === 0) {
+      if (selectedUnit === 'Carregando...') {
+        setSelectedUnit('Unidade Principal');
+      }
+    }
+  }, [units, clients, professionals, services, products, transactions, appointments]);
+
+  const currentUnitData = allData[selectedUnit] || {
+    clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
+    transactions: [], appointments: [], marketingCampaigns: [], directMailCampaigns: [],
+    acquisitionChannels: []
+  };
 
   // --- Data Handlers ---
   const {
@@ -440,7 +460,7 @@ const App: React.FC = () => {
             selectedUnit={selectedUnit}
             onUnitChange={setSelectedUnit}
             allData={allData}
-            setAllData={() => { }}
+            setAllData={setAllData}
             users={systemUsers}
             onUsersChange={handleUsersChange}
             onSuspendAcquisitionChannel={handleSuspendAcquisitionChannel}
@@ -468,8 +488,21 @@ const App: React.FC = () => {
         id: -1,
         name: currentUser?.name || 'Administrador',
         email: currentUser?.email || '',
+        photo: currentUser?.avatarUrl || 'https://i.pravatar.cc/150?u=admin',
         phone: '',
-        tenant_id: currentUser?.tenant_id
+        tenant_id: currentUser?.tenant_id,
+        history: [],
+        packages: [],
+        procedurePhotos: [],
+        documents: [],
+        address: {
+          cep: '',
+          street: '',
+          number: '',
+          neighborhood: '',
+          city: '',
+          state: ''
+        }
       } as any : null);
 
       if (clientToDisplay) {

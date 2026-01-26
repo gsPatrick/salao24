@@ -16,7 +16,8 @@ import {
     paymentsAPI,
     promotionsAPI,
     packagesAPI,
-    salonPlansAPI
+    salonPlansAPI,
+    contractsAPI
 } from '../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -43,6 +44,8 @@ export interface Client {
     documents?: any[];
     address?: any;
     tags?: string[];
+    reminders?: any[];
+    relationships?: any[];
     crmColumnId?: string;
     crmData?: any;
     [key: string]: any;
@@ -146,6 +149,14 @@ export interface Transaction {
     [key: string]: any;
 }
 
+export interface ContractTemplate {
+    id: number;
+    name: string;
+    type: 'Contrato' | 'Termo';
+    content: string;
+    logo?: string | null;
+}
+
 export interface SystemUser {
     id: number;
     name: string;
@@ -163,12 +174,17 @@ export interface Tenant {
     description?: string;
     logo_url?: string;
     primary_color?: string;
+    primaryColor?: string;
     working_hours?: any;
     checkin_message?: string;
     address?: any;
     phone?: string;
     email?: string;
     cnpj_cpf?: string;
+    termsAndConditions?: string;
+    nextBillingDate?: string;
+    trialEndsAt?: string;
+    subscriptionStatus?: string;
     settings?: {
         bank_info?: any;
         appointment_interval?: number;
@@ -230,6 +246,7 @@ export interface DataContextType {
     promotions: any[];
     packages: Package[];
     salonPlans: SalonPlan[];
+    contractTemplates: ContractTemplate[];
     serviceCategories: string[];
 
     // Loading states
@@ -246,6 +263,7 @@ export interface DataContextType {
         crmSettings: boolean;
         promotions: boolean;
         packages: boolean;
+        contractTemplates: boolean;
         salonPlans: boolean;
     };
 
@@ -263,6 +281,7 @@ export interface DataContextType {
         crmSettings: string | null;
         promotions: string | null;
         packages: string | null;
+        contractTemplates: string | null;
         salonPlans: string | null;
     };
 
@@ -276,6 +295,7 @@ export interface DataContextType {
     refreshTenant: () => Promise<void>;
     refreshUnits: () => Promise<void>;
     refreshProducts: () => Promise<void>;
+    refreshContractTemplates: () => Promise<void>;
     refreshCrmSettings: () => Promise<void>;
     refreshPromotions: () => Promise<void>;
     refreshPackages: () => Promise<void>;
@@ -290,6 +310,9 @@ export interface DataContextType {
     suspendProfessional: (id: number) => Promise<Professional | null>;
     archiveProfessional: (id: number) => Promise<Professional | null>;
     deleteProfessional: (id: number) => Promise<boolean>;
+
+    saveContractTemplate: (template: Partial<ContractTemplate>) => Promise<ContractTemplate | null>;
+    deleteContractTemplate: (id: number) => Promise<boolean>;
 
     saveService: (service: Partial<Service>) => Promise<Service | null>;
     deleteService: (id: number) => Promise<boolean>;
@@ -364,20 +387,23 @@ const mapClientFromAPI = (apiClient: any): Client => ({
     birthdate: apiClient.birth_date || apiClient.birthdate,
     howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
     // Map snake_case to camelCase
-    lastVisit: apiClient.last_visit_at,
+    lastVisit: apiClient.last_visit || apiClient.last_visit_at,
     totalVisits: apiClient.total_visits || 0,
     registrationDate: apiClient.created_at,
+    maritalStatus: apiClient.marital_status,
     history: apiClient.history || [],
     packages: apiClient.packages || [],
     procedurePhotos: apiClient.procedure_photos || [],
     documents: apiClient.documents || [],
     preferences: apiClient.preferences || [],
+    additionalPhones: apiClient.additional_phones || [],
+    reminders: apiClient.reminders || [],
+    relationships: apiClient.relationships || [],
     tags: apiClient.tags || [],
     crmColumnId: apiClient.crm_column_id,
     crmData: apiClient.crm_data,
     isActive: apiClient.is_active,
-    // Add logic for blocked if needed, but since we don't have it in DB, let's keep it as is or map it if it exists
-    blocked: apiClient.blocked || { status: false, reason: '' },
+    blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
 });
 
 const mapServiceFromAPI = (apiService: any): Service => ({
@@ -428,11 +454,24 @@ const mapProductFromAPI = (apiProduct: any): Product => ({
     suspended: apiProduct.is_suspended !== undefined ? apiProduct.is_suspended : apiProduct.suspended,
 });
 
+const mapUserFromAPI = (apiUser: any): SystemUser => ({
+    ...apiUser,
+    avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
+    suspended: apiUser.is_active === false,
+});
+
 const mapTenantFromAPI = (apiTenant: any): Tenant => ({
     ...apiTenant,
+    description: apiTenant.description,
+    primaryColor: apiTenant.primary_color || apiTenant.primaryColor,
+    primary_color: apiTenant.primary_color || apiTenant.primary_color,
     cnpj_cpf: apiTenant.cnpj_cpf,
     working_hours: apiTenant.business_hours || apiTenant.working_hours,
     checkin_message: apiTenant.checkin_message,
+    termsAndConditions: apiTenant.terms_and_conditions,
+    nextBillingDate: apiTenant.next_billing_date,
+    trialEndsAt: apiTenant.trial_ends_at,
+    subscriptionStatus: apiTenant.subscription_status,
 });
 
 const mapUnitFromAPI = (apiUnit: any): Unit => ({
@@ -456,6 +495,14 @@ const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
     isFavorite: apiPlan.is_favorite !== undefined ? apiPlan.is_favorite : apiPlan.isFavorite,
 });
 
+const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
+    id: apiTemplate.id,
+    name: apiTemplate.name,
+    type: apiTemplate.type,
+    content: apiTemplate.content,
+    logo: apiTemplate.logo || null
+});
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { isAuthenticated } = useAuth();
 
@@ -469,6 +516,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [tenant, setTenant] = useState<Tenant | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
+    const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([]);
     const [crmSettings, setCrmSettings] = useState<CrmSettings | null>(null);
     const [promotions, setPromotions] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -500,6 +548,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tenant: false,
         units: false,
         products: false,
+        contractTemplates: false,
         crmSettings: false,
         promotions: false,
         packages: false,
@@ -520,6 +569,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         crmSettings: null as string | null,
         promotions: null as string | null,
         packages: null as string | null,
+        contractTemplates: null as string | null,
         salonPlans: null as string | null,
     });
 
@@ -610,7 +660,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(prev => ({ ...prev, users: true }));
         try {
             const response = await usersAPI.getAll();
-            setUsers(response.data || []);
+            const mapped = (response.data || []).map(mapUserFromAPI);
+            setUsers(mapped);
         } catch (error: any) {
             console.error('Error fetching users:', error);
             setErrors(prev => ({ ...prev, users: error.message }));
@@ -732,6 +783,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [isAuthenticated]);
 
+    const refreshContractTemplates = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, contractTemplates: true }));
+        try {
+            const response = await contractsAPI.list();
+            setContractTemplates(response.map(mapContractTemplateFromAPI));
+            setErrors(prev => ({ ...prev, contractTemplates: null }));
+        } catch (err: any) {
+            console.error('Error fetching contract templates:', err);
+            setErrors(prev => ({ ...prev, contractTemplates: err.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, contractTemplates: false }));
+        }
+    }, [isAuthenticated]);
+
     const refreshAll = useCallback(async () => {
         await Promise.all([
             refreshClients(),
@@ -748,8 +814,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             refreshPromotions(),
             refreshPackages(),
             refreshSalonPlans(),
+            refreshContractTemplates(),
         ]);
-    }, [refreshClients, refreshProfessionals, refreshServices, refreshAppointments, refreshTransactions, refreshUsers, refreshTenant, refreshUnits, refreshProducts, refreshCrmSettings, refreshNotifications, refreshPromotions, refreshPackages, refreshSalonPlans]);
+    }, [refreshClients, refreshProfessionals, refreshServices, refreshAppointments, refreshTransactions, refreshUsers, refreshTenant, refreshUnits, refreshProducts, refreshCrmSettings, refreshNotifications, refreshPromotions, refreshPackages, refreshSalonPlans, refreshContractTemplates]);
 
     // Initial data fetch when authenticated
     useEffect(() => {
@@ -768,6 +835,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 birth_date: client.birthdate,
                 photo_url: client.photo,
                 how_found_us: client.howTheyFoundUs,
+                marital_status: client.maritalStatus,
+                procedure_photos: client.procedurePhotos,
+                additional_phones: client.additionalPhones,
+                reminders: client.reminders,
+                relationships: client.relationships,
+                last_visit: client.lastVisit,
+                total_visits: client.totalVisits,
+                status: client.blocked?.status ? 'blocked' : client.status,
+                blocked_reason: client.blocked?.reason || client.blockReason,
                 is_active: client.isActive ?? true,
             };
 
@@ -856,6 +932,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return true;
         } catch (error) {
             console.error('Error deleting professional:', error);
+            return false;
+        }
+    };
+
+    const saveContractTemplate = async (template: Partial<ContractTemplate>): Promise<ContractTemplate | null> => {
+        try {
+            const apiData = {
+                title: template.name,
+                type: template.type,
+                content: template.content
+            };
+            let response;
+            if (template.id) {
+                response = await contractsAPI.update(template.id, apiData as any);
+            } else {
+                response = await contractsAPI.create(apiData as any);
+            }
+            await refreshContractTemplates();
+            return mapContractTemplateFromAPI(response);
+        } catch (error) {
+            console.error('Error saving contract template:', error);
+            return null;
+        }
+    };
+
+    const deleteContractTemplate = async (id: number): Promise<boolean> => {
+        try {
+            await contractsAPI.delete(id);
+            await refreshContractTemplates();
+            return true;
+        } catch (error) {
+            console.error('Error deleting contract template:', error);
             return false;
         }
     };
@@ -1138,19 +1246,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const saveUser = async (user: Partial<SystemUser>): Promise<SystemUser | null> => {
         try {
             // Map frontend fields to API fields
-            const apiData = {
+            const apiData: any = {
                 ...user,
                 avatar_url: user.avatarUrl,
             };
 
+            // Map suspended to is_active (backend name)
+            if (user.suspended !== undefined) {
+                apiData.is_active = !user.suspended;
+            } else if (user.id === undefined) {
+                apiData.is_active = true; // Default for new users
+            }
+
+            // Normalize role to lowercase backend version
+            if (user.role) {
+                const roleMap: { [key: string]: string } = {
+                    'Administrador': 'admin',
+                    'Gerente': 'gerente',
+                    'Profissional': 'profissional',
+                    'Concierge': 'recepcao',
+                    'admin': 'admin',
+                    'gerente': 'gerente',
+                    'profissional': 'profissional',
+                    'recepcao': 'recepcao'
+                };
+                apiData.role = roleMap[user.role] || user.role.toLowerCase();
+            }
+
             let response;
             if (user.id) {
-                response = await usersAPI.update(user.id, apiData);
+                // Update: use spread to avoid sending frontend-only fields that might cause 400
+                const { avatarUrl, suspended, ...cleanData } = apiData;
+                response = await usersAPI.update(user.id, cleanData);
             } else {
                 response = await usersAPI.create(apiData);
             }
+
             await refreshUsers();
-            return response.data;
+            const savedUser = mapUserFromAPI(response.data || response);
+
+            // If the user being edited is the current user, we might need a profile refresh
+            // But usually this is for OTHER users in Settings.
+
+            return savedUser;
         } catch (error) {
             console.error('Error saving user:', error);
             return null;
@@ -1405,6 +1543,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 services,
                 appointments,
                 transactions,
+                users,
+                tenant,
+                units,
+                products,
+                contractTemplates,
+                crmSettings,
+                promotions,
+                packages,
+                salonPlans,
+                serviceCategories,
                 loading,
                 errors,
                 refreshClients,
@@ -1412,6 +1560,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 refreshServices,
                 refreshAppointments,
                 refreshTransactions,
+                refreshUsers,
+                refreshTenant,
+                refreshUnits,
+                refreshProducts,
+                refreshContractTemplates,
+                refreshCrmSettings,
+                refreshPromotions,
+                refreshPackages,
+                refreshSalonPlans,
                 refreshAll,
                 saveClient,
                 deleteClient,
@@ -1419,54 +1576,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 suspendProfessional,
                 archiveProfessional,
                 deleteProfessional,
+                saveContractTemplate,
+                deleteContractTemplate,
                 saveService,
                 deleteService,
                 toggleSuspendService,
                 toggleFavoriteService,
+                addServiceCategory,
+                updateServiceCategory,
+                deleteServiceCategory,
                 saveAppointment,
                 updateAppointmentStatus,
                 cancelAppointment,
                 saveTransaction,
                 deleteTransaction,
-                users,
-                tenant,
-                refreshUsers,
-                refreshTenant,
                 saveUser,
                 deleteUser,
                 updateTenant,
                 uploadTenantLogo,
-                units,
-                refreshUnits,
                 saveUnit,
                 deleteUnit,
-                products,
-                refreshProducts,
                 saveProduct,
                 deleteProduct,
                 toggleSuspendProduct,
                 updateStockQuantity,
                 toggleFavoriteProduct,
-                crmSettings,
-                refreshCrmSettings,
                 updateCrmSettings,
                 updateClientCrm,
-                getClientById,
-                getProfessionalById,
-                getServiceById,
-                selectedUnitId,
-                setSelectedUnitId,
-                subscribeToPlan,
-                promotions,
-                refreshPromotions,
                 savePromotion,
                 deletePromotion,
                 togglePromotion,
-                packages,
-                salonPlans,
-                serviceCategories,
-                refreshPackages,
-                refreshSalonPlans,
                 savePackage,
                 deletePackage,
                 toggleSuspendPackage,
@@ -1475,9 +1614,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 deleteSalonPlan,
                 toggleSuspendSalonPlan,
                 toggleFavoriteSalonPlan,
-                addServiceCategory,
-                updateServiceCategory,
-                deleteServiceCategory,
+                getClientById,
+                getProfessionalById,
+                getServiceById,
+                selectedUnitId,
+                setSelectedUnitId,
+                subscribeToPlan,
             }}
         >
             {children}

@@ -1,23 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData, Client as DataContextClient } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
-
-interface Reminder {
-    id: number;
-    subject: string;
-    text: string;
-    dateTime: string;
-    status: 'pending' | 'completed';
-}
 import SignatureModal from './SignatureModal';
 
 declare var jspdf: any;
 
 // --- Interfaces ---
-import { Client as DataContextClient } from '../contexts/DataContext';
-
-// --- Interfaces ---
-export interface ClientHistory {
+interface ClientHistory {
     id: number;
     name: string;
     date: string;
@@ -28,13 +18,13 @@ export interface ClientHistory {
     price: string;
 }
 
-export interface ClientPackage {
+interface ClientPackage {
     name: string;
     totalSessions: number;
     completedSessions: number;
 }
 
-export interface ClientDocument {
+interface ClientDocument {
     id?: number;
     name: string;
     signed: boolean;
@@ -44,27 +34,20 @@ export interface ClientDocument {
     userPhoto?: string;
 }
 
-// Extend DataContext Client to include specific frontend types if needed, or just use it.
-// For now, we will use an intersection or just rely on the fact that they are compatible enough
-// but we need to strictly type history for this specific component to work with its existing logic.
-interface Client extends Omit<DataContextClient, 'history' | 'documents' | 'packages'> {
+interface Reminder {
+    id: number;
+    subject: string;
+    text: string;
+    dateTime: string;
+    status: 'pending' | 'completed';
+}
+
+type Client = DataContextClient & {
     history: ClientHistory[];
     documents: ClientDocument[];
     packages: ClientPackage[];
-    relationships?: { type: string; clientId: number; }[];
     reminders?: Reminder[];
-    blocked?: {
-        status: boolean;
-        reason: string;
-    };
-    // Add other missing fields if necessary
-    status?: string; // DataContext has string | undefined
-    password?: string;
-    preferredUnit?: string;
-    maritalStatus?: string;
-    rg?: string;
-    servicesOfInterest?: string[];
-}
+};
 
 interface ClientDetailModalProps {
     isOpen: boolean;
@@ -131,6 +114,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock }) => {
     const { t } = useLanguage();
+    const { saveClient } = useData();
     const [isExiting, setIsExiting] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [activeSubTab, setActiveSubTab] = useState('servicos');

@@ -3053,14 +3053,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const handleBlockClientDashboard = async (clientId: number, reason: string) => {
         const client = clients.find(c => c.id === clientId);
         if (client) {
-            await saveClient({ ...client, blocked: true, blockReason: reason });
+            await saveClient({ ...client, blocked: { status: true, reason } });
         }
     };
 
     const handleUnblockClientDashboard = async (clientId: number) => {
         const client = clients.find(c => c.id === clientId);
         if (client) {
-            await saveClient({ ...client, blocked: false, blockReason: '' });
+            await saveClient({ ...client, blocked: { status: false, reason: '' } });
         }
     };
 
@@ -3444,16 +3444,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const handleSuspendService = async (id: number) => {
         await toggleSuspendService(id);
     };
-    const handleDeletePackage = (id: number) => handlePackagesChange(currentUnitData.packages.filter((p: any) => p.id !== id));
-    const handleSuspendPackage = (id: number) => handlePackagesChange(currentUnitData.packages.map((p: any) => p.id === id ? { ...p, suspended: !p.suspended } : p));
-    const handleDeletePlan = (id: number) => handlePlansChange(currentUnitData.plans.filter((p: any) => p.id !== id));
-    const handleSuspendPlan = (id: number) => handlePlansChange(currentUnitData.plans.map((p: any) => p.id === id ? { ...p, suspended: !p.suspended } : p));
+    const handleDeletePackage = (id: number) => handlePackagesChange((currentUnitData?.packages || []).filter((p: any) => p.id !== id));
+    const handleSuspendPackage = (id: number) => handlePackagesChange((currentUnitData?.packages || []).map((p: any) => p.id === id ? { ...p, suspended: !p.suspended } : p));
+    const handleDeletePlan = (id: number) => handlePlansChange((currentUnitData?.plans || []).filter((p: any) => p.id !== id));
+    const handleSuspendPlan = (id: number) => handlePlansChange((currentUnitData?.plans || []).map((p: any) => p.id === id ? { ...p, suspended: !p.suspended } : p));
 
     const [serviceCategories, setServiceCategories] = useState<string[]>([]);
     useEffect(() => {
-        const uniqueCategories = [...new Set(currentUnitData.services.map((s: Service) => s.category))];
+        const uniqueCategories = [...new Set((currentUnitData?.services || []).map((s: Service) => s.category))];
         setServiceCategories(uniqueCategories.sort());
-    }, [currentUnitData.services]);
+    }, [currentUnitData?.services]);
 
     const handleAddServiceCategory = (newCategory: string) => {
         const trimmedCategory = newCategory.trim();

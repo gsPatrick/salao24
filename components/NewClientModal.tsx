@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import SignatureModal from './SignatureModal';
 import HairStyleTestModal from './HairStyleTestModal';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useData, Service } from '../contexts/DataContext';
-import { defaultContractsAndTerms } from './ContractPage';
+import { useData, Service, ContractTemplate } from '../contexts/DataContext';
 
 interface ClientDocument {
   id: number;
@@ -132,7 +131,7 @@ const initialFormData = {
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, existingClients, clientToEdit, acquisitionChannels, isIndividualPlan, onComingSoon }) => {
   const { t } = useLanguage();
-  const { services: contextServices } = useData();
+  const { services: contextServices, contractTemplates } = useData();
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<{ [key: string]: any }>({});
   const [useSocialName, setUseSocialName] = useState(false);
@@ -631,7 +630,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     setSelectedDocument(null);
     if (query.length > 1) {
       setDocumentSearchResults(
-        defaultContractsAndTerms.filter(
+        contractTemplates.filter(
           doc => doc.name.toLowerCase().includes(query)
         )
       );

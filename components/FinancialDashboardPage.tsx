@@ -42,7 +42,7 @@ const StatCard: React.FC<{ title: string; value: string; color: string; }> = ({ 
 
 const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack }) => {
     const { t } = useLanguage();
-    const { transactions, saveTransaction } = useData();
+    const { transactions, saveTransaction, tenant } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'receita' | 'despesa'>('receita');
 
@@ -179,6 +179,50 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack 
         URL.revokeObjectURL(link.href);
     };
 
+    const SubscriptionAlert = () => {
+        if (!tenant) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const billingDate = tenant.nextBillingDate || tenant.trialEndsAt;
+        if (!billingDate && tenant.subscriptionStatus !== 'OVERDUE') return null;
+
+        const dueDate = billingDate ? new Date(billingDate + 'T00:00:00') : null;
+        const diffDays = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : -1;
+
+        const isOverdue = tenant.subscriptionStatus === 'OVERDUE' || (diffDays < 0 && billingDate);
+        const isNearExpiry = diffDays <= 7 && diffDays >= 0;
+
+        if (!isOverdue && !isNearExpiry) return null;
+
+        return (
+            <div className={`mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 animate-pulse-subtle ${isOverdue ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${isOverdue ? 'bg-red-100' : 'bg-amber-100'}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm">
+                            {isOverdue ? 'Sua fatura está vencida!' : `Sua fatura vence em ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}.`}
+                        </p>
+                        <p className="text-xs opacity-90">
+                            {isOverdue ? 'Regularize seu pagamento para evitar a suspensão dos serviços.' : 'Mantenha seus pagamentos em dia para garantir o acesso total ao sistema.'}
+                        </p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => onBack && onBack()} // In this context, it might be better to navigate to settings or payment
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${isOverdue ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-amber-600 text-white hover:bg-amber-700'}`}
+                >
+                    Pagar Agora
+                </button>
+            </div>
+        );
+    };
+
     // Date Filter Component and helpers
     const setDateRange = (start: Date, end: Date) => {
         setStartDate(start);
@@ -306,6 +350,7 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack 
                 )}
 
 
+                <SubscriptionAlert />
                 <DateFilterComponent />
 
                 {/* Financial Summary */}

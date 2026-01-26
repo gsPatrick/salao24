@@ -31,7 +31,7 @@ const QRCodeIcon = () => <svg className="w-6 h-6" viewBox="0 0 20 20" fill="curr
 
 // --- Client Promo Carousel ---
 const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) => {
-  const activePromotions = promotions.filter(p => p.isActive && p.targetArea === 'cliente');
+  const activePromotions = (promotions || []).filter(p => p.isActive && p.targetArea === 'cliente');
 
   const cards = activePromotions.length > 0 ? activePromotions.map((p, idx) => ({
     id: p.id,
@@ -379,15 +379,15 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
 
   const today = new Date();
 
-  const upcomingAppointments = appointments
+  const upcomingAppointments = (appointments || [])
     .filter(a => a.clientId === clientData.id && new Date(a.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const pastAppointments = clientData.history
+  const pastAppointments = (clientData?.history || [])
     .filter(h => new Date(h.date) < today)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const allAppointments = appointments
+  const allAppointments = (appointments || [])
     .filter(a => a.clientId === clientData.id)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -459,7 +459,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                 </div>
               )}
             </div>
-            {clientData.packages?.length > 0 && (
+            {(clientData?.packages || []).length > 0 && (
               <div>
                 <h2 className="text-xl font-bold text-secondary mb-3">Meus Pacotes Ativos</h2>
                 <div className="space-y-4">
@@ -573,7 +573,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
         return (
           <div>
             <h2 className="text-xl font-bold text-secondary mb-4">Meus Pacotes</h2>
-            {clientData.packages?.length > 0 ? (
+            {(clientData?.packages || []).length > 0 ? (
               <div className="space-y-4">
                 {clientData.packages.map((pkg, index) => (
                   <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
