@@ -22,6 +22,7 @@ import ClientAppPage from './components/ClientAppPage';
 // FIX: Changed import to a named import as PaymentPage does not have a default export.
 import { PaymentPage } from './components/PaymentPage';
 import QRCodeCheckin from './components/QRCodeCheckin';
+import ClientLoginPage from './components/ClientLoginPage';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAuth } from './contexts/AuthContext';
 import BackToTopButton from './components/BackToTopButton';
@@ -384,6 +385,10 @@ const App: React.FC = () => {
 
     if (page === 'login') {
       return <div key="login" className="animate-fade-in"><LoginPage navigate={navigate} goBack={goBack} onLoginSuccess={handleLoginSuccess} /></div>;
+    }
+
+    if (page === 'clientLogin') {
+      return <div key="clientLogin" className="animate-fade-in"><ClientLoginPage navigate={navigate} goBack={goBack} onLoginSuccess={handleClientLoginSuccess} /></div>;
     }
 
     if (page === 'updatePaymentMethod' && currentUser) {

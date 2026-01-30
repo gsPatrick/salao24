@@ -21,6 +21,7 @@ interface ChatContact {
     lastMessage?: string;
     lastMessageTime?: string;
     unreadCount?: number;
+    channelOrigin?: string;
     history: Message[];
 }
 
@@ -78,6 +79,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
                 lastMessage: chat.last_message,
                 lastMessageTime: chat.updated_at,
                 unreadCount: chat.unreadCount || 0,
+                channelOrigin: chat.channel_origin || chat.channelOrigin,
                 history: chat.history || []
             }));
             setChats(mapped);
@@ -104,22 +106,22 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
 
     // Split chats into Clientes and Leads
     const { clientChats, leadChats } = useMemo(() => {
-        const clientPhones = new Set(clients.map(c => c.phone.replace(/\D/g, '')));
         const cChats: ChatContact[] = [];
         const lChats: ChatContact[] = [];
 
         chats.forEach(chat => {
             const cleanPhone = chat.customer_phone?.replace(/\D/g, '') || '';
             // Match with clients by phone (suffix match for safety with international codes)
-            const isClient = clients.some(c => {
+            const isKnownClient = clients.some(c => {
                 const cPhone = c.phone.replace(/\D/g, '');
-                return cPhone.endsWith(cleanPhone) || cleanPhone.endsWith(cPhone);
+                return cPhone.length > 0 && cleanPhone.length > 0 && (cPhone.endsWith(cleanPhone) || cleanPhone.endsWith(cPhone));
             });
 
-            if (isClient) {
-                cChats.push(chat);
-            } else {
+            // Rule: If it comes from Marketing OR is not a known client, it's a lead.
+            if (chat.channelOrigin === 'Marketing' || !isKnownClient) {
                 lChats.push(chat);
+            } else { // Rule: If it's NOT from marketing AND is a known client, it's a client.
+                cChats.push(chat);
             }
         });
 

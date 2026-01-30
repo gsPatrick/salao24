@@ -894,43 +894,7 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
                 </button>
             </div>
 
-            {/* Placeholder Analytics Graphs as per Wagner's Rules */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                    <h3 className="text-lg font-bold text-secondary mb-4">Origem dos Clientes (Analytics)</h3>
-                    <div className="h-48 flex items-end gap-2 justify-around px-4">
-                        {[40, 70, 45, 90, 65].map((h, i) => (
-                            <div key={i} className="w-full bg-primary/20 rounded-t-lg relative group transition-all" style={{ height: `${h}%` }}>
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Recurso em Breve</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-around mt-4 text-[10px] text-gray-400 font-bold uppercase">
-                        <span>Direct</span>
-                        <span>Insta</span>
-                        <span>Google</span>
-                        <span>TikTok</span>
-                        <span>Outros</span>
-                    </div>
-                    <p className="text-[10px] text-center text-gray-400 mt-6 italic">Gráficos analytics disponíveis na versão 2.0</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col justify-center items-center text-center">
-                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-secondary mb-2">Engajamento por Canal</h3>
-                    <p className="text-xs text-gray-500 mb-6 px-4">Compare a performance de conversão entre seus canais de aquisição configurados.</p>
-                    <button
-                        onClick={() => onComingSoon?.('O módulo avançado de Analytics e ROI por canal estará disponível em breve.')}
-                        className="text-primary text-xs font-bold hover:underline"
-                    >
-                        Ver Detalhes do Funil &rarr;
-                    </button>
-                </div>
-            </div>
-
-            <div className="my-10 border-b border-gray-200 flex justify-end">
+            <div className="my-6 border-b border-gray-200 flex justify-end">
                 <nav className="-mb-px flex space-x-6">
                     <button onClick={() => setView('active')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm ${view === 'active' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary'}`}>{t('viewActive')} ({activeChannels.length})</button>
                     <button onClick={() => setView('archived')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm ${view === 'archived' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary'}`}>{t('viewArchived')} ({archivedChannels.length})</button>

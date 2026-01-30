@@ -300,11 +300,11 @@ interface DashboardProps {
 
 // FIX: Define rolePermissions constant, as it was missing and causing initialization errors.
 const rolePermissions: { [key: string]: { [key: string]: PermissionDetails } } = {
-    Administrador: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true } },
-    Gerente: { dashboard: { create: true, view: true, delete: false, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: false, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: false, view: true, delete: false, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: false, export: true } },
-    Profissional: { dashboard: { create: false, view: false, delete: false, export: false }, agenda: { create: false, view: false, delete: false, export: false }, minhaAgenda: { create: true, view: true, delete: false, export: true }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } },
-    Concierge: { dashboard: { create: false, view: true, delete: false, export: false }, agenda: { create: true, view: true, delete: false, export: true }, minhaAgenda: { create: false, view: false, delete: false, export: false }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } },
-    admin: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true } },
+    Administrador: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true }, chat: { create: true, view: true, delete: true, export: true } },
+    Gerente: { dashboard: { create: true, view: true, delete: false, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: false, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: false, view: true, delete: false, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: false, export: true }, chat: { create: true, view: true, delete: true, export: true } },
+    Profissional: { dashboard: { create: false, view: false, delete: false, export: false }, agenda: { create: false, view: false, delete: false, export: false }, minhaAgenda: { create: true, view: true, delete: false, export: true }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false }, chat: { create: false, view: false, delete: false, export: false } },
+    Concierge: { dashboard: { create: false, view: true, delete: false, export: false }, agenda: { create: true, view: true, delete: false, export: true }, minhaAgenda: { create: false, view: false, delete: false, export: false }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false }, chat: { create: true, view: true, delete: true, export: true } },
+    admin: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true }, chat: { create: true, view: true, delete: true, export: true } },
 };
 
 
@@ -2664,6 +2664,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         deleteClient
     } = useData();
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
     const mainContentRef = useRef<HTMLDivElement>(null);
     const notificationPanelRef = useRef<HTMLDivElement>(null);
     const [isNewChannelModalOpen, setIsNewChannelModalOpen] = useState(false);
@@ -3420,6 +3422,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             if (notificationPanelRef.current && !notificationPanelRef.current.contains(event.target as Node)) {
                 setIsNotificationPanelOpen(false);
             }
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setIsUserMenuOpen(false);
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
@@ -4119,15 +4124,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         { name: t('reports'), icon: <ReportsIcon />, key: 'Relatórios', internalKey: 'relatorio' },
         { name: t('support'), icon: <HeadsetIcon />, key: 'Suporte', internalKey: 'suporte' },
         { name: t('settings'), icon: <SettingsIcon />, key: 'Configurações', internalKey: 'configuracoes' },
+        { name: t('chat'), icon: <ChatIcon />, key: 'Chat', internalKey: 'chat' },
         { name: 'Modo Cliente', icon: <SidebarUsersIcon />, key: 'clientApp', internalKey: 'clientApp' },
     ];
 
     const superAdminItems = [
         { name: 'Gestão de Salões', icon: <UnitIcon />, key: 'Super Admin: Salões', internalKey: 'tenants' },
-        { name: 'Banners Globais', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, key: 'Super Admin: Banners', internalKey: 'globalBanners' },
-        { name: 'Moderação YouTube', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" /><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" /></svg>, key: 'Super Admin: YouTube', internalKey: 'youtubeMod' },
-        { name: 'Centro de Tradução', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>, key: 'Super Admin: Tradução', internalKey: 'translation' },
-        { name: 'Diagnósticos', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>, key: 'Super Admin: Diagnósticos', internalKey: 'diagnostics' },
         { name: 'Servidor de E-mail', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, key: 'Super Admin: E-mail', internalKey: 'emailServer' },
     ];
 
@@ -4138,7 +4140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         // Special mapping for keys that might differ
         if (item.key === 'Visão Geral' || item.key === 'Painel de Controle') return rolePerms.dashboard?.view;
-        if (item.key === 'Promoção' || item.key === 'Promoção Exclusiva') return rolePerms.marketing?.view || userRole === 'admin' || userRole === 'gerente';
+        if (item.key === 'Promoção' || item.key === 'Promoção Exclusiva') return userRole === 'admin' || userRole === 'Administrador';
 
         // God Mode: Only allow 'clientApp' key for admins
         if (item.key === 'clientApp') return userRole === 'admin' || userRole === 'Administrador' || isSuperAdmin || userRole === 'Gerente';
@@ -4208,7 +4210,68 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button onClick={() => setIsChatOpen(prev => !prev)} className="text-gray-500 hover:text-primary relative"><ChatIcon />{totalUnread > 0 && (<span className="absolute -top-1 -right-2 flex h-5 w-5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span className="relative inline-flex rounded-full h-5 w-5 bg-primary text-white text-xs items-center justify-center">{totalUnread}</span></span>)}</button>
                                 <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>{t('chat')}<div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div></div>
                             </div>
-                            <div className="flex items-center space-x-3"><img src={currentUser?.avatarUrl} alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')} className="w-10 h-10 rounded-full" /><div className="hidden sm:block"><p className="font-bold text-secondary text-sm">{currentUser?.name}</p><p className="text-xs text-gray-500">{roleDisplayName}</p></div></div>
+                            <div className="relative" ref={userMenuRef}>
+                                <button
+                                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                    className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                                >
+                                    <img src={currentUser?.avatarUrl} alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')} className="w-10 h-10 rounded-full border border-gray-200" />
+                                    <div className="hidden sm:block text-left">
+                                        <p className="font-bold text-secondary text-sm leading-tight">{currentUser?.name}</p>
+                                        <p className="text-xs text-gray-500 leading-tight">{roleDisplayName}</p>
+                                    </div>
+                                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+
+                                {isUserMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 animate-fade-in-down py-2">
+                                        <div className="px-4 py-2 border-b border-gray-50 mb-2">
+                                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">{t('activePlan') || 'Plano Ativo'}</p>
+                                            <p className="text-sm font-bold text-primary">
+                                                {isIndividualPlan ? 'Plano Individual' : (currentUser?.plan === 'Vitalício' ? 'Plano Vitalício' : 'Plano Empresa')}
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            {isIndividualPlan ? (
+                                                <button
+                                                    onClick={() => { navigate('upgrade_to_empresa'); setIsUserMenuOpen(false); }}
+                                                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-colors gap-3"
+                                                >
+                                                    <TrophyIcon />
+                                                    <span>Mudar para Plano Empresa</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => { handleSidebarClick('Configurações'); setIsUserMenuOpen(false); }}
+                                                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-colors gap-3"
+                                                >
+                                                    <UnitIcon />
+                                                    <span>Gerenciar Unidades</span>
+                                                </button>
+                                            )}
+
+                                            <button
+                                                onClick={() => { handleSidebarClick('Configurações'); setIsUserMenuOpen(false); }}
+                                                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors gap-3"
+                                            >
+                                                <SettingsIcon />
+                                                <span>{t('settings')}</span>
+                                            </button>
+
+                                            <div className="border-t border-gray-50 my-1"></div>
+
+                                            <button
+                                                onClick={onLogout}
+                                                className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors gap-3"
+                                            >
+                                                <LogoutIcon />
+                                                <span>{t('logout')}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -4218,12 +4281,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </main>
 
                 {/* Coming Soon Overlays */}
-                <ComingSoonModal
-                    isOpen={activeView === 'Canais'}
-                    onClose={() => setActiveView('Visão Geral')}
-                    title="Canais de Comunicação"
-                    description="Estamos preparando uma integração completa! Em breve, você poderá conectar e gerenciar WhatsApp, Instagram e outros canais diretamente por aqui. Esta funcionalidade será liberada automaticamente em uma próxima atualização."
-                />
 
                 {/* Generic Coming Soon Modal for child components */}
                 <ComingSoonModal

@@ -1,0 +1,214 @@
+import React, { useState, useRef } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import LanguageSelector from './LanguageSelector';
+
+const GoogleIcon: React.FC = () => (
+    <svg className="w-5 h-5" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path>
+        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path>
+        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.222 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path>
+        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.574l6.19 5.238C44.484 36.336 48 30.732 48 24c0-1.341-.138-2.65-.389-3.917z"></path>
+    </svg>
+);
+
+const EyeIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+);
+
+const EyeOffIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057-5.064 7-9.542-7 .847 0 1.673.124 2.468.352M10.582 10.582a3 3 0 114.243 4.243M1 1l22 22" />
+    </svg>
+);
+
+interface ClientLoginPageProps {
+    navigate: (page: string) => void;
+    goBack: () => void;
+    onLoginSuccess: (client: any) => void;
+}
+
+const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onLoginSuccess }) => {
+    const { t } = useLanguage();
+    const { login } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const emailRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
+
+    const handleLogin = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        const email = emailRef.current?.value || '';
+        const password = passwordRef.current?.value || '';
+
+        const result = await login(email, password, false);
+
+        if (result.success) {
+            const storedUser = localStorage.getItem('authUser');
+            if (storedUser) {
+                onLoginSuccess(JSON.parse(storedUser));
+            }
+        } else {
+            setError(result.error || t('loginInvalidCredentials'));
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Mock Google login
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // In a real scenario, we would use the return from Google to authenticate
+            const result = await login('juliana.costa@example.com', '123', false);
+
+            if (result.success) {
+                const storedUser = localStorage.getItem('authUser');
+                if (storedUser) {
+                    onLoginSuccess(JSON.parse(storedUser));
+                }
+            } else {
+                setError('Erro ao autenticar com Google. Tente novamente.');
+            }
+        } catch (err) {
+            setError('Erro no login com Google.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const SubmitButtonContent = () => (
+        <>
+            {isLoading ? (
+                <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{t('loginEntering') || 'Entrando...'}</span>
+                </>
+            ) : (
+                t('clientLoginEnter') || 'Entrar na Área do Cliente'
+            )}
+        </>
+    );
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
+            <div className="absolute top-4 right-4 z-10">
+                <LanguageSelector />
+            </div>
+            <div className="max-w-md w-full space-y-8">
+                <div>
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline">
+                        Salão24h
+                    </a>
+                </div>
+
+                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+                    <div>
+                        <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-secondary">
+                            {t('clientLoginTitle') || 'Bem-vindo, Cliente!'}
+                        </h2>
+                        <p className="mt-2 text-center text-sm text-gray-600">
+                            {t('clientLoginSubtitle') || 'Acesse seus agendamentos e histórico'}
+                        </p>
+                    </div>
+                    <form className="space-y-6" onSubmit={handleLogin}>
+                        <div>
+                            <label htmlFor="email-address" className="sr-only font-bold">{t('loginEmailAddress') || 'E-mail'}</label>
+                            <input
+                                id="email-address"
+                                name="email"
+                                type="email"
+                                ref={emailRef}
+                                autoComplete="email"
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                placeholder={t('loginYourEmail') || 'Seu e-mail'}
+                                defaultValue="juliana.costa@example.com"
+                            />
+                        </div>
+                        <div className="relative">
+                            <label htmlFor="password" className="sr-only font-bold">{t('password') || 'Senha'}</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type={showPassword ? 'text' : 'password'}
+                                ref={passwordRef}
+                                autoComplete="current-password"
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
+                                placeholder={t('loginPassword') || 'Senha'}
+                                defaultValue="123"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                aria-label={showPassword ? t('loginHidePassword') : t('loginShowPassword')}
+                            >
+                                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                            </button>
+                        </div>
+                        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+                        >
+                            <SubmitButtonContent />
+                        </button>
+                    </form>
+
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500 font-bold">{t('or') || 'ou'}</span>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={isLoading}
+                        className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:opacity-50"
+                    >
+                        <GoogleIcon />
+                        <span className="ml-3 font-bold">{t('clientLoginGoogle') || 'Entrar com Google'}</span>
+                    </button>
+
+                    <div className="pt-4 text-center text-xs text-gray-500">
+                        <p>{t('clientLoginHint') || 'Dica: use juliana.costa@example.com / 123 para testar.'}</p>
+                    </div>
+                </div>
+
+                <div className="text-center text-sm text-gray-500">
+                    <p className="mb-4">
+                        É um colaborador?{' '}
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="font-medium text-primary hover:text-primary-dark">
+                            Acesse aqui a Área Restrita
+                        </a>
+                    </p>
+                    <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ClientLoginPage;

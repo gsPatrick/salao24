@@ -252,9 +252,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                 <SubmitButtonContent />
               </button>
             </form>
-            <div className="pt-4 text-center text-xs text-gray-500">
+            <div className="pt-4 text-center text-xs text-gray-500 border-t border-gray-100">
+              <p className="font-bold text-secondary mb-2 uppercase tracking-widest">{t('collaboratorArea') || 'Área do Colaborador'}</p>
               <p>{(t('loginHintAdmin') || 'Dica: use admin@salao24h.com / admin para o admin.').replace('{email}', 'admin@salao24h.com').replace('{password}', 'admin')}</p>
               <p>{(t('loginHintProfessional') || 'Use fernanda@salao24h.com / 123 para um profissional.').replace('{email}', 'fernanda@salao24h.com').replace('{password}', '123')}</p>
+            </div>
+            <div className="pt-4 mt-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
+              <p className="text-sm text-gray-700 mb-2">
+                É um cliente?
+              </p>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="inline-block bg-white text-primary border border-primary font-bold py-2 px-6 rounded-lg hover:bg-primary hover:text-white transition-all duration-300">
+                Acessar Área do Cliente
+              </a>
             </div>
           </div>
         )}
