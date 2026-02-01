@@ -2684,6 +2684,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const [isSwitchingUnit, setIsSwitchingUnit] = useState(false);
     const [isUnitLimitModalOpen, setIsUnitLimitModalOpen] = useState(false);
+    const [isUnitSelectionModalOpen, setIsUnitSelectionModalOpen] = useState(false);
     const [animateContent, setAnimateContent] = useState(false);
     const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null);
 
@@ -3500,22 +3501,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onUnitChange(unitName);
     };
 
-    const handleUnitSwitchAnimation = () => {
-        if (availableUnits.length <= 1) {
-            setIsUnitLimitModalOpen(true);
+    const handleUnitSelect = (unitName: string) => {
+        if (unitName === selectedUnit) {
+            setIsUnitSelectionModalOpen(false);
             return;
         }
 
-        if (isIndividualPlan) return;
-
+        setIsUnitSelectionModalOpen(false);
         setIsSwitchingUnit(true);
         setAnimateContent(false);
 
         setTimeout(() => {
-            const currentIndex = availableUnits.indexOf(selectedUnit);
-            const nextIndex = (currentIndex + 1) % availableUnits.length;
-            const nextUnit = availableUnits[nextIndex];
-            onUnitChange(nextUnit);
+            onUnitChange(unitName);
         }, 300);
 
         const fetchTime = 1200 + Math.random() * 800;
@@ -3524,6 +3521,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             setIsSwitchingUnit(false);
             setAnimateContent(true);
         }, fetchTime);
+    };
+
+    const handleUnitSwitchAnimation = () => {
+        if (availableUnits.length <= 1) {
+            setIsUnitLimitModalOpen(true);
+            return;
+        }
+
+        if (isIndividualPlan) return;
+
+        setIsUnitSelectionModalOpen(true);
     };
 
     // Reset the animation trigger after animations have played
@@ -4312,6 +4320,85 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 />
 
                 {isChatOpen && currentUserWithId && <InternalChat onClose={() => setIsChatOpen(false)} users={users} currentUser={currentUserWithId} unreadMessages={unreadMessages} onClearUnread={handleClearUnread} />}
+
+                {/* Unit Selection Modal */}
+                {isUnitSelectionModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                        <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in">
+                            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-secondary">Trocar Unidade</h3>
+                                    <p className="text-gray-500 text-sm mt-1">Selecione a unidade que deseja acessar hoje</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsUnitSelectionModalOpen(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                            <div className="p-4 max-h-[60vh] overflow-y-auto">
+                                <div className="grid gap-3">
+                                    {availableUnits.map(unitName => {
+                                        const unit = allData[unitName]?.unitDetails;
+                                        const isActive = unitName === selectedUnit;
+
+                                        return (
+                                            <button
+                                                key={unitName}
+                                                onClick={() => handleUnitSelect(unitName)}
+                                                className={`flex items-center p-4 rounded-2xl transition-all border-2 text-left group
+                                                    ${isActive
+                                                        ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
+                                                        : 'border-gray-50 hover:border-primary/30 hover:bg-gray-50'}`}
+                                            >
+                                                <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 mr-4 flex-shrink-0 border border-gray-100">
+                                                    {unit?.logo_url ? (
+                                                        <img src={unit.logo_url} alt={unitName} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xl">
+                                                            {unitName.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <h4 className={`font-bold text-lg ${isActive ? 'text-primary' : 'text-secondary'}`}>
+                                                        {unitName}
+                                                    </h4>
+                                                    <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                                                        {unit?.address || 'Sem endereço cadastrado'}
+                                                    </p>
+                                                </div>
+                                                {isActive ? (
+                                                    <div className="bg-primary text-white p-1 rounded-full">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                ) : (
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-primary">
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                                <span className="text-sm text-gray-400">Total: {availableUnits.length} {availableUnits.length === 1 ? 'unidade' : 'unidades'}</span>
+                                <button
+                                    onClick={() => {
+                                        setIsUnitSelectionModalOpen(false);
+                                        handleSidebarClick('Configurações');
+                                    }}
+                                    className="text-sm font-bold text-primary hover:underline flex items-center gap-2"
+                                >
+                                    <UnitIcon />
+                                    Gerenciar Unidades
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Unit Limit Modal */}
                 {isUnitLimitModalOpen && (
