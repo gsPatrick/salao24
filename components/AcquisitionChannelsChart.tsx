@@ -62,9 +62,6 @@ const AcquisitionChannelsChart: React.FC<AcquisitionChannelsChartProps> = ({ cli
               <span className="text-2xl mr-2">📈</span>
               {t('acquisitionChannelsTitle')}
             </h2>
-            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-              Dados Demonstrativos
-            </span>
           </div>
           <p className="text-sm text-gray-500">{t('acquisitionChannelsSubtitle')}</p>
         </div>

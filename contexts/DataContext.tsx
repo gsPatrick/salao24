@@ -1319,13 +1319,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 logo_url: data.logo_url
             };
 
-            const response = await tenantsAPI.update(tenant.id, apiData);
+            const response = await tenantsAPI.updateSettings(apiData);
             const updated = mapTenantFromAPI(response.data || response);
             setTenant(updated);
             return updated;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating tenant:', error);
-            return null;
+            throw error; // Re-throw to allow component to handle it
         }
     };
 

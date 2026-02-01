@@ -526,6 +526,10 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+    const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+
+    const videoRef = useRef<HTMLVideoElement>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activePromotions = promotions.filter(p => p.isActive);
@@ -2679,6 +2683,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const isChatOpenRef = useRef(isChatOpen);
 
     const [isSwitchingUnit, setIsSwitchingUnit] = useState(false);
+    const [isUnitLimitModalOpen, setIsUnitLimitModalOpen] = useState(false);
     const [animateContent, setAnimateContent] = useState(false);
     const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null);
 
@@ -3516,7 +3521,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const handleUnitSwitchAnimation = () => {
         const availableUnits = Object.keys(allData);
-        if (availableUnits.length <= 1 || isIndividualPlan) return;
+
+        if (availableUnits.length <= 1) {
+            setIsUnitLimitModalOpen(true);
+            return;
+        }
+
+        if (isIndividualPlan) return;
 
         setIsSwitchingUnit(true);
         setAnimateContent(false); // Ensure content isn't animated before skeleton is gone
@@ -4156,8 +4167,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return (
         <div className="min-h-screen bg-light flex">
             <aside className={`w-64 bg-secondary text-white p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
-                <div className="flex items-center justify-between mb-10 mt-4">
-                    <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="text-center block text-3xl font-extrabold text-white no-underline">Salão24h</a>
+                <div className="mb-8 px-4 flex justify-between items-center">
+                    {currentUser?.tenant?.logo_url ? (
+                        <img src={currentUser.tenant.logo_url} alt={currentUser.tenant.name || 'Logo'} className="h-10 mx-auto object-contain" />
+                    ) : (
+                        <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="text-center block text-3xl font-extrabold text-white no-underline break-words px-2">{currentUser?.tenant?.name || 'Salão24h'}</a>
+                    )}
                     <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-300 hover:text-white">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
@@ -4291,6 +4306,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 />
 
                 {isChatOpen && currentUserWithId && <InternalChat onClose={() => setIsChatOpen(false)} users={users} currentUser={currentUserWithId} unreadMessages={unreadMessages} onClearUnread={handleClearUnread} />}
+
+                {/* Unit Limit Modal */}
+                {isUnitLimitModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+                        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-scale-in">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4">Nova Unidade?</h3>
+                            <p className="text-gray-600 mb-6">
+                                Você possui apenas uma unidade cadastrada. Deseja criar uma nova unidade agora?
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsUnitLimitModalOpen(false)}
+                                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    Não
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsUnitLimitModalOpen(false);
+                                        handleSidebarClick('Configurações');
+                                    }}
+                                    className="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+                                >
+                                    Sim, criar unidade
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

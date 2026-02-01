@@ -42,39 +42,27 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
     cta: p.actionButton || 'Aproveitar',
     imageUrl: p.image,
     accentColor: idx % 3 === 0 ? 'from-emerald-500 to-teal-400' : idx % 3 === 1 ? 'from-indigo-500 to-sky-500' : 'from-amber-500 to-rose-500',
-    link: p.promotionUrl
+    link: p.promotionUrl,
+    isEmpty: false
   })) : [
     {
       id: 0,
-      tag: 'Oferta Especial',
-      title: 'Linha de Produtos de Beleza',
-      highlight: 'Shampoo, máscaras e óleos com até 30% OFF',
-      description:
-        'Monte kits de hidratação, nutrição e reconstrução para vender junto com seus serviços.',
-      cta: 'Aproveitar',
-      imageUrl:
-        'https://images.pexels.com/photos/3738341/pexels-photo-3738341.jpeg?auto=compress&cs=tinysrgb&w=600',
-      accentColor: 'from-emerald-500 to-teal-400',
-      link: '#'
-    },
-    {
-      id: 1,
-      tag: 'Kit Profissional',
-      title: 'Combo Premium para Cabeleireiros',
-      highlight: 'Secador, escovas e pentes em um único kit',
-      description:
-        'Deixe sua bancada com cara de estúdio profissional com ferramentas de alta performance.',
-      cta: 'Ver Detalhes',
-      imageUrl:
-        'https://images.pexels.com/photos/3738364/pexels-photo-3738364.jpeg?auto=compress&cs=tinysrgb&w=600',
-      accentColor: 'from-indigo-500 to-sky-500',
-      link: '#'
+      tag: 'Novidades',
+      title: 'Sem promoções no momento',
+      highlight: '',
+      description: 'Fique atento! Logo teremos novidades e ofertas especiais para você.',
+      cta: 'Aguarde',
+      imageUrl: '',
+      accentColor: 'from-gray-400 to-gray-300',
+      link: '#',
+      isEmpty: true
     }
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+    if (cards.length <= 1) return; // Don't rotate if only 1 card (or empty state)
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % cards.length);
     }, 5000);
@@ -97,11 +85,13 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
         <div
           className={`absolute inset-0 bg-gradient-to-br ${activeCard.accentColor} opacity-90`}
         ></div>
-        <img
-          src={activeCard.imageUrl}
-          alt={activeCard.title}
-          className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
-        />
+        {!activeCard.isEmpty && (
+          <img
+            src={activeCard.imageUrl}
+            alt={activeCard.title}
+            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="relative h-full flex flex-col justify-between p-3">
           <div>
@@ -125,12 +115,14 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
           {activeCard.description}
         </p>
 
-        <button
-          onClick={() => activeCard.link !== '#' && window.open(activeCard.link, '_blank')}
-          className="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors"
-        >
-          {activeCard.cta}
-        </button>
+        {!activeCard.isEmpty && (
+          <button
+            onClick={() => activeCard.link !== '#' && window.open(activeCard.link, '_blank')}
+            className="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+          >
+            {activeCard.cta}
+          </button>
+        )}
 
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-2">

@@ -91,23 +91,16 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
 
     if (loading && banners.length === 0) return <div className="p-6 bg-white rounded-2xl shadow-lg h-64 flex items-center justify-center font-bold text-secondary">Carregando promoções...</div>;
 
-    // If no real items, show the default placeholders from the original design
+    // If no real items, show empty state with same layout
     const finalItems = displayItems.length > 0 ? displayItems : [
         {
-            id: 'placeholder-1',
-            title: 'Super Pacote Beleza',
-            image_url: 'https://images.unsplash.com/photo-1560066987926-78b5d9b5c3e5?w=400&h=200&fit=crop',
-            button_text: 'Compre Agora',
+            id: 'empty-state',
+            title: 'Sem promoções em destaque',
+            image_url: '', // Empty image
+            button_text: 'Criar Promoção', // Optional or hidden
             link: '#',
-            subtitle: 'Destaque'
-        },
-        {
-            id: 'placeholder-2',
-            title: 'Clube VIP Mensal',
-            image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a372?w=400&h=200&fit=crop',
-            button_text: 'Ver Detalhes',
-            link: '#',
-            subtitle: 'Exclusivo'
+            subtitle: '',
+            isEmpty: true // Flag to handle empty state styling
         }
     ];
 
@@ -128,27 +121,37 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
                         className="flex transition-transform duration-500 ease-in-out"
                         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                     >
-                        {finalItems.map((item) => (
+                        {finalItems.map((item: any) => (
                             <div key={item.id} className="min-w-full">
-                                <div className="bg-gradient-to-r from-primary to-secondary rounded-lg overflow-hidden relative">
-                                    <div className="relative h-48 sm:h-64">
-                                        <img
-                                            src={item.image_url}
-                                            alt={item.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                    </div>
-                                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
-                                        <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wider">{item.subtitle}</div>
-                                        <h4 className="text-xl font-bold mb-2">{item.title}</h4>
-                                        <button
-                                            onClick={() => item.link !== '#' && window.open(item.link, '_blank')}
-                                            className="bg-white text-secondary font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors mt-2 text-sm shadow-lg active:scale-95"
-                                        >
-                                            {item.button_text}
-                                        </button>
-                                    </div>
+                                <div className={`relative rounded-lg overflow-hidden h-48 sm:h-64 ${item.isEmpty ? 'bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center' : 'bg-gradient-to-r from-primary to-secondary'}`}>
+
+                                    {!item.isEmpty ? (
+                                        <>
+                                            <div className="relative h-full">
+                                                <img
+                                                    src={item.image_url}
+                                                    alt={item.title}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                            </div>
+                                            <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
+                                                <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wider">{item.subtitle}</div>
+                                                <h4 className="text-xl font-bold mb-2">{item.title}</h4>
+                                                <button
+                                                    onClick={() => item.link !== '#' && window.open(item.link, '_blank')}
+                                                    className="bg-white text-secondary font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors mt-2 text-sm shadow-lg active:scale-95"
+                                                >
+                                                    {item.button_text}
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-6">
+                                            <h4 className="text-xl font-bold text-gray-400 mb-2">{item.title}</h4>
+                                            <p className="text-gray-400 text-sm mb-4">Crie uma campanha para aparecer aqui.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

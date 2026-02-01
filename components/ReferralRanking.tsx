@@ -33,30 +33,46 @@ export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients }) => 
   const { t } = useLanguage();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const birthdayProfessionals = [
-    // Dados fictícios removidos - lista vazia para Painel de Controle
-  ];
+  // Filter clients who have a birthday in the current month
+  const birthdayProfessionals = useMemo(() => {
+    const currentMonth = new Date().getMonth(); // 0-indexed
+    return clients.filter(client => {
+      if (!client.birth_date && !client.birthDate) return false;
+      const birthDate = new Date(client.birth_date || client.birthDate);
+      return birthDate.getMonth() === currentMonth;
+    }).map(client => ({
+      id: client.id,
+      name: client.name,
+      photo: client.photo || client.photo_url || 'https://via.placeholder.com/150',
+      role: 'Cliente', // Since these are clients, not professionals
+      birthday: new Date(client.birth_date || client.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
+    }));
+  }, [clients]);
 
   const ranking = useMemo(() => {
     const referrers: { [key: string]: ReferrerStats } = {};
 
     clients.forEach(indicatedClient => {
-      if (indicatedClient.indicatedBy) {
-        const referrerClient = clients.find(c => c.name === indicatedClient.indicatedBy);
+      // Use indicated_by or indicatedBy depending on API response format
+      const referrerName = indicatedClient.indicated_by || indicatedClient.indicatedBy;
+
+      if (referrerName) {
+        // Find the referrer client in the list by name
+        const referrerClient = clients.find(c => c.name.toLowerCase() === referrerName.toLowerCase());
 
         if (referrerClient) {
           if (!referrers[referrerClient.name]) {
             referrers[referrerClient.name] = {
               referrerId: referrerClient.id,
               referrerName: referrerClient.name,
-              referrerPhoto: referrerClient.photo,
+              referrerPhoto: referrerClient.photo || referrerClient.photo_url || 'https://via.placeholder.com/150',
               referrals: [],
               totalReferrals: 0,
               totalConversions: 0,
             };
           }
 
-          const converted = indicatedClient.history.length > 0;
+          const converted = indicatedClient.history && indicatedClient.history.length > 0;
 
           referrers[referrerClient.name].referrals.push({
             indicatedClientName: indicatedClient.name,
@@ -107,7 +123,7 @@ export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients }) => 
                       <span>{index + 1}.</span>
                     )}
                   </div>
-                  <img src={referrer.referrerPhoto} alt={referrer.referrerName} className="w-12 h-12 rounded-full" />
+                  <img src={referrer.referrerPhoto} alt={referrer.referrerName} className="w-12 h-12 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="font-bold text-gray-800">{referrer.referrerName}</p>
                     <p className="text-sm text-primary font-semibold">
@@ -152,26 +168,30 @@ export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients }) => 
           {t('referralBirthdaysTitle')}
         </h3>
         <p className="text-sm text-gray-600 mb-4">{t('referralBirthdaysSubtitle')}</p>
-        <ul className="space-y-3">
-          {birthdayProfessionals.map(pro => (
-            <li key={pro.id} className="flex items-center justify-between bg-light p-3 rounded-lg">
-              <div className="flex items-center gap-3">
-                <img
-                  src={pro.photo}
-                  alt={pro.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold text-gray-800">{pro.name}</p>
-                  <p className="text-xs text-gray-500">{pro.role}</p>
+        {birthdayProfessionals.length > 0 ? (
+          <ul className="space-y-3">
+            {birthdayProfessionals.map(pro => (
+              <li key={pro.id} className="flex items-center justify-between bg-light p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={pro.photo}
+                    alt={pro.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-800">{pro.name}</p>
+                    <p className="text-xs text-gray-500">{pro.role}</p>
+                  </div>
                 </div>
-              </div>
-              <span className="text-sm font-semibold text-primary">
-                {pro.birthday}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span className="text-sm font-semibold text-primary">
+                  {pro.birthday}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-center text-sm py-2">Nenhum aniversariante neste mês.</p>
+        )}
       </div>
     </div>
   );

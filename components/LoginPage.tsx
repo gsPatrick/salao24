@@ -118,9 +118,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline">
-            Salão24h
-          </a>
+          {rememberedUser?.tenant?.logo_url ? (
+            <img src={rememberedUser.tenant.logo_url} alt={rememberedUser.tenant.name || 'Logo'} className="h-16 mx-auto mb-4 object-contain" />
+          ) : (
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline break-words px-4">
+              {rememberedUser?.tenant?.name || 'Salão24h'}
+            </a>
+          )}
         </div>
 
         {rememberedUser ? (

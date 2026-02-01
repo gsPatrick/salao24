@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import UserManagementModal from './UserManagementModal';
 import UnitManagementModal from './UnitManagementModal';
 import AccessHistoryPage from './AccessHistoryPage';
+import { paymentsAPI } from '../lib/api';
 
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser as User, Unit, Tenant } from '../contexts/DataContext';
@@ -65,7 +67,20 @@ interface PlanSettingsProps {
     currentUser: User | null;
     onLogout: () => void;
     navigate: (page: string) => void;
-    tenant: Tenant | null;
+    tenant: Tenant | null; // Keep tenant prop for other info
+}
+
+// Minimal Interface for Asaas Payment
+interface AsaasPayment {
+    id: string;
+    dateCreated: string;
+    value: number;
+    netValue: number;
+    status: string; // PENDING, RECEIVED, OVERDUE, etc.
+    billingType: string;
+    invoiceUrl: string;
+    description: string;
+    dueDate: string;
 }
 
 // --- New Modal Component for Cancellation ---
@@ -100,7 +115,7 @@ const CancelSubscriptionModal: React.FC<{
                     </h3>
                     <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                            {t('cancelSubscriptionWarning')}
+                            {t('cancelSubscriptionWarning') || 'Ao cancelar, você continuará com acesso até o fim do período vigente, mas a renovação automática será desativada para o próximo mês. Tem certeza?'}
                         </p>
                     </div>
                 </div>
@@ -554,12 +569,12 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
     const [notifications, setNotifications] = useState(tenant?.settings?.notifications || { whatsapp: true, email: true });
 
     const [workingHours, setWorkingHours] = useState<WorkingHour[]>(Array.isArray(tenant?.working_hours) ? tenant.working_hours : [
-        { day: 'Segunda-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
-        { day: 'Terça-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
-        { day: 'Quarta-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
-        { day: 'Quinta-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
-        { day: 'Sexta-feira', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
-        { day: 'Sábado', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Segunda-feira', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Terça-feira', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Quarta-feira', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Quinta-feira', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Sexta-feira', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+        { day: 'Sábado', open: true, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
         { day: 'Domingo', open: false, start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
     ]);
     const dayNameKeys = ['daySunday', 'dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday'];
@@ -590,8 +605,9 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
         }
     }, [tenant]);
 
+    const { updateUser, user } = useAuth(); // Destructure updateUser from useAuth
     const handleSave = async () => {
-        await updateTenant({
+        const updatedTenant = await updateTenant({
             name: salonName,
             description,
             cnpj_cpf: cnpjCpf,
@@ -609,6 +625,18 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                 notifications
             }
         });
+
+        if (updatedTenant && user) {
+            // Sync the updated tenant with Auth Context to trigger UI updates immediately
+            updateUser({
+                ...user,
+                tenant: {
+                    ...user.tenant,
+                    ...updatedTenant
+                }
+            });
+        }
+
         onSave();
     };
 
@@ -868,8 +896,10 @@ const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => 
             });
             onSave();
             setIsEditing(false);
-        } catch (error) {
+            alert('Dados bancários salvos com sucesso!');
+        } catch (error: any) {
             console.error('Error saving bank info:', error);
+            alert('Erro ao salvar dados bancários: ' + (error.response?.data?.message || error.message));
         } finally {
             setIsLoading(false);
         }
@@ -948,12 +978,39 @@ const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => 
 
 const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, currentUser, onLogout, navigate, tenant }) => {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [invoices, setInvoices] = useState<AsaasPayment[]>([]);
+    const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
 
-    const invoices = [
-        { date: '01/10/2024', value: 'R$ 79,87', status: 'Paga' },
-        { date: '01/09/2024', value: 'R$ 79,87', status: 'Paga' },
-        { date: '01/08/2024', value: 'R$ 79,87', status: 'Paga' },
-    ];
+    useEffect(() => {
+        const fetchInvoices = async () => {
+            setIsLoadingInvoices(true);
+            try {
+                // Assuming paymentsAPI is imported from '../lib/api'
+                // We need to dynamically import or having it available. 
+                // Since this file imports everything from 'api.ts' via '../contexts/DataContext' usually, 
+                // but here it seems standalone. Let's use the standard import if available or existing hooks.
+                // Re-checking imports: 'api.ts' is likely imported as 'paymentsAPI' or similar.
+                // Assuming global 'paymentsAPI' or importing it at the top would be better.
+                // For this edit, I'll rely on global fetch or assume imports exist.
+                // Actually, let's use the explicit import in the file header if I could, but I can't see it now.
+                // I will assume `paymentsAPI` is available or I will fix the import in a separate block if needed.
+                // WAIT: I can't add imports easily without seeing the top.
+                // Let's assume I can use `useData` context if I updated it, but I didn't update DataContext.
+                // I will fallback to `paymentsAPI.getInvoices()` and assume I need to double check imports.
+                // Let's try to fetch using the imported `paymentsAPI`.
+                const result = await paymentsAPI.getInvoices();
+                if (result && Array.isArray(result.data)) {
+                    setInvoices(result.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch invoices", error);
+            } finally {
+                setIsLoadingInvoices(false);
+            }
+        };
+
+        fetchInvoices();
+    }, []);
 
     const planDetailsMap = {
         'Individual': { name: t('pricingIndividualPlanName'), desc: t('pricingIndividualPlanDesc') },
@@ -975,9 +1032,17 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
         setIsCancelModalOpen(true);
     };
 
-    const confirmCancellation = () => {
-        setIsCancelModalOpen(false);
-        navigate('cancellation');
+    const confirmCancellation = async () => {
+        try {
+            await paymentsAPI.cancelSubscription();
+            alert('Assinatura cancelada com sucesso. Seu acesso continua ativo até o fim do ciclo atual.');
+            setIsCancelModalOpen(false);
+            // Optionally refresh tenant data or redirect
+            // navigate('dashboard'); 
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao cancelar assinatura. Tente novamente ou contate o suporte.');
+        }
     };
 
     const handleDownloadInvoice = (invoice: { date: string, value: string, status: string }) => {
@@ -1212,18 +1277,34 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {tenant?.invoices && tenant.invoices.length > 0 ? (
-                                    tenant.invoices.map((invoice: any, index: number) => (
-                                        <tr key={index}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{new Date(invoice.date).toLocaleDateString('pt-BR')}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">R$ {invoice.value}</td>
+                                {isLoadingInvoices ? (
+                                    <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-500">Carregando faturas...</td></tr>
+                                ) : invoices.length > 0 ? (
+                                    invoices.map((invoice, index) => (
+                                        <tr key={invoice.id || index}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('pt-BR') : 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(invoice.value)}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                    {invoice.status === 'paid' ? t('invoiceStatusPaid') : invoice.status}
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    ${invoice.status === 'RECEIVED' || invoice.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                                                        invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                    {invoice.status === 'RECEIVED' || invoice.status === 'CONFIRMED' ? t('invoiceStatusPaid') :
+                                                        invoice.status === 'OVERDUE' ? 'Vencida' : invoice.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <a href="#" onClick={e => { e.preventDefault(); handleDownloadInvoice(invoice); }} className="text-primary hover:text-primary-dark">{t('downloadInvoice')}</a>
+                                                {invoice.invoiceUrl ? (
+                                                    <a href={invoice.invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark cursor-pointer">
+                                                        Visualizar
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-gray-400">Indisponível</span>
+                                                )}
+                                                {/* Removed PDF generation for now as we have direct link */}
                                             </td>
                                         </tr>
                                     ))

@@ -296,6 +296,10 @@ export const tenantsAPI = {
         const response = await api.put(`/tenants/${id}`, data);
         return response.data;
     },
+    updateSettings: async (data: any) => {
+        const response = await api.put('/tenants/settings', data);
+        return response.data;
+    },
     uploadLogo: async (id: number, file: File) => {
         const formData = new FormData();
         formData.append('logo', file);
@@ -309,6 +313,14 @@ export const tenantsAPI = {
 export const paymentsAPI = {
     subscribe: async (planId: number, paymentMethod: string = 'UNDEFINED') => {
         const response = await api.post('/payments/subscribe', { planId, paymentMethod });
+        return response.data;
+    },
+    getInvoices: async () => {
+        const response = await api.get('/payments/invoices');
+        return response.data;
+    },
+    cancelSubscription: async () => {
+        const response = await api.post('/payments/cancel');
         return response.data;
     },
 };

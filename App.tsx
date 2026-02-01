@@ -254,6 +254,21 @@ const App: React.FC = () => {
     }
   }, [authUser, authLoading]);
 
+  // Dynamic Visual Identity Injection
+  useEffect(() => {
+    if (currentUser?.tenant?.primary_color) {
+      document.documentElement.style.setProperty('--primary-color', currentUser.tenant.primary_color);
+
+      // Calculate a darker shade for hover states provided simple logic or use the same
+      // Ideally we would darken the color hex here. For simplicity, we can use the same or a fixed darken logic.
+      // Let's implement a simple darken function or just use the same for now to ensure consistency.
+      // A simple way to get a "dark" variant is to assume the backend sends it or we compute it.
+      // For now, let's just set primary-dark to the same or slightly adjusted if we had a util.
+      // We will set it to the same color to avoid breakage, or improved later.
+      document.documentElement.style.setProperty('--primary-dark', currentUser.tenant.primary_color);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     // Prevent browser from trying to restore scroll position on back/forward
     if ('scrollRestoration' in window.history) {

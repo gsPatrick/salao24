@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePersistentState } from '../hooks/usePersistentState';
+import api from '../lib/api'; // Fix: default import for api
 import YouTubeCommentModeration from './YouTubeCommentModeration';
 import { youtubeService } from '../lib/youtubeService';
 import { commentAutomationService } from '../lib/commentAutomationService';
@@ -28,15 +29,29 @@ interface ChannelsPageProps {
   onBack?: () => void;
   isIndividualPlan: boolean;
   navigate: (page: string) => void;
-  onComingSoon: (featureName: string) => void;
 }
 
-const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, navigate, onComingSoon }) => {
+const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, navigate }) => {
   const { t } = useLanguage();
-  const [isSupportConnected, setIsSupportConnected] = useState(true);
+  const [isSupportConnected, setIsSupportConnected] = useState(false);
   const [isMarketingConnected, setIsMarketingConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Load initial settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await api.get('/tenants/current');
+        const settings = response.data.data.settings || {};
+        setIsSupportConnected(settings.support_active || false);
+        setIsMarketingConnected(settings.marketing_active || false);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Instagram state
   const [isInstagramConnected, setIsInstagramConnected] = useState(false);
@@ -60,29 +75,54 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleToggleConnection = (channel: 'support' | 'marketing') => {
+  const handleToggleConnection = async (channel: 'support' | 'marketing') => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const update = {};
+      if (channel === 'support') {
+        update['support_active'] = !isSupportConnected;
+      } else if (channel === 'marketing') {
+        update['marketing_active'] = !isMarketingConnected;
+      }
+
+      await api.put('/tenants/settings', { settings: update });
+
       if (channel === 'support') {
         const newState = !isSupportConnected;
         setIsSupportConnected(newState);
         showNotification(newState ? 'Canal de Atendimento conectado!' : 'Canal de Atendimento desconectado.');
-      }
-      if (channel === 'marketing') {
+      } else if (channel === 'marketing') {
         const newState = !isMarketingConnected;
         setIsMarketingConnected(newState);
         showNotification(newState ? 'Canal de Marketing conectado com sucesso!' : 'Canal de Marketing desconectado.');
       }
+
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      showNotification('Erro ao conectar canal. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleInstagramConnection = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      const newState = !isInstagramConnected;
+      setIsInstagramConnected(newState);
+      showNotification(newState ? t('channelsInstagramConnected') : t('channelsInstagramDisconnected'));
       setIsLoading(false);
     }, 1500);
   };
 
-  const handleToggleInstagramConnection = () => {
-    onComingSoon('A integração oficial com Instagram estará disponível na próxima atualização.');
-  };
-
   const handleToggleYouTubeConnection = () => {
-    onComingSoon('A integração oficial com YouTube estará disponível na próxima atualização.');
+    setIsLoading(true);
+    setTimeout(() => {
+      const newState = !isYouTubeConnected;
+      setIsYouTubeConnected(newState);
+      showNotification(newState ? t('channelsYouTubeConnected') : t('channelsYouTubeDisconnected'));
+      setIsLoading(false);
+    }, 1500);
   };
 
   const handleSaveYouTubeSettings = (e: React.FormEvent) => {

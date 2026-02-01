@@ -131,7 +131,7 @@ const initialFormData = {
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, existingClients, clientToEdit, acquisitionChannels, isIndividualPlan, onComingSoon }) => {
   const { t } = useLanguage();
-  const { services: contextServices, contractTemplates } = useData();
+  const { services: contextServices, contractTemplates, units } = useData();
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<{ [key: string]: any }>({});
   const [useSocialName, setUseSocialName] = useState(false);
@@ -368,7 +368,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         setProcedurePhotos(clientToEdit.procedurePhotos || []);
         setRelationships(clientToEdit.relationships || []);
         setAdditionalPhones(clientToEdit.additionalPhones || []);
-        setStagedDocuments(clientToEdit.documents?.filter((d: any) => d.type !== 'Anexo') || []);
+        setStagedDocuments(clientToEdit.documents?.filter((d: any) => d.id !== undefined && d.type !== 'Anexo') || []);
         setAttachedDocuments(clientToEdit.documents?.filter((d: any) => d.type === 'Anexo').map((doc: any) => ({
           title: doc.name,
           fileName: doc.fileName || doc.name,
@@ -386,9 +386,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         }
       } else {
         resetForm();
+        // If not editing and there is only one unit, auto-select it
+        if (units.length === 1) {
+          setFormData(prev => ({ ...prev, preferredUnit: units[0].name }));
+        }
       }
     }
-  }, [isOpen, clientToEdit, existingClients]);
+  }, [isOpen, clientToEdit, existingClients, units]);
 
   const handleClose = () => {
     setIsExiting(true);
@@ -1034,16 +1038,17 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         <CollapsibleSection title={t('preferencesAndMarketing')}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField label="Time do Coração" name="team" value={formData.team} onChange={handleChange} />
-            <SelectField
-              label="Unidade de Preferência"
-              name="preferredUnit"
-              value={formData.preferredUnit}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              options={isIndividualPlan ? [{ value: 'Unidade Matriz', label: 'Unidade Matriz' }] : [{ value: 'Unidade Matriz', label: 'Unidade Matriz' }, { value: 'Unidade Filial', label: 'Unidade Filial' }]}
-              disabled={isIndividualPlan}
-              error={errors.preferredUnit}
-            />
+            {units.length > 1 && (
+              <SelectField
+                label="Unidade de Preferência"
+                name="preferredUnit"
+                value={formData.preferredUnit}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                options={units.map(u => ({ value: u.name, label: u.name }))}
+                error={errors.preferredUnit}
+              />
+            )}
             <SelectField
               label={t('acquisitionChannelLabel')}
               name="howTheyFoundUs"
