@@ -4366,7 +4366,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                         {unitName}
                                                     </h4>
                                                     <p className="text-sm text-gray-500 truncate max-w-[200px]">
-                                                        {unit?.address || 'Sem endereço cadastrado'}
+                                                        {unit?.address?.street
+                                                            ? `${unit.address.street}${unit.address.number ? `, ${unit.address.number}` : ''}`
+                                                            : 'Sem endereço cadastrado'}
                                                     </p>
                                                 </div>
                                                 {isActive ? (
