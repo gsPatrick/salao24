@@ -3005,6 +3005,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         };
     }, [allData, selectedUnit]);
 
+    const availableUnits = useMemo(() => Object.keys(allData), [allData]);
+
     const createDataHandler = (dataType: keyof typeof currentUnitData) => (newItem: any) => {
         setAllData((prevData: any) => {
             const fallbackUnitData = {
@@ -3494,34 +3496,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const handleUpdateTransaction = (updatedTransaction: Transaction) => handleTransactionsChange(currentUnitData.transactions.map((t: Transaction) => t.id === updatedTransaction.id ? updatedTransaction : t));
 
-    const handleUnitsChange = (updatedUnits: Unit[], newActiveUnitName?: string) => {
-        const allUnits = Object.keys(allData);
-        const newUnits = updatedUnits.map(u => u.name);
-        const addedUnits = newUnits.filter(u => !allUnits.includes(u));
-        const removedUnits = allUnits.filter(u => !newUnits.includes(u) && u !== 'Unidade Matriz');
-
-        let newData = { ...allData };
-        addedUnits.forEach(unitName => {
-            newData[unitName] = { clients: [], professionals: [], services: [], packages: [], plans: [], products: [], transactions: [], appointments: [], marketingCampaigns: [], directMailCampaigns: [], acquisitionChannels: [] };
-        });
-        removedUnits.forEach(unitName => {
-            delete newData[unitName];
-        });
-
-        // This part seems incorrect as it would overwrite allData. We'll just manage the units list from settings
-        // setAllData(newData);
-
-        const unitsWithData = Object.keys(newData);
-        if (newActiveUnitName && unitsWithData.includes(newActiveUnitName)) {
-            onUnitChange(newActiveUnitName);
-        } else if (!unitsWithData.includes(selectedUnit)) {
-            onUnitChange(unitsWithData.length > 0 ? unitsWithData[0] : '');
-        }
+    const handleUnitsChange = (unitName: string) => {
+        onUnitChange(unitName);
     };
 
     const handleUnitSwitchAnimation = () => {
-        const availableUnits = Object.keys(allData);
-
         if (availableUnits.length <= 1) {
             setIsUnitLimitModalOpen(true);
             return;
@@ -3530,9 +3509,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         if (isIndividualPlan) return;
 
         setIsSwitchingUnit(true);
-        setAnimateContent(false); // Ensure content isn't animated before skeleton is gone
+        setAnimateContent(false);
 
-        // Short delay to allow skeleton to render before changing the data underneath
         setTimeout(() => {
             const currentIndex = availableUnits.indexOf(selectedUnit);
             const nextIndex = (currentIndex + 1) % availableUnits.length;
@@ -3540,12 +3518,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onUnitChange(nextUnit);
         }, 300);
 
-        // Simulate a variable data fetch time
-        const fetchTime = 1200 + Math.random() * 800; // between 1.2s and 2s
+        const fetchTime = 1200 + Math.random() * 800;
 
         setTimeout(() => {
             setIsSwitchingUnit(false);
-            setAnimateContent(true); // Trigger the content animation
+            setAnimateContent(true);
         }, fetchTime);
     };
 
@@ -4096,7 +4073,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Financeiro': return <FinancialDashboardPage onBack={handleBackToDashboard} clients={currentUnitData.clients || []} transactions={currentUnitData.transactions || []} onSaveTransaction={handleSaveTransaction} onUpdateTransaction={handleUpdateTransaction} onComingSoon={onComingSoon} />;
             case 'Relatórios': return <ReportsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'Suporte': return <SupportPage onBack={handleBackToDashboard} currentUser={currentUser!} onComingSoon={onComingSoon} />;
-            case 'Configurações': return <SettingsPage onBack={handleBackToDashboard} units={Object.keys(allData).map((name, id) => ({ id, name, ...allData[name].unitDetails }))} onUnitsChange={handleUnitsChange} isIndividualPlan={isIndividualPlan} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} users={users} onUsersChange={onUsersChange} onComingSoon={onComingSoon} />;
+            case 'Configurações': return <SettingsPage
+                onBack={handleBackToDashboard}
+                units={Object.keys(allData).map((name, id) => ({ id, name, ...allData[name].unitDetails }))}
+                selectedUnit={selectedUnit}
+                onUnitsChange={handleUnitsChange}
+                isIndividualPlan={isIndividualPlan}
+                onPayInstallment={onPayInstallment}
+                currentUser={currentUser}
+                onLogout={onLogout}
+                navigate={navigate}
+                users={users}
+                onUsersChange={onUsersChange}
+                onComingSoon={onComingSoon}
+            />;
             // onUsersChange needs real implementation
             default: return <PlaceholderComponent title={activeView} onBack={handleBackToDashboard} />;
         }
@@ -4214,6 +4204,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button onClick={() => handleSidebarClick('Visão Geral')} className="text-gray-500 hover:text-primary"><HomeIcon /></button>
                                 <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>{t('overview')}<div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div></div>
                             </div>
+
+                            {/* Unit Switcher in Header */}
+                            {!isIndividualPlan && availableUnits.length > 1 && (
+                                <div className="hidden sm:flex items-center bg-gray-50 rounded-full px-3 py-1 border border-gray-200">
+                                    <span className="text-gray-400 mr-2"><UnitIcon /></span>
+                                    <select
+                                        value={selectedUnit}
+                                        onChange={(e) => onUnitChange(e.target.value)}
+                                        className="bg-transparent text-sm font-bold text-secondary focus:outline-none cursor-pointer border-none p-0 pr-8"
+                                    >
+                                        {availableUnits.map(unitName => (
+                                            <option key={unitName} value={unitName}>{unitName}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <div className="relative group" ref={notificationPanelRef}>
                                 <button onClick={() => setIsNotificationPanelOpen(prev => !prev)} className="text-gray-500 hover:text-primary relative"><BellIcon />{unreadCount > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-white text-xs items-center justify-center">{unreadCount}</span></span>}</button>

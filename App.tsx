@@ -126,18 +126,18 @@ const App: React.FC = () => {
         setSelectedUnit(units[0].name);
       }
 
-      // Initialize or update allData structure for all units
+      // Initialize allData structure for all units (rebuild to remove stale keys)
       setAllData((prev: any) => {
-        const newData = { ...prev };
+        const newData: any = {};
         units.forEach(unit => {
-          if (!newData[unit.name]) {
-            newData[unit.name] = {
-              clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
-              transactions: [], appointments: [], marketingCampaigns: [], directMailCampaigns: [],
-              acquisitionChannels: [], unitDetails: unit
-            };
-          }
-          // Merge base context data into each unit (currently sharing global data)
+          // Keep existing data if unit name hasn't changed, otherwise create new structure
+          newData[unit.name] = prev[unit.name] || {
+            clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
+            transactions: [], appointments: [], marketingCampaigns: [], directMailCampaigns: [],
+            acquisitionChannels: [], unitDetails: unit
+          };
+
+          // Sync with latest global data
           newData[unit.name] = {
             ...newData[unit.name],
             clients, professionals, services, products, transactions, appointments,

@@ -50,8 +50,9 @@ interface Professional {
 interface SettingsPageProps {
     onBack?: () => void;
     units?: Unit[];
-    onUnitsChange?: (units: Unit[], newActiveUnitName?: string) => void;
-    professionals: Professional[];
+    selectedUnit?: string;
+    onUnitsChange?: (unitName: string) => void;
+    professionals?: Professional[];
     isIndividualPlan: boolean;
     onPayInstallment: (planName: 'Individual' | 'Empresa' | 'Vitalício' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium') => void;
     currentUser: User | null;
@@ -165,7 +166,16 @@ const rolePermissions: { [key in User['role']]: { [key: string]: PermissionDetai
     profissional: { ...defaultPermissions, minhhAgenda: { create: true, view: true, delete: false, export: true } }
 };
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividualPlan, onPayInstallment, currentUser, onLogout, navigate }) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({
+    onBack,
+    selectedUnit,
+    onUnitsChange,
+    isIndividualPlan,
+    onPayInstallment,
+    currentUser,
+    onLogout,
+    navigate
+}) => {
     const { t } = useLanguage();
     const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals } = useData(); // Use DataContext
     const [activeTab, setActiveTab] = useState('conta');
@@ -411,6 +421,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, isIndividual
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                                                {selectedUnit !== unit.name && !unit.suspended && (
+                                                    <button
+                                                        onClick={() => onUnitsChange && onUnitsChange(unit.name)}
+                                                        className="text-green-600 hover:text-green-800 font-bold"
+                                                    >
+                                                        Selecionar
+                                                    </button>
+                                                )}
                                                 <button onClick={() => { setUnitToEdit(unit); setIsUnitModalOpen(true); }} className="text-primary hover:text-primary-dark">{t('edit')}</button>
                                                 <button onClick={() => handleUnitSuspend(unit.id)} disabled={!canAddMultipleUnits} className={`transition-colors ${!canAddMultipleUnits ? 'text-gray-400 cursor-not-allowed' : (unit.suspended ? "text-green-600 hover:text-green-800" : "text-yellow-600 hover:text-yellow-800")}`}>
                                                     {unit.suspended ? t('actionReactivate') : t('actionSuspend')}
