@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { appointmentsAPI } from '../lib/api';
-import { Service, Professional } from '../types';
+import { appointmentsAPI, unitsAPI } from '../lib/api';
+import { Service, Professional, Unit } from '../types';
 
 // --- Constants ---
-const units = ['Unidade Boa Viagem', 'Unidade Piedade'];
 const anyProfessional: Professional = {
     id: -1,
     name: 'Qualquer profissional',
@@ -60,6 +59,25 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
     const [calendarMonth, setCalendarMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [loadingSlots, setLoadingSlots] = useState(false);
+    const [units, setUnits] = useState<Unit[]>([]);
+    const [loadingUnits, setLoadingUnits] = useState(true);
+
+    useEffect(() => {
+        const fetchUnits = async () => {
+            try {
+                setLoadingUnits(true);
+                const response = await unitsAPI.getAll();
+                if (response.success) {
+                    setUnits(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching units:', error);
+            } finally {
+                setLoadingUnits(false);
+            }
+        };
+        fetchUnits();
+    }, []);
 
     useEffect(() => {
         const fetchSlots = async () => {
@@ -85,7 +103,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
         fetchSlots();
     }, [selection.professional, selection.service, selectedDate]);
 
-    const unitsToShow = isIndividualPlan ? [units[0]] : units;
+    const unitsToShow = isIndividualPlan ? (units.length > 0 ? [units[0]] : []) : units;
     const professionalForIndividualPlan = professionals.length > 0 ? professionals[0] : null;
     const professionalsToShow = isIndividualPlan && professionalForIndividualPlan ? [professionalForIndividualPlan] : professionals;
 
@@ -197,11 +215,17 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                     <div>
                         <h2 className="text-2xl font-bold text-center text-secondary mb-6">Onde você quer ser atendido(a)?</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {unitsToShow.map(unit => (
-                                <button key={unit} onClick={() => select('unit', unit)} className="p-8 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 text-center transform hover:scale-105">
-                                    <p className="text-xl font-semibold text-secondary">{unit}</p>
-                                </button>
-                            ))}
+                            {loadingUnits ? (
+                                <div className="col-span-2 text-center py-12">Carregando unidades...</div>
+                            ) : unitsToShow.length > 0 ? (
+                                unitsToShow.map(unit => (
+                                    <button key={unit.id} onClick={() => select('unit', unit.name)} className="p-8 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 text-center transform hover:scale-105">
+                                        <p className="text-xl font-semibold text-secondary">{unit.name}</p>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="col-span-2 text-center py-12 text-gray-500">Nenhuma unidade encontrada.</div>
+                            )}
                         </div>
                     </div>
                 );

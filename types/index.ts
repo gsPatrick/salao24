@@ -199,3 +199,11 @@ export interface DirectMailCampaignData {
     };
     archived?: boolean;
 }
+
+export interface Unit {
+    id: number;
+    name: string;
+    tenant_id?: number;
+    is_active?: boolean;
+    address?: any;
+}
