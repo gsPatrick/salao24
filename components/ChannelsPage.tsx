@@ -69,12 +69,23 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
       setIsLoading(false);
     });
 
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+      setIsLoading(false);
+      if (err.message === 'User not found' || err.message === 'Authentication error') {
+        showNotification('Erro de autenticação. Tente fazer login novamente.');
+      } else {
+        showNotification('Erro de conexão com o servidor. Tentando reconectar...');
+      }
+    });
+
     // Check initial status
     socket.emit('whatsapp:check_status');
 
     return () => {
       socket.off('whatsapp:qr');
       socket.off('whatsapp:status');
+      socket.off('connect_error');
     };
   }, []);
 

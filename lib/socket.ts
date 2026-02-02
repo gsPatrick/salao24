@@ -10,7 +10,7 @@ export const getSocket = (): Socket => {
         const token = localStorage.getItem('token');
         socket = io(SOCKET_URL, {
             auth: { token },
-            transports: ['websocket'],
+            transports: ['polling', 'websocket'], // Try polling first if websocket fails
             autoConnect: true,
         });
 
