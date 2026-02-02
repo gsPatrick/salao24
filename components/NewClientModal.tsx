@@ -707,11 +707,14 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     if (!documentToSign) return;
 
     setStagedDocuments(prevDocs =>
-      prevDocs.map(doc =>
-        doc.stagedId === documentToSign.stagedId
+      prevDocs.map(doc => {
+        // Match by stagedId (for newly added template documents) OR by id (for existing documents from database)
+        const isMatch = (doc.stagedId && doc.stagedId === documentToSign.stagedId) ||
+          (doc.id && doc.id === documentToSign.id);
+        return isMatch
           ? { ...doc, signed: true, signatureImg: signatureData.signature, userPhoto: signatureData.photo }
-          : doc
-      )
+          : doc;
+      })
     );
     setDocumentToSign(null);
   };
