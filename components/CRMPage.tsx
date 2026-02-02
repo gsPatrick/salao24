@@ -461,7 +461,7 @@ interface CRMPageProps {
 }
 
 const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpenChat }) => {
-    const { clients, appointments, services, professionals } = useData();
+    const { clients, appointments, services, professionals, crmSettings, updateCrmSettings } = useData();
     const { t } = useLanguage();
 
     // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
@@ -491,6 +491,13 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         { id: 'rescheduled', title: 'Reagendados', icon: '🔄', visible: true, deletable: false, configTitle: 'Confirmar Reagendamento', configDescription: 'Enviar confirmação do novo horário para o cliente.', isAIActionActive: true },
         { id: 'inactive', title: 'Inativas (60+ dias)', icon: '⏳', visible: true, deletable: false, configTitle: 'Campanha de Reativação', configDescription: 'Enviar mensagem com oferta especial para clientes que não retornam há mais de 60 dias.', isAIActionActive: false },
     ]);
+
+    // Load persisted settings
+    useEffect(() => {
+        if (crmSettings?.funnel_stages && Array.isArray(crmSettings.funnel_stages) && crmSettings.funnel_stages.length > 0) {
+            setColumnsConfig(crmSettings.funnel_stages);
+        }
+    }, [crmSettings]);
 
     const [classifications, setClassifications] = useState<Classification[]>([
         { text: 'VIP', icon: '👑' },
@@ -541,12 +548,13 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         setOpenConfigColumnId(prev => (prev === columnId ? null : columnId));
     };
 
-    const handleColumnConfigChange = (columnId: string, field: keyof CrmColumnConfig, value: any) => {
-        setColumnsConfig(prev =>
-            prev.map(col =>
-                col.id === columnId ? { ...col, [field]: value } : col
-            )
+    const handleColumnConfigChange = async (columnId: string, field: keyof CrmColumnConfig, value: any) => {
+        const updated = columnsConfig.map(col =>
+            col.id === columnId ? { ...col, [field]: value } : col
         );
+        setColumnsConfig(updated);
+        // Persist change
+        await updateCrmSettings({ funnel_stages: updated });
     };
 
 
@@ -636,15 +644,12 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 return;
             }
 
-            // Priority 4: New Client (last 7 days)
-            if (client.registrationDate) {
-                const regDate = new Date(client.registrationDate);
-                const diffTime = Math.abs(startOfToday.getTime() - regDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays <= 7) {
-                    groups.new.push(client);
-                    return;
-                }
+            // Priority 4: New Client (Unprocessed/Leads)
+            // Catch all for clients who don't have attended appointments yet and didn't fall into other categories
+            const isAttended = client.status === 'Atendido' || client.status === 'concluido' || (client.total_visits && client.total_visits > 0);
+            if (!isAttended) {
+                groups.new.push(client);
+                return;
             }
 
             // Priority 5: Inactive Client
@@ -756,8 +761,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         }));
     }, [columnsConfig, cardPositions, clientGroups]);
 
-    const handleSaveSettings = (updatedConfig: CrmColumnConfig[]) => {
+    const handleSaveSettings = async (updatedConfig: CrmColumnConfig[]) => {
         setColumnsConfig(updatedConfig);
+        await updateCrmSettings({ funnel_stages: updatedConfig });
     };
 
     const handleCardClick = (client: any) => {

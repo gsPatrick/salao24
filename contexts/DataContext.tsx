@@ -52,8 +52,12 @@ export interface Client {
 }
 
 export interface CrmSettings {
-    columns: any[];
-    classifications: any[];
+    id?: number;
+    tenant_id?: number;
+    funnel_stages: any[];
+    automation_rules: any[];
+    columns?: any[];
+    classifications?: any[];
 }
 
 export interface Professional {
