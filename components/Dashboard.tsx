@@ -917,6 +917,9 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                                 accept="image/*"
                                             />
                                         </div>
+                                        <p className="text-xs text-gray-500">
+                                            <span className="font-medium text-primary">Tamanho recomendado:</span> 1080x1080px (Quadrado 1:1)
+                                        </p>
                                     </div>
                                 </div>
 
@@ -1349,9 +1352,7 @@ const ExclusivePromotionsPage: React.FC<{
                                                 />
                                             </div>
                                             <p className="text-xs text-gray-500">
-                                                <span className="font-medium">Tamanho recomendado:</span> 1200x400px (proporção 3:1)
-                                                <br />
-                                                <span className="text-gray-400">A imagem será otimizada para melhor performance.</span>
+                                                <span className="font-medium text-primary">Tamanho recomendado:</span> 1200x630px (Retangular)
                                             </p>
                                         </div>
                                     </div>
@@ -2519,6 +2520,9 @@ const MonthlyPackagesPage: React.FC<{
                                                         accept="image/*"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-gray-500">
+                                                    <span className="font-medium text-primary">Tamanho recomendado:</span> 1080x1080px (Quadrado 1:1)
+                                                </p>
                                             </div>
                                         </div>
 
