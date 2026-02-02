@@ -496,7 +496,24 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages && Array.isArray(crmSettings.funnel_stages) && crmSettings.funnel_stages.length > 0) {
-            setColumnsConfig(crmSettings.funnel_stages);
+            const fetchedStages = crmSettings.funnel_stages;
+            const hasRecurrent = fetchedStages.some((s: any) => s.id === 'recurrent');
+
+            if (!hasRecurrent) {
+                const newStage = { id: 'recurrent', title: 'Recorrentes (Ativos)', icon: '💎', visible: true, deletable: true, configTitle: 'Fidelização', configDescription: 'Manter engajamento com cliente ativo.', isAIActionActive: false };
+                const newIndex = fetchedStages.findIndex((s: any) => s.id === 'new');
+                const newStages = [...fetchedStages];
+                if (newIndex >= 0) {
+                    newStages.splice(newIndex + 1, 0, newStage);
+                } else {
+                    newStages.unshift(newStage);
+                }
+                setColumnsConfig(newStages);
+                // Optionally save back to server to persist for future
+                // updateCrmSettings({ funnel_stages: newStages }); 
+            } else {
+                setColumnsConfig(fetchedStages);
+            }
         }
     }, [crmSettings]);
 
