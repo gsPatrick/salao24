@@ -105,7 +105,7 @@ export const professionalsAPI = {
         const response = await api.patch(`/professionals/${id}/archive`);
         return response.data;
     },
-    getRanking: async (params?: { limit?: number }) => {
+    getRanking: async (params?: { limit?: number, unit?: string }) => {
         const response = await api.get('/professionals/ranking', { params });
         return response.data;
     },
@@ -182,7 +182,7 @@ export const financeAPI = {
         const response = await api.get('/finance/transactions');
         return response.data;
     },
-    getSummary: async (params?: { period?: string, startDate?: string, endDate?: string }) => {
+    getSummary: async (params?: { period?: string, startDate?: string, endDate?: string, unit?: string }) => {
         const response = await api.get('/finance/summary', { params });
         return response.data;
     },

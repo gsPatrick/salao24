@@ -3710,7 +3710,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     const DashboardOverviewContent = () => {
-        const { transactions, appointments, clients, promotions, notifications: contextNotifications, refreshNotifications } = useData();
+        const { transactions, appointments, clients } = currentUnitData;
+        const { promotions, notifications: contextNotifications, refreshNotifications } = useData();
         const periodKey = derivedPeriod === 'mes' ? 'mensal' : derivedPeriod;
         const [summary, setSummary] = useState<any>(null);
         const [loadingSummary, setLoadingSummary] = useState(false);
@@ -3721,7 +3722,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             const fetchRankings = async () => {
                 setLoadingRankings(true);
                 try {
-                    const response = await professionalsAPI.getRanking({ limit: 5 });
+                    const response = await professionalsAPI.getRanking({ limit: 5, unit: selectedUnit });
                     if (response.success) {
                         setRankings(response.data);
                     }
@@ -3732,13 +3733,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }
             };
             fetchRankings();
-        }, []);
+        }, [selectedUnit]);
 
         useEffect(() => {
             const fetchSummary = async () => {
                 setLoadingSummary(true);
                 try {
-                    const response = await financeAPI.getSummary({ period: derivedPeriod });
+                    const response = await financeAPI.getSummary({ period: derivedPeriod, unit: selectedUnit });
                     if (response.success) {
                         setSummary(response.data);
                     }
@@ -3749,7 +3750,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }
             };
             fetchSummary();
-        }, [derivedPeriod]);
+        }, [derivedPeriod, selectedUnit, transactions]);
 
         // Use summary if available, otherwise fallback to local calculation
         const kpisForPeriod = useMemo(() => {
@@ -4131,7 +4132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Serviços': return <ServicesPage onBack={handleBackToDashboard} />;
             case 'Estoque': return <StockPage onBack={handleBackToDashboard} />;
             case 'Contratos': return <ContractPage onBack={handleBackToDashboard} currentUser={currentUser} onComingSoon={onComingSoon} />;
-            case 'Financeiro': return <FinancialDashboardPage onBack={handleBackToDashboard} clients={currentUnitData.clients || []} transactions={currentUnitData.transactions || []} onSaveTransaction={handleSaveTransaction} onUpdateTransaction={handleUpdateTransaction} onComingSoon={onComingSoon} />;
+            case 'Financeiro': return <FinancialDashboardPage onBack={handleBackToDashboard} clients={currentUnitData.clients || []} transactions={currentUnitData.transactions || []} onSaveTransaction={handleSaveTransaction} onUpdateTransaction={handleUpdateTransaction} onComingSoon={onComingSoon} unitName={selectedUnit} />;
             case 'Relatórios': return <ReportsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'Suporte': return <SupportPage onBack={handleBackToDashboard} currentUser={currentUser!} onComingSoon={onComingSoon} />;
             case 'Configurações': return <SettingsPage

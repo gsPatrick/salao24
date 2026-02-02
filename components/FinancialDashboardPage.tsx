@@ -23,6 +23,8 @@ interface FinancialDashboardPageProps {
     transactions?: Transaction[];
     onSaveTransaction?: (transaction: any) => void;
     onUpdateTransaction?: (transaction: Transaction) => void;
+    unitName?: string;
+    onComingSoon?: (feature: string) => void;
 }
 
 // --- Icons ---
@@ -40,7 +42,7 @@ const StatCard: React.FC<{ title: string; value: string; color: string; }> = ({ 
     </div>
 );
 
-const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack }) => {
+const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack, unitName }) => {
     const { t } = useLanguage();
     const { transactions, saveTransaction, tenant } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,7 +83,8 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack 
         // Adapt modal data to Transaction type if needed
         const newTransaction = {
             ...transactionData,
-            type: modalType
+            type: modalType,
+            unit: unitName
         };
         await saveTransaction(newTransaction);
         setIsModalOpen(false);
@@ -424,6 +427,7 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack 
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveLocal}
                 transactionType={modalType}
+                currentUnit={unitName || ''}
             />
         </>
     );

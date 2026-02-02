@@ -6,9 +6,10 @@ interface NewTransactionModalProps {
   onClose: () => void;
   onSave: (transaction: any) => void;
   transactionType: 'receita' | 'despesa';
+  currentUnit: string;
 }
 
-const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClose, onSave, transactionType }) => {
+const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClose, onSave, transactionType, currentUnit }) => {
   const { t } = useLanguage();
   const [description, setDescription] = useState('');
   const [value, setValue] = useState('');
@@ -91,6 +92,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
       status,
       billAttachment: billAttachment ? billAttachment.name : undefined,
       receiptAttachment: receiptAttachment ? receiptAttachment.name : undefined,
+      unit: currentUnit,
     };
 
     onSave(saveData);

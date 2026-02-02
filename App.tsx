@@ -140,15 +140,12 @@ const App: React.FC = () => {
           // Sync with latest global data
           newData[unit.name] = {
             ...newData[unit.name],
-            clients,
+            clients: clients.filter(c => c.preferredUnit === unit.name),
             professionals: professionals.filter(p => p.unit === unit.name),
             services,
             products,
-            transactions, // Transactions could also be filtered if they had a professionalId or unit field
-            appointments: appointments.filter(a => {
-              const prof = professionals.find(p => p.id === a.professionalId);
-              return prof ? prof.unit === unit.name : true; // Fallback to true if professional not found
-            }),
+            transactions: transactions.filter(t => t.unit === unit.name),
+            appointments: appointments.filter(a => a.unit === unit.name),
             unitDetails: unit
           };
         });
