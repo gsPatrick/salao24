@@ -171,6 +171,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [documentToSign, setDocumentToSign] = useState<ClientDocument | null>(null);
+  const [viewingSignedDoc, setViewingSignedDoc] = useState<ClientDocument | null>(null);
   const [isHairStyleTestModalOpen, setIsHairStyleTestModalOpen] = useState(false);
 
   const [indicationResults, setIndicationResults] = useState<any[]>([]);
@@ -1250,10 +1251,14 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <p className="text-sm font-semibold text-gray-800">{doc.name}</p>
                   <div className="flex items-center gap-4">
                     {doc.signed ? (
-                      <span className="text-sm font-semibold text-green-600 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setViewingSignedDoc(doc)}
+                        className="text-sm font-semibold text-green-600 flex items-center gap-1 hover:underline"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                        Assinado
-                      </span>
+                        Ver Assinatura
+                      </button>
                     ) : (
                       <button
                         type="button"
@@ -1457,6 +1462,75 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             </div>
           </form>
         </div>
+        {/* Signature Viewer Modal */}
+        {viewingSignedDoc && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-60 animate-fade-in" onClick={() => setViewingSignedDoc(null)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-xl w-full animate-bounce-in" onClick={e => e.stopPropagation()}>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-secondary text-center mb-4">
+                  Assinatura do Contrato
+                </h3>
+                <p className="text-sm text-gray-500 text-center mb-4">{viewingSignedDoc.name}</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Photo */}
+                  <div className="text-center">
+                    <h4 className="font-semibold text-gray-700 mb-2">Foto do Cliente</h4>
+                    {viewingSignedDoc.userPhoto ? (
+                      <div className="space-y-2">
+                        <img
+                          src={viewingSignedDoc.userPhoto}
+                          alt="Foto do cliente"
+                          className="w-32 h-32 object-cover rounded-full mx-auto shadow-md border-2 border-primary"
+                        />
+                        <a
+                          href={viewingSignedDoc.userPhoto}
+                          download={`foto_${formData.fullName?.replace(/\s+/g, '_') || 'cliente'}.png`}
+                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                        >
+                          ⬇ Baixar Foto
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-sm">Foto não disponível</p>
+                    )}
+                  </div>
+
+                  {/* Signature */}
+                  <div className="text-center">
+                    <h4 className="font-semibold text-gray-700 mb-2">Assinatura</h4>
+                    {viewingSignedDoc.signatureImg ? (
+                      <div className="space-y-2">
+                        <img
+                          src={viewingSignedDoc.signatureImg}
+                          alt="Assinatura"
+                          className="w-full max-w-[200px] h-auto mx-auto border rounded-lg bg-gray-50 p-2"
+                        />
+                        <a
+                          href={viewingSignedDoc.signatureImg}
+                          download={`assinatura_${formData.fullName?.replace(/\s+/g, '_') || 'cliente'}.png`}
+                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                        >
+                          ⬇ Baixar Assinatura
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-sm">Assinatura não disponível</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-6 py-3 flex justify-end rounded-b-lg">
+                <button
+                  onClick={() => setViewingSignedDoc(null)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <SignatureModal
           isOpen={isSignatureModalOpen}
           onClose={() => setIsSignatureModalOpen(false)}
