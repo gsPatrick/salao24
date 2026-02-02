@@ -519,7 +519,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                                             <img
                                                 src={promo.image || "https://via.placeholder.com/400x200"}
                                                 alt={promo.title}
-                                                className="w-full h-32 object-cover rounded-lg mb-3"
+                                                className="w-full h-56 object-contain rounded-lg mb-3 bg-gray-50"
                                             />
                                             <h4 className="font-semibold text-gray-800 text-sm mb-2">{promo.title}</h4>
                                             <p className="text-xs text-gray-600 mb-3 line-clamp-2">{promo.description}</p>

@@ -120,7 +120,7 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
 
   return (
     <div className="mt-4 bg-white rounded-2xl shadow-md overflow-hidden flex flex-col">
-      <div className="relative h-44 overflow-hidden">
+      <div className="relative h-44 overflow-hidden bg-gray-50 flex items-center justify-center">
         <div
           className={`absolute inset-0 bg-gradient-to-br ${activeCard.accentColor}`}
         ></div>
@@ -128,7 +128,7 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
           <img
             src={activeCard.imageUrl}
             alt={activeCard.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

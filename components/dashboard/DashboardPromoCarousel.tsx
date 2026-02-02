@@ -132,11 +132,11 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
                                     {!item.isEmpty ? (
                                         <>
                                             {/* Image Section */}
-                                            <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden shadow-inner">
+                                            <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center">
                                                 <img
                                                     src={item.image_url}
                                                     alt={item.title}
-                                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                                                    className="w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
                                                 />
 
                                                 {/* Badge - Top Left */}
