@@ -5,6 +5,8 @@ import api from '../lib/api'; // Fix: default import for api
 import YouTubeCommentModeration from './YouTubeCommentModeration';
 import { youtubeService } from '../lib/youtubeService';
 import { commentAutomationService } from '../lib/commentAutomationService';
+import { getSocket, disconnectSocket } from '../lib/socket';
+import { QRCodeCanvas } from 'qrcode.react';
 
 // Icons
 const YouTubeIcon = () => (
@@ -37,6 +39,44 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
   const [isMarketingConnected, setIsMarketingConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Unified WhatsApp State
+  const [qrCode, setQrCode] = useState<string>('');
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'qrcode' | 'connected' | 'logged_out'>('disconnected');
+
+  // Socket Connection for WhatsApp
+  useEffect(() => {
+    const socket = getSocket();
+
+    socket.on('whatsapp:qr', ({ qr }) => {
+      console.log('QR Received');
+      setQrCode(qr);
+      setConnectionStatus('qrcode');
+      setIsLoading(false);
+    });
+
+    socket.on('whatsapp:status', ({ status }) => {
+      console.log('WhatsApp Status:', status);
+      setConnectionStatus(status);
+      if (status === 'connected') {
+        setIsSupportConnected(true);
+        setIsMarketingConnected(true);
+        setQrCode('');
+      } else if (status === 'disconnected' || status === 'logged_out') {
+        setIsSupportConnected(false);
+        setIsMarketingConnected(false);
+      }
+      setIsLoading(false);
+    });
+
+    // Check initial status
+    socket.emit('whatsapp:check_status');
+
+    return () => {
+      socket.off('whatsapp:qr');
+      socket.off('whatsapp:status');
+    };
+  }, []);
 
   // Load initial settings
   useEffect(() => {
@@ -75,34 +115,16 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleToggleConnection = async (channel: 'support' | 'marketing') => {
+  const handleConnectWhatsApp = () => {
     setIsLoading(true);
-    try {
-      const update = {};
-      if (channel === 'support') {
-        update['support_active'] = !isSupportConnected;
-      } else if (channel === 'marketing') {
-        update['marketing_active'] = !isMarketingConnected;
-      }
+    const socket = getSocket();
+    socket.emit('whatsapp:connect');
+  };
 
-      await api.put('/tenants/settings', { settings: update });
-
-      if (channel === 'support') {
-        const newState = !isSupportConnected;
-        setIsSupportConnected(newState);
-        showNotification(newState ? 'Canal de Atendimento conectado!' : 'Canal de Atendimento desconectado.');
-      } else if (channel === 'marketing') {
-        const newState = !isMarketingConnected;
-        setIsMarketingConnected(newState);
-        showNotification(newState ? 'Canal de Marketing conectado com sucesso!' : 'Canal de Marketing desconectado.');
-      }
-
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      showNotification('Erro ao conectar canal. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDisconnectWhatsApp = () => {
+    setIsLoading(true);
+    const socket = getSocket();
+    socket.emit('whatsapp:disconnect');
   };
 
   const handleToggleInstagramConnection = () => {
@@ -219,87 +241,131 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
       <div className="max-w-4xl mx-auto space-y-8">
         {/* WhatsApp Section */}
         <div className="bg-white p-6 rounded-2xl shadow-lg">
-          <div className="flex items-center gap-4 mb-6 pb-4 border-b">
-            <div className="p-2 bg-green-100 text-green-600 rounded-lg">
-              <WhatsAppIcon />
-            </div>
-            <h2 className="text-2xl font-bold text-secondary">WhatsApp</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Marketing e Atendimento a Clientes Card */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+            {/* Unified WhatsApp Card */}
             <div className="relative border p-6 rounded-xl flex flex-col items-center text-center">
               {isIndividualPlan && (
-                <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-xl z-10 flex flex-col items-center justify-center p-4">
-                  <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center mb-3">
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-xl z-20 flex flex-col items-center justify-center p-6 text-white">
+                  <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg animate-pulse">
                     <LockIcon />
                   </div>
-                  <h4 className="text-md font-bold text-white">{t('planEnterprise')}</h4>
-                  <p className="text-xs text-gray-300 mt-1 mb-3">Faça o upgrade para usar este canal de comunicação.</p>
+                  <h4 className="text-2xl font-bold mb-2">{t('planEnterprise')}</h4>
+                  <p className="text-gray-300 mb-6 max-w-md">
+                    Recurso disponível apenas no plano Empresa. Faça o upgrade agora para desbloquear a conexão ilimitada com WhatsApp.
+                  </p>
                   <button
                     type="button"
                     onClick={() => navigate('upgrade_to_empresa')}
-                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 shadow-xl"
                   >
                     Fazer Upgrade
                   </button>
                 </div>
               )}
-              <h3 className="text-lg font-bold text-secondary">Marketing e Atendimento a Clientes</h3>
-              <p className="text-sm text-gray-500 mt-1 mb-4">Número principal para suporte, campanhas de marketing, agendamentos e comunicação geral com clientes já existentes.</p>
-              <div className="my-4 p-4 border-2 border-dashed rounded-lg">
-                <svg className="w-20 h-20 text-gray-300 mx-auto" viewBox="0 0 256 256"><path fill="currentColor" d="M128 256a128 128 0 1 0 0-256a128 128 0 1 0 0 256ZM48 48v64h64V48H48Zm16 16h32v32H64V64Zm80-16v64h64V48h-64Zm16 16h32v32h-32V64ZM48 144v64h64v-64H48Zm16 16h32v32H64v-32Zm80-16h16v16h-16v-16Zm16 16h16v16h-16v-16Zm16-16h16v16h-16v-16Zm-16 32h16v16h-16v-16Zm16 16h16v16h-16v-16Zm-32-16h16v16h-16v-16Zm0 16h16v16h-16v-16Zm-16-16h16v16h-16v-16Zm-16 32h16v16H96v-16Zm32 0h16v16h-16v-16Zm-16-16h16v16h-16v-16Z" /></svg>
-              </div>
-              <span className={`text-xs font-semibold px-2 py-1 rounded-full mb-4 ${isSupportConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {isSupportConnected ? t('channelsConnected') : t('channelsDisconnected')}
-              </span>
-              <button
-                onClick={() => handleToggleConnection('support')}
-                disabled={isLoading || isIndividualPlan}
-                className={`w-full flex justify-center py-2 px-4 border text-sm font-medium rounded-md disabled:opacity-50 transition-colors ${isSupportConnected ? 'border-red-500 text-red-500 bg-white hover:bg-red-50' : 'border-transparent text-white bg-primary hover:bg-primary-dark'}`}
-              >
-                {isLoading ? '...' : (isSupportConnected ? t('channelsDisconnect') : t('channelsConnect'))}
-              </button>
-            </div>
 
-            {/* Leads Card */}
-            <div className="relative border p-6 rounded-xl flex flex-col items-center text-center">
-              {isIndividualPlan && (
-                <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-xl z-10 flex flex-col items-center justify-center p-4">
-                  <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center mb-3">
-                    <LockIcon />
-                  </div>
-                  <h4 className="text-md font-bold text-white">{t('planEnterprise')}</h4>
-                  <p className="text-xs text-gray-300 mt-1 mb-3">Faça o upgrade para usar um número exclusivo para leads.</p>
-                  <button
-                    type="button"
-                    onClick={() => navigate('upgrade_to_empresa')}
-                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
-                  >
-                    Fazer Upgrade
-                  </button>
-                </div>
-              )}
-              <h3 className="text-lg font-bold text-secondary">Leads</h3>
-              <p className="text-sm text-gray-500 mt-1 mb-4">Número exclusivo para captação de novos clientes e primeiro contato.</p>
-              <div className="my-4 p-4 border-2 border-dashed rounded-lg">
-                <svg className="w-20 h-20 text-gray-300 mx-auto" viewBox="0 0 256 256"><path fill="currentColor" d="M128 256a128 128 0 1 0 0-256a128 128 0 1 0 0 256ZM48 48v64h64V48H48Zm16 16h32v32H64V64Zm80-16v64h64V48h-64Zm16 16h32v32h-32V64ZM48 144v64h64v-64H48Zm16 16h32v32H64v-32Zm80-16h16v16h-16v-16Zm16 16h16v16h-16v-16Zm16-16h16v16h-16v-16Zm-16 32h16v16h-16v-16Zm16 16h16v16h-16v-16Zm-32-16h16v16h-16v-16Zm0 16h16v16h-16v-16Zm-16-16h16v16h-16v-16Zm-16 32h16v16H96v-16Zm32 0h16v16h-16v-16Zm-16-16h16v16h-16v-16Z" /></svg>
+              <div className="p-4 bg-green-100 text-green-600 rounded-full mb-4">
+                <WhatsAppIcon />
               </div>
-              <span className={`text-xs font-semibold px-2 py-1 rounded-full mb-4 ${isMarketingConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {isMarketingConnected ? t('channelsConnected') : t('channelsDisconnected')}
-              </span>
-              <button
-                onClick={() => handleToggleConnection('marketing')}
-                disabled={isLoading || isIndividualPlan}
-                className={`w-full flex justify-center py-2 px-4 border text-sm font-medium rounded-md disabled:opacity-50 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${isMarketingConnected ? 'border-red-500 text-red-500 bg-white hover:bg-red-50' : 'border-transparent text-white bg-primary hover:bg-primary-dark'}`}
-              >
-                {isLoading ? '...' : (isMarketingConnected ? t('channelsDisconnect') : t('channelsConnect'))}
-              </button>
+              <h3 className="text-2xl font-bold text-secondary mb-2">WhatsApp</h3>
+              <p className="text-gray-500 mb-6 max-w-lg">
+                Conecte seu WhatsApp para centralizar atendimento, marketing e leads em um único número inteligente com IA.
+              </p>
+
+              <div className="my-4 min-h-[220px] flex items-center justify-center w-full bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6">
+                {connectionStatus === 'qrcode' && qrCode ? (
+                  <div className="flex flex-col items-center animate-fade-in">
+                    <QRCodeCanvas value={qrCode} size={220} />
+                    <p className="text-sm font-medium text-gray-600 mt-4">Escaneie com seu WhatsApp</p>
+                  </div>
+                ) : connectionStatus === 'connected' ? (
+                  <div className="flex flex-col items-center text-green-600 animate-bounce-in">
+                    <svg className="w-20 h-20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span className="font-bold text-lg">Conectado com Sucesso!</span>
+                    <p className="text-sm text-green-700 mt-1">Sessão ativa e sincronizada.</p>
+                  </div>
+                ) : connectionStatus === 'connecting' ? (
+                  <div className="flex flex-col items-center text-gray-500">
+                    <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p>Iniciando conexão...</p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-gray-400 mb-4">Nenhuma conexão ativa.</p>
+                    <button
+                      onClick={handleConnectWhatsApp}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:-translate-y-1"
+                      disabled={isLoading || isIndividualPlan}
+                    >
+                      Gerar QR Code
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {connectionStatus === 'connected' && (
+                <button
+                  onClick={handleDisconnectWhatsApp}
+                  disabled={isLoading || isIndividualPlan}
+                  className="mt-4 text-red-500 hover:text-red-700 font-medium text-sm underline decoration-red-500 underline-offset-4"
+                >
+                  Desconectar Sessão
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Instagram Section */}
+        {/* Instagram Section (Future Launch) */}
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 relative overflow-hidden grayscale opacity-80">
+          <div className="absolute inset-0 bg-white bg-opacity-60 z-10 flex flex-col items-center justify-center text-center p-6 backdrop-blur-[2px]">
+            <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3">Em Breve</span>
+            <h3 className="text-2xl font-bold text-gray-800 mb-1">Lançamento Futuro</h3>
+            <p className="text-gray-600 text-sm">Estamos finalizando a integração oficial com a API do Instagram.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-6 opacity-50 pointer-events-none">
+            <div className="p-4 bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 text-white rounded-xl">
+              <InstagramIcon />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-xl font-bold text-secondary">Instagram</h2>
+              <p className="text-gray-600 text-sm mt-1">{t('channelsInstagramDesc')}</p>
+            </div>
+            <button className="w-32 py-2 px-4 border border-transparent text-white bg-gray-400 rounded-md cursor-not-allowed">
+              Conectar
+            </button>
+          </div>
+        </div>
+
+        {/* YouTube Section (Future Launch) */}
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 relative overflow-hidden grayscale opacity-80">
+          <div className="absolute inset-0 bg-white bg-opacity-60 z-10 flex flex-col items-center justify-center text-center p-6 backdrop-blur-[2px]">
+            <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3">Em Breve</span>
+            <h3 className="text-2xl font-bold text-gray-800 mb-1">Lançamento Futuro</h3>
+            <p className="text-gray-600 text-sm">Gerencie comentários e análises do YouTube diretamente por aqui.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-6 opacity-50 pointer-events-none">
+            <div className="p-4 bg-red-600 text-white rounded-xl">
+              <YouTubeIcon />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-xl font-bold text-secondary">YouTube</h2>
+              <p className="text-gray-600 text-sm mt-1">{t('channelsYouTubeDesc')}</p>
+            </div>
+            <button className="w-32 py-2 px-4 border border-transparent text-white bg-gray-400 rounded-md cursor-not-allowed">
+              Conectar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Instagram Section */}
+      {/* The original Instagram section is now replaced by the "Future Launch" version above.
+            The following block is commented out or removed based on the instruction.
+            If the intention was to keep the original Instagram section and add the overlay,
+            the overlay would be inside the existing Instagram div.
+            Based on the provided diff, the entire Instagram section is replaced with the "Future Launch" version.
+        */}
+      {/*
         <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-transparent space-y-6 relative">
           {isIndividualPlan && (
             <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-2xl z-10 flex flex-col items-center justify-center p-4 text-center">
@@ -412,7 +478,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
                 </div>
               </div>
 
-              {/* Seção de Automações Arquivadas */}
+
               <div className="mt-6 pt-4 border-t border-dashed border-gray-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-secondary">{t('channelsArchivedAutomationsTitle')}</h4>
@@ -452,8 +518,16 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
             </div>
           )}
         </div>
+        */}
 
-        {/* YouTube Section */}
+      {/* YouTube Section */}
+      {/* The original YouTube section is now replaced by the "Future Launch" version above.
+            The following block is commented out or removed based on the instruction.
+            If the intention was to keep the original YouTube section and add the overlay,
+            the overlay would be inside the existing YouTube div.
+            Based on the provided diff, the entire YouTube section is replaced with the "Future Launch" version.
+        */}
+      {/*
         <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-transparent space-y-6 relative">
           {isIndividualPlan && (
             <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-2xl z-10 flex flex-col items-center justify-center p-4 text-center">
@@ -586,34 +660,37 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
             </div>
           )}
         </div>
-      </div>
+        */}
+    </div>
 
-      {/* YouTube Comment Moderation Modal */}
-      {showModerationPanel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold">{t('youtubeModerationTitle')}</h2>
-              <button
-                onClick={() => setShowModerationPanel(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-4">
-              <YouTubeCommentModeration
-                channelId={youtubeChannelId}
-                apiKey={youtubeApiKey}
-                isEnabled={youtubeCommentsEnabled}
-              />
-            </div>
+      {/* YouTube Comment Moderation Modal */ }
+  {
+    showModerationPanel && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+            <h2 className="text-xl font-bold">{t('youtubeModerationTitle')}</h2>
+            <button
+              onClick={() => setShowModerationPanel(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4">
+            <YouTubeCommentModeration
+              channelId={youtubeChannelId}
+              apiKey={youtubeApiKey}
+              isEnabled={youtubeCommentsEnabled}
+            />
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    )
+  }
+    </div >
   );
 };
 
