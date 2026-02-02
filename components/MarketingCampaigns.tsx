@@ -592,11 +592,9 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
     const TabButton: React.FC<{ tabId: string; label: string }> = ({ tabId, label }) => (
         <button
             onClick={() => {
-                if (['canal-aquisicao', 'servidor', 'automacoes'].includes(tabId)) {
+                if (['servidor'].includes(tabId)) {
                     const messages: { [key: string]: string } = {
-                        'canal-aquisicao': 'O módulo avançado de Analytics e ROI por canal estará disponível em breve.',
-                        'servidor': 'A configuração de servidor SMTP próprio para e-mail marketing estará disponível na versão 2.0.',
-                        'automacoes': 'A engine de automação inteligente (ManyChat style) estará disponível na versão 2.0.'
+                        'servidor': 'A configuração de servidor SMTP próprio para e-mail marketing estará disponível na versão 2.0.'
                     };
                     onComingSoon?.(messages[tabId]);
                 } else {
@@ -617,7 +615,6 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                     <TabButton tabId="canal-aquisicao" label={t('marketingTabAcquisitionChannel')} />
                     <TabButton tabId="mala-direta" label={t('marketingTabDirectMail')} />
                     <TabButton tabId="servidor" label={t('marketingTabServer')} />
-                    <TabButton tabId="automacoes" label="Automações" />
                 </nav>
             </div>
 
@@ -644,25 +641,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                         </button>
                     </div>
                 )}
-                {activeTab === 'automacoes' && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Automações de Marketing</h3>
-                        <p className="text-gray-500 max-w-md mb-8">
-                            Conecte o Salão24h com as melhores ferramentas de automação do mercado, como ManyChat e muito mais.
-                        </p>
-                        <button
-                            onClick={() => onComingSoon?.('A engine de automação inteligente (ManyChat style) estará disponível na versão 2.0.')}
-                            className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
-                        >
-                            Ativar Automações
-                        </button>
-                    </div>
-                )}
+
             </div>
         </div>
     );
