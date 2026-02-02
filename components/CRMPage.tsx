@@ -485,6 +485,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const [columnsConfig, setColumnsConfig] = useState<CrmColumnConfig[]>([
         { id: 'new', title: 'Novos Clientes', icon: '✨', visible: true, deletable: true, configTitle: 'Boas-vindas', configDescription: 'Enviar mensagem de boas-vindas via WhatsApp e agendar primeiro contato.', isAIActionActive: true },
+        { id: 'recurrent', title: 'Recorrentes (Ativos)', icon: '💎', visible: true, deletable: true, configTitle: 'Fidelização', configDescription: 'Manter engajamento com cliente ativo.', isAIActionActive: false },
         { id: 'birthday', title: 'Aniversariante do Dia', icon: '🎂', visible: true, deletable: false, configTitle: 'Mensagem de Aniversário', configDescription: 'Enviar mensagem automática de feliz aniversário com um cupom de 10% de desconto.', isAIActionActive: true },
         { id: 'scheduled', title: 'Agendados Hoje', icon: '✅', visible: true, deletable: false, configTitle: 'Lembrete de Agendamento', configDescription: 'Enviar lembrete 1 hora antes do horário. Confirmar com cliente se ele vem.', isAIActionActive: false },
         { id: 'absent', title: 'Faltantes', icon: '❌', visible: true, deletable: false, configTitle: 'Contato Pós-Falta', configDescription: 'Entrar em contato para entender o motivo da falta e oferecer reagendamento.', isAIActionActive: false },
@@ -573,7 +574,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         const scheduledClientIds = new Set(appointments.filter(a => a.date === todayKey).map(a => a.clientId));
 
         const groups: { [key: string]: any[] } = {
-            new: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
+            new: [], recurrent: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
         };
 
         const filteredClients = clients.filter(client => {
@@ -642,6 +643,18 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             if (client.status === 'Reagendado') {
                 groups.rescheduled.push(client);
                 return;
+            }
+
+            // Priority 3.5: Recurrent/Active Clients
+            if (client.lastVisit) {
+                const lastVisitDate = new Date(client.lastVisit);
+                const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
+
+                // If they have history and are NOT inactive (<= 60 days), they are recurrent
+                if (daysSinceLastVisit <= 60 && client.totalVisits > 0) {
+                    groups.recurrent.push(client);
+                    return;
+                }
             }
 
             // Priority 4: New Client (Unprocessed/Leads)
