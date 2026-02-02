@@ -9,6 +9,15 @@ interface Tenant {
     subscription_status: string;
     trial_ends_at: string | null;
     plan?: { name: string };
+    address?: {
+        country?: string;
+        state?: string;
+        neighborhood?: string;
+        city?: string;
+        street?: string;
+        number?: string;
+        cep?: string;
+    };
 }
 
 interface Banner {
@@ -22,26 +31,76 @@ interface Banner {
 export const SuperAdminTenantsPage: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+    const [filters, setFilters] = useState({ country: '', state: '', neighborhood: '' });
+
+    const fetchTenants = async () => {
+        try {
+            setLoading(true);
+            const res = await tenantsAPI.list(filters);
+            setTenants(res.data);
+        } catch (error) {
+            console.error("Error fetching tenants:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchTenants = async () => {
-            try {
-                const res = await tenantsAPI.list();
-                setTenants(res.data);
-            } catch (error) {
-                console.error("Error fetching tenants:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchTenants();
-    }, []);
+    }, [filters]);
 
-    if (loading) return <div className="p-8">Carregando salões...</div>;
+    const handleToggleLifetime = async (tenantId: number) => {
+        try {
+            await tenantsAPI.update(tenantId, { subscription_status: 'lifetime' });
+            alert("Plano Vitalício ativado com sucesso!");
+            fetchTenants();
+            setSelectedTenant(prev => prev && prev.id === tenantId ? { ...prev, subscription_status: 'lifetime' } : prev);
+        } catch (error) {
+            alert("Erro ao ativar plano vitalício");
+        }
+    };
+
+    if (loading && tenants.length === 0) return <div className="p-8">Carregando salões...</div>;
 
     return (
         <div className="container mx-auto px-6 py-8">
             <h2 className="text-2xl font-bold text-secondary mb-6">Gestão de Salões (Tenants)</h2>
+
+            {/* Filters */}
+            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">País</label>
+                    <input
+                        type="text"
+                        placeholder="Filtrar por país..."
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                        value={filters.country}
+                        onChange={(e) => setFilters({ ...filters, country: e.target.value })}
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
+                    <input
+                        type="text"
+                        placeholder="Filtrar por estado..."
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                        value={filters.state}
+                        onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bairro</label>
+                    <input
+                        type="text"
+                        placeholder="Filtrar por bairro..."
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                        value={filters.neighborhood}
+                        onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}
+                    />
+                </div>
+            </div>
+
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -64,6 +123,11 @@ export const SuperAdminTenantsPage: React.FC = () => {
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tenant.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                         {tenant.is_active ? 'Ativo' : 'Inativo'}
                                     </span>
+                                    {tenant.subscription_status === 'lifetime' && (
+                                        <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                            Vitalício
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {tenant.plan?.name || 'N/A'}
@@ -72,7 +136,7 @@ export const SuperAdminTenantsPage: React.FC = () => {
                                     {tenant.trial_ends_at ? new Date(tenant.trial_ends_at).toLocaleDateString('pt-BR') : '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button className="text-primary hover:text-primary-dark mr-3">Editar</button>
+                                    <button onClick={() => setSelectedTenant(tenant)} className="text-primary hover:text-primary-dark mr-3">Visualizar</button>
                                     <button className="text-red-600 hover:text-red-900">Suspender</button>
                                 </td>
                             </tr>
@@ -80,6 +144,62 @@ export const SuperAdminTenantsPage: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Tenant Detail Modal */}
+            {selectedTenant && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+                            <h3 className="text-xl font-bold text-secondary">Detalhes do Salão</h3>
+                            <button onClick={() => setSelectedTenant(null)} className="text-gray-400 hover:text-gray-600">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Nome do Negócio</label>
+                                    <p className="text-lg font-medium">{selectedTenant.name}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Slug / URL</label>
+                                    <p className="text-lg font-medium">/{selectedTenant.slug}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Status de Assinatura</label>
+                                    <p className="text-lg font-medium capitalize">{selectedTenant.subscription_status}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Plano Atual</label>
+                                    <p className="text-lg font-medium">{selectedTenant.plan?.name || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4">
+                                <h4 className="font-bold text-secondary mb-3">Status Vitalício</h4>
+                                <div className="flex items-center justify-between bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                    <div>
+                                        <p className="text-sm text-purple-800 font-medium">Ativar acesso permanente para este salão.</p>
+                                        <p className="text-xs text-purple-600">Isso desabilitará cobranças e garantirá acesso contínuo.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleToggleLifetime(selectedTenant.id)}
+                                        disabled={selectedTenant.subscription_status === 'lifetime'}
+                                        className={`px-4 py-2 rounded-lg font-bold transition-colors ${selectedTenant.subscription_status === 'lifetime' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'}`}
+                                    >
+                                        {selectedTenant.subscription_status === 'lifetime' ? 'Já é Vitalício' : 'Tornar Vitalício'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-6 bg-gray-50 text-right border-t">
+                            <button onClick={() => setSelectedTenant(null)} className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-100 transition-colors">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

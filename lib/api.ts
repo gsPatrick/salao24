@@ -284,8 +284,8 @@ export const usersAPI = {
 };
 
 export const tenantsAPI = {
-    list: async () => {
-        const response = await api.get('/tenants');
+    list: async (params?: any) => {
+        const response = await api.get('/tenants', { params });
         return response.data;
     },
     getCurrent: async () => {
