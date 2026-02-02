@@ -42,8 +42,8 @@ interface PreRegistrationModalProps {
   onQuickSchedule?: (payload: {
     clientName: string;
     clientPhone: string;
-    serviceName: string;
-    professionalName: string;
+    serviceId: number;
+    professionalId: number;
     date: string; // YYYY-MM-DD
     time: string; // HH:MM
   }) => void;
@@ -184,14 +184,19 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
     }
 
     if (onQuickSchedule) {
-      onQuickSchedule({
-        clientName: name,
-        clientPhone: phone,
-        serviceName: service,
-        professionalName: professional,
-        date,
-        time,
-      });
+      const selectedService = contextServices.find(s => s.name === service);
+      const selectedProf = professionalsToShow.find(p => p.name === professional);
+
+      if (selectedService && selectedProf) {
+        onQuickSchedule({
+          clientName: name,
+          clientPhone: phone,
+          serviceId: selectedService.id,
+          professionalId: selectedProf.id,
+          date,
+          time,
+        });
+      }
     }
 
     handleClose();

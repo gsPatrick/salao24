@@ -49,7 +49,7 @@ interface Selection {
 const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isClientView, isIndividualPlan, onPayForService, services, professionals, onCreateAppointment, currentClientId }) => {
     const [step, setStep] = useState(1);
     const [selection, setSelection] = useState<Selection>({
-        unit: 'Unidade Boa Viagem',
+        unit: null,
         service: null,
         professional: null,
         date: null,
@@ -361,7 +361,9 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                             clientId: currentClientId,
                                             date: selectedDate.toISOString().split('T')[0],
                                             time: selection.time,
-                                            service: selection.service.name,
+                                            service_id: selection.service.id,
+                                            professional_id: selection.professional?.id,
+                                            unit: selection.unit,
                                             status: 'Agendado',
                                         });
                                     }
