@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData } from '../contexts/DataContext';
 
 interface NewPackageModalProps {
     isOpen: boolean;
@@ -15,22 +16,21 @@ const initialFormData = { name: '', description: '', duration: '', price: '', se
 
 const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
     const { t } = useLanguage();
+    const { units } = useData();
     const [formData, setFormData] = useState(initialFormData);
-    // FIX: Broaden the type of the 'errors' state to 'any' for its values to resolve a TypeScript type error on assignment.
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [isExiting, setIsExiting] = useState(false);
     const [newCategory, setNewCategory] = useState('');
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
 
-    // FIX: Changed 'name' type from string to keyof typeof formData to prevent type errors when indexing.
     const validateField = (name: keyof typeof formData, value: string) => {
         let error = '';
-        if (!value) {
+        if (!value && name !== 'description') { // Allow empty description if needed, or keep it strict
             error = t('errorRequired');
-        } else if (name === 'price' && !/^\d+([,.]\d{1,2})?$/.test(value)) {
+        } else if (name === 'price' && value && !/^\d+([,.]\d{1,2})?$/.test(value)) {
             error = t('errorInvalidCurrency');
-        } else if (name === 'sessions' && (isNaN(Number(value)) || Number(value) <= 0)) {
+        } else if (name === 'sessions' && value && (isNaN(Number(value)) || Number(value) <= 0)) {
             error = t('errorPositiveNumber');
         }
         return error;
@@ -90,9 +90,8 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // FIX: Refactored to iterate over a defined list of keys instead of using a for...in loop for improved type safety.
         const newErrors: Partial<Record<keyof typeof formData, string>> = {};
-        const fieldsToValidate: (keyof typeof formData)[] = ['name', 'description', 'duration', 'price', 'sessions', 'category', 'unit'];
+        const fieldsToValidate: (keyof typeof formData)[] = ['name', 'price', 'sessions', 'category', 'unit'];
         fieldsToValidate.forEach(key => {
             const error = validateField(key, formData[key]);
             if (error) {
@@ -111,7 +110,11 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
     };
 
     const isFormValid = useMemo(() => {
-        return Object.values(formData).every(value => !!value) && Object.values(errors).every(error => !error);
+        // Validation for required fields
+        const required = ['name', 'price', 'sessions', 'category', 'unit'];
+        const hasAllRequired = required.every(field => !!formData[field as keyof typeof formData]);
+        const hasNoErrors = Object.values(errors).every(error => !error);
+        return hasAllRequired && hasNoErrors;
     }, [formData, errors]);
 
     if (!isOpen && !isExiting) return null;
@@ -133,7 +136,7 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                         <h3 className="text-xl font-bold text-secondary">{title}</h3>
                         <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                             {renderInput('name', 'Nome do Pacote')}
-                            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" required className="w-full p-2 border rounded" />
+                            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" className="w-full p-2 border rounded" />
                             {renderInput('duration', 'Duração (por sessão)')}
                             {renderInput('price', 'Preço do Pacote (ex: 100,00)')}
                             {renderInput('sessions', 'Quantidade de Sessões', 'number')}
@@ -169,9 +172,8 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                             <div>
                                 <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Unidade</option>
-                                    <option>Unidade Matriz</option>
-                                    <option>Unidade Filial</option>
-                                    <option>Ambas</option>
+                                    <option value="Ambas">Ambas as unidades</option>
+                                    {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
                             </div>

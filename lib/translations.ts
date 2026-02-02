@@ -233,6 +233,13 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         reject: 'Rejeitar',
         approvalSuccess: 'Aprovado com sucesso',
         rejectionSuccess: 'Rejeitado com sucesso',
+        timeClockSuccessClockIn: 'Ponto batido com sucesso!',
+        timeClockSuccessClockOut: 'Saída registrada com sucesso!',
+        timeClockSuccessBreakStart: 'Início de pausa registrado!',
+        timeClockSuccessBreakEnd: 'Fim de pausa registrado!',
+        timeClockErrorNoGeolocation: 'Não foi possível obter sua localização. Verifique o GPS.',
+        timeClockPhotoCaptured: 'Foto capturada com sucesso',
+        timeClockTakingPhoto: 'Capturando foto para validação...',
 
         // Dashboard content
         dashboardRevenue: 'Faturamento',

@@ -1200,6 +1200,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await appointmentsAPI.updateStatus(id, status);
             await refreshAppointments();
+            if (['Atendido', 'realizado', 'concluído', 'Completed'].includes(status)) {
+                await refreshTransactions();
+            }
             return mapAppointmentFromAPI(response.data);
         } catch (error) {
             console.error('Error updating appointment status:', error);

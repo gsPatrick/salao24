@@ -509,6 +509,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             <label htmlFor="unit" className="block text-sm font-medium text-gray-700">Unidade de Atendimento *</label>
                             <select id="unit" name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
                                 <option value="">Selecione...</option>
+                                <option value="Ambas">Ambas as unidades</option>
                                 {units.map(u => (
                                     <option key={u.id} value={u.name}>{u.name}</option>
                                 ))}

@@ -32,7 +32,7 @@ const StockPage: React.FC<StockPageProps> = ({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [productToEdit, setProductToEdit] = useState<Product | null>(null);
     const [filterQuery, setFilterQuery] = useState('');
-    const [filterType, setFilterType] = useState<'product' | 'category'>('product');
+    const [categoryFilter, setCategoryFilter] = useState('');
     const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
     const [productCategories, setProductCategories] = useState<string[]>([]);
@@ -84,22 +84,11 @@ const StockPage: React.FC<StockPageProps> = ({
     const otherProducts = products.filter(p => p.suspended || p.quantity > p.lowStockAlert);
 
     const filteredProducts = otherProducts.filter(product => {
-        const query = filterQuery.toLowerCase();
-
-        const matchesQuery = (() => {
-            if (!query) return true;
-            if (filterType === 'product') {
-                return product.name.toLowerCase().includes(query);
-            }
-            if (filterType === 'category') {
-                return product.category.toLowerCase().includes(query);
-            }
-            return true;
-        })();
-
+        const matchesQuery = !filterQuery || product.name.toLowerCase().includes(filterQuery.toLowerCase());
+        const matchesCategory = !categoryFilter || product.category === categoryFilter;
         const matchesFavorite = !showOnlyFavorites || product.isFavorite;
 
-        return matchesQuery && matchesFavorite;
+        return matchesQuery && matchesCategory && matchesFavorite;
     });
 
     return (
@@ -160,37 +149,29 @@ const StockPage: React.FC<StockPageProps> = ({
                     <h2 className="text-xl font-bold text-secondary mb-4">Todos os Produtos</h2>
                     <div className="mb-6 p-4 bg-light rounded-lg">
                         <div className="flex flex-col sm:flex-row gap-4 items-center flex-wrap">
-                            <input
-                                type="text"
-                                placeholder="Buscar..."
-                                value={filterQuery}
-                                onChange={(e) => setFilterQuery(e.target.value)}
-                                className="w-full sm:w-auto flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                            />
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm font-medium text-gray-700">Filtrar por:</span>
-                                <label className="flex items-center cursor-pointer">
+                            <div className="flex flex-col sm:flex-row gap-4 items-center flex-wrap w-full sm:w-auto flex-grow">
+                                <div className="relative flex-grow w-full sm:w-64">
                                     <input
-                                        type="radio"
-                                        name="filterType"
-                                        value="product"
-                                        checked={filterType === 'product'}
-                                        onChange={() => setFilterType('product')}
-                                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                                        type="text"
+                                        placeholder="Buscar por nome..."
+                                        value={filterQuery}
+                                        onChange={(e) => setFilterQuery(e.target.value)}
+                                        className="w-full p-2 pl-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                     />
-                                    <span className="ml-2 text-sm text-gray-600">Produto</span>
-                                </label>
-                                <label className="flex items-center cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="filterType"
-                                        value="category"
-                                        checked={filterType === 'category'}
-                                        onChange={() => setFilterType('category')}
-                                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-                                    />
-                                    <span className="ml-2 text-sm text-gray-600">Categoria</span>
-                                </label>
+                                </div>
+
+                                <div className="relative w-full sm:w-48">
+                                    <select
+                                        value={categoryFilter}
+                                        onChange={(e) => setCategoryFilter(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white"
+                                    >
+                                        <option value="">Todas Categorias</option>
+                                        {productCategories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
