@@ -9,6 +9,14 @@ interface Tenant {
     subscription_status: string;
     trial_ends_at: string | null;
     plan?: { name: string };
+    cnpj_cpf?: string;
+    phone?: string;
+    email?: string;
+    owner?: {
+        name: string;
+        phone?: string;
+        email?: string;
+    };
     address?: {
         country?: string;
         state?: string;
@@ -32,7 +40,7 @@ export const SuperAdminTenantsPage: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-    const [filters, setFilters] = useState({ country: '', state: '', city: '', neighborhood: '' });
+    const [filters, setFilters] = useState({ name: '', country: '', state: '', city: '', neighborhood: '' });
     const [filterOptions, setFilterOptions] = useState<{ countries: string[], states: string[], cities: string[], neighborhoods: string[] }>({
         countries: [],
         states: [],
@@ -84,10 +92,20 @@ export const SuperAdminTenantsPage: React.FC = () => {
 
     return (
         <div className="container mx-auto px-6 py-8">
-            <h2 className="text-2xl font-bold text-secondary mb-6">Gestão de Salões (Tenants)</h2>
+            <h2 className="text-2xl font-bold text-secondary mb-6">Gestão de Salões</h2>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Pesquisar por Nome</label>
+                    <input
+                        type="text"
+                        placeholder="Nome do salão..."
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
+                        value={filters.name}
+                        onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                    />
+                </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">País</label>
                     <select
@@ -197,6 +215,30 @@ export const SuperAdminTenantsPage: React.FC = () => {
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase">Slug / URL</label>
                                     <p className="text-lg font-medium">/{selectedTenant.slug}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">CNPJ/CPF</label>
+                                    <p className="text-lg font-medium">{selectedTenant.cnpj_cpf || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Telefone Negócio</label>
+                                    <p className="text-lg font-medium">{selectedTenant.phone || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Nome do ADM</label>
+                                    <p className="text-lg font-medium">{selectedTenant.owner?.name || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Telefone ADM</label>
+                                    <p className="text-lg font-medium">{selectedTenant.owner?.phone || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Endereço</label>
+                                    <p className="text-lg font-medium">
+                                        {selectedTenant.address ?
+                                            `${selectedTenant.address.street || ''}, ${selectedTenant.address.number || ''} - ${selectedTenant.address.neighborhood || ''}, ${selectedTenant.address.city || ''}/${selectedTenant.address.state || ''}` :
+                                            'Não informado'}
+                                    </p>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase">Status de Assinatura</label>
