@@ -134,13 +134,33 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const { services: contextServices, contractTemplates, units, refreshUnits } = useData();
   const [formData, setFormData] = useState(initialFormData);
 
-  // Task 2: Fetch units when modal opens
+  // State for dynamically fetched acquisition channels
+  const [dynamicChannels, setDynamicChannels] = useState<any[]>([]);
+
+  // Task 2: Fetch units and acquisition channels when modal opens
   useEffect(() => {
     if (isOpen) {
       refreshUnits();
+      // Fetch acquisition channels from API
+      const fetchChannels = async () => {
+        try {
+          const { marketingAPI } = await import('../lib/api');
+          const channels = await marketingAPI.listChannels();
+          setDynamicChannels(channels || []);
+        } catch (error) {
+          console.error('Error fetching acquisition channels:', error);
+          setDynamicChannels([]);
+        }
+      };
+      fetchChannels();
     }
   }, [isOpen, refreshUnits]);
+
+  // Use dynamic channels if available, otherwise fallback to prop channels
+  const effectiveChannels = dynamicChannels.length > 0 ? dynamicChannels : acquisitionChannels;
+
   const [errors, setErrors] = useState<{ [key: string]: any }>({});
+
   const [useSocialName, setUseSocialName] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
 
@@ -1062,7 +1082,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               value={formData.howTheyFoundUs}
               onChange={handleChange}
               onBlur={handleBlur}
-              options={acquisitionChannels.map(c => ({ value: c.name, label: c.name }))}
+              options={effectiveChannels.map(c => ({ value: c.name, label: c.name }))}
               error={errors.howTheyFoundUs}
             />
             {formData.howTheyFoundUs === 'Indicação' && (

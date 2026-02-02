@@ -4,6 +4,8 @@ import api from '../../lib/api';
 interface PromoBanner {
     id: number;
     title: string;
+    subtitle?: string;
+    description?: string;
     image_url: string;
     button_text: string;
     link: string;
@@ -54,12 +56,13 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
         ...banners.map(b => ({
             id: `banner-${b.id}`,
             title: b.title,
-            description: (b as any).description,
+            description: b.description || '',
             image_url: b.image_url,
             button_text: b.button_text,
             link: b.link,
-            subtitle: 'Destaque'
+            subtitle: b.subtitle || 'Destaque'
         })),
+
         ...promotions.filter(p => p.isActive && p.targetArea === 'painel').map(p => ({
             id: `promo-${p.id}`,
             title: p.title,
