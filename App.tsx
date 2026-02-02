@@ -140,7 +140,15 @@ const App: React.FC = () => {
           // Sync with latest global data
           newData[unit.name] = {
             ...newData[unit.name],
-            clients, professionals, services, products, transactions, appointments,
+            clients,
+            professionals: professionals.filter(p => p.unit === unit.name),
+            services,
+            products,
+            transactions, // Transactions could also be filtered if they had a professionalId or unit field
+            appointments: appointments.filter(a => {
+              const prof = professionals.find(p => p.id === a.professionalId);
+              return prof ? prof.unit === unit.name : true; // Fallback to true if professional not found
+            }),
             unitDetails: unit
           };
         });
@@ -544,6 +552,7 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
+            {console.log('[DEBUG-GOD-MODE] Promotions passed to ClientAppPage:', promotions)}
             <ClientAppPage
               currentClient={clientToDisplay}
               onLogout={handleLogout}

@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData } from '../contexts/DataContext';
 
 // Props for the modal
 interface NewServiceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: any) => void;
-  itemToEdit?: any | null;
-  categories: string[];
-  onAddCategory: (category: string) => void;
-  onUpdateCategory: (oldCategory: string, newCategory: string) => void;
-  onDeleteCategory: (category: string) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: any) => void;
+    itemToEdit?: any | null;
+    categories: string[];
+    onAddCategory: (category: string) => void;
+    onUpdateCategory: (oldCategory: string, newCategory: string) => void;
+    onDeleteCategory: (category: string) => void;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', category: '', unit: '' };
@@ -20,7 +21,22 @@ const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w
 
 export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, onUpdateCategory, onDeleteCategory }) => {
     const { t } = useLanguage();
+    const { units, refreshUnits } = useData();
     const [formData, setFormData] = useState(initialFormData);
+
+    // Fetch units when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            refreshUnits();
+        }
+    }, [isOpen, refreshUnits]);
+
+    // Pre-select unit if only one exists
+    useEffect(() => {
+        if (isOpen && !itemToEdit && units.length === 1) {
+            setFormData(prev => ({ ...prev, unit: units[0].name }));
+        }
+    }, [isOpen, units, itemToEdit]);
     // FIX: Broaden the type of the 'errors' state to 'any' for its values to resolve a TypeScript type error on assignment.
     const [errors, setErrors] = useState<{ [key: string]: any }>({});
     const [isExiting, setIsExiting] = useState(false);
@@ -38,7 +54,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
         }
         return error;
     };
-    
+
     useEffect(() => {
         if (isOpen) {
             setFormData(itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData);
@@ -78,7 +94,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
             handleChange(e);
         }
         if (errors.category) {
-            setErrors(prev => ({ ...prev, category: ''}));
+            setErrors(prev => ({ ...prev, category: '' }));
         }
     };
 
@@ -91,7 +107,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
             setIsCreatingCategory(false);
         }
     };
-    
+
     const handleStartEditing = (index: number, name: string) => {
         setEditingCategory({ index, name });
     };
@@ -127,13 +143,13 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
         onSave({ ...itemToEdit, ...formData, isFavorite });
         handleClose();
     };
-    
+
     const isFormValid = useMemo(() => {
         return Object.values(formData).every(value => !!value) && Object.values(errors).every(error => !error);
     }, [formData, errors]);
 
     if (!isOpen && !isExiting) return null;
-    
+
     const title = itemToEdit ? 'Editar Serviço' : 'Novo Serviço';
 
     const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text') => (
@@ -183,7 +199,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                     </button>
                                 </div>
                             )}
-                             <div>
+                            <div>
                                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Gerenciar Categorias</h4>
                                 <div className="space-y-2 max-h-32 overflow-y-auto border p-2 rounded-md bg-white">
                                     {categories.map((cat, index) => (
@@ -194,7 +210,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                                     value={editingCategory.name}
                                                     onChange={(e) => setEditingCategory({ index, name: e.target.value })}
                                                     onBlur={() => handleUpdateCategory(cat)}
-                                                    onKeyDown={(e) => { if(e.key === 'Enter') handleUpdateCategory(cat); }}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateCategory(cat); }}
                                                     className="text-sm p-1 border rounded w-full"
                                                     autoFocus
                                                 />
@@ -202,8 +218,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                                 <>
                                                     <span className="text-sm text-gray-800">{cat}</span>
                                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button type="button" onClick={() => handleStartEditing(index, cat)} className="text-blue-500 hover:text-blue-700"><EditIcon/></button>
-                                                        <button type="button" onClick={() => onDeleteCategory(cat)} className="text-red-500 hover:text-red-700"><TrashIcon/></button>
+                                                        <button type="button" onClick={() => handleStartEditing(index, cat)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
+                                                        <button type="button" onClick={() => onDeleteCategory(cat)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
                                                     </div>
                                                 </>
                                             )}
@@ -214,9 +230,10 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                             <div>
                                 <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Unidade</option>
-                                    <option>Unidade Matriz</option>
-                                    <option>Unidade Filial</option>
-                                    <option>Ambas</option>
+                                    {units.map(u => (
+                                        <option key={u.id} value={u.name}>{u.name}</option>
+                                    ))}
+                                    <option value="Ambas">Ambas</option>
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
                             </div>

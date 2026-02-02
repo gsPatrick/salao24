@@ -167,13 +167,14 @@ interface AcquisitionChannel {
 
 interface Promotion {
     id: number;
+    type?: 'standard' | 'exclusive';
     callToAction: string;    // Chamada
     title: string;          // Título da Promoção
     subtitle: string;       // Subtítulo da Promoção
     description: string;    // Descrição
     image: string;          // Imagem da Promoção
     promotionUrl: string;   // URL da Promoção
-    targetArea: 'cliente' | 'painel'; // Área de Exibição
+    targetArea: 'client' | 'painel'; // Área de Exibição
     actionButton: string;   // Botão: chamada para ação
     duration: number; // em dias
     startDate: string;
@@ -619,11 +620,11 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                     {filteredPromotions.map((promotion) => (
                         <div key={promotion.id} className="bg-white p-5 rounded-xl shadow-lg border border-transparent hover:border-primary transition-all duration-300 group">
                             <div className="flex justify-between items-start mb-3">
-                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${promotion.targetArea === 'cliente'
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${promotion.targetArea === 'client'
                                     ? 'bg-blue-100 text-blue-700'
                                     : 'bg-purple-100 text-purple-700'
                                     }`}>
-                                    {promotion.targetArea === 'cliente' ? 'Área Cliente' : 'Painel'}
+                                    {promotion.targetArea === 'client' ? 'Área Cliente' : 'Painel'}
                                 </span>
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
@@ -721,7 +722,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     description: formData.get('description') as string,
                                     image: imageUrl,
                                     promotionUrl: formData.get('promotionUrl') as string || '',
-                                    targetArea: formData.get('targetArea') as 'cliente' | 'painel',
+                                    targetArea: formData.get('targetArea') as 'client' | 'painel',
                                     profileTarget: formData.get('profileTarget') as string,
                                     locationCountry: formData.get('locationCountry') as string,
                                     locationState: formData.get('locationState') as string,
@@ -823,7 +824,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                     >
                                         <option value="painel">Painel de Controle</option>
-                                        <option value="cliente">Área do Cliente</option>
+                                        <option value="client">Área do Cliente</option>
                                     </select>
                                 </div>
 
@@ -2324,7 +2325,7 @@ const MonthlyPackagesPage: React.FC<{
                                             description: formData.get('description') as string,
                                             image: imageUrl || editingPromotion?.image || '',
                                             promotionUrl: formData.get('promotionUrl') as string || '',
-                                            targetArea: formData.get('targetArea') as 'cliente' | 'painel',
+                                            targetArea: formData.get('targetArea') as 'client' | 'painel',
                                             profileTarget: formData.get('profileTarget') as string,
                                             locationCountry: formData.get('locationCountry') as string,
                                             locationState: formData.get('locationState') as string,
@@ -2409,7 +2410,7 @@ const MonthlyPackagesPage: React.FC<{
                                                 className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                             >
                                                 <option value="painel">Painel de Controle</option>
-                                                <option value="cliente">Área do Cliente</option>
+                                                <option value="client">Área do Cliente</option>
                                             </select>
                                         </div>
 
@@ -3895,7 +3896,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <div className={animateContent ? 'animate-fade-slide-up-4' : 'opacity-100'}>
-                        <DashboardPromoCarousel promotions={promotions} />
+                        <DashboardPromoCarousel promotions={promotions.filter(p => p.type !== 'exclusive')} />
                     </div>
                 </div>
 
@@ -3973,8 +3974,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 selectedUnit={selectedUnit}
                 onUnitChange={onUnitChange}
                 units={Object.keys(allData).map((name, id) => ({ id, name }))}
-                promotions={promotions}
+                promotions={promotions.filter(p => p.type === 'exclusive')}
                 onOpenPromoModal={handleOpenPromoModal}
+                unitData={allData[selectedUnit]}
             />;
             case 'Super Admin: Salões': return <SuperAdminTenantsPage />;
             case 'Super Admin: Banners': return <SuperAdminBannersPage />;
@@ -4213,22 +4215,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>{t('overview')}<div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div></div>
                             </div>
 
-                            {/* Unit Switcher in Header */}
-                            {!isIndividualPlan && availableUnits.length > 1 && (
-                                <div className="hidden sm:flex items-center bg-gray-50 rounded-full px-3 py-1 border border-gray-200">
-                                    <span className="text-gray-400 mr-2"><UnitIcon /></span>
-                                    <select
-                                        value={selectedUnit}
-                                        onChange={(e) => onUnitChange(e.target.value)}
-                                        className="bg-transparent text-sm font-bold text-secondary focus:outline-none cursor-pointer border-none p-0 pr-8"
-                                    >
-                                        {availableUnits.map(unitName => (
-                                            <option key={unitName} value={unitName}>{unitName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
                             <div className="relative group" ref={notificationPanelRef}>
                                 <button onClick={() => setIsNotificationPanelOpen(prev => !prev)} className="text-gray-500 hover:text-primary relative"><BellIcon />{unreadCount > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-white text-xs items-center justify-center">{unreadCount}</span></span>}</button>
                                 <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>{t('notifications')}<div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div></div>
@@ -4262,24 +4248,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         </div>
 
                                         <div className="space-y-1">
-                                            {isIndividualPlan ? (
-                                                <button
-                                                    onClick={() => { navigate('upgrade_to_empresa'); setIsUserMenuOpen(false); }}
-                                                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-colors gap-3"
-                                                >
-                                                    <TrophyIcon />
-                                                    <span>Mudar para Plano Empresa</span>
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => { handleSidebarClick('Configurações'); setIsUserMenuOpen(false); }}
-                                                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-colors gap-3"
-                                                >
-                                                    <UnitIcon />
-                                                    <span>Gerenciar Unidades</span>
-                                                </button>
-                                            )}
-
                                             <button
                                                 onClick={() => { handleSidebarClick('Configurações'); setIsUserMenuOpen(false); }}
                                                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors gap-3"

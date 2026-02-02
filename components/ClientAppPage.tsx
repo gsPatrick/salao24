@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client, Professional } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { professionalsAPI } from '../lib/api';
+import api, { professionalsAPI } from '../lib/api';
 
 // --- Interfaces ---
 interface Appointment {
@@ -31,19 +31,58 @@ const QRCodeIcon = () => <svg className="w-6 h-6" viewBox="0 0 20 20" fill="curr
 
 // --- Client Promo Carousel ---
 const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) => {
-  const activePromotions = (promotions || []).filter(p => p.isActive && p.targetArea === 'cliente');
+  const [banners, setBanners] = useState<any[]>([]);
 
-  const cards = activePromotions.length > 0 ? activePromotions.map((p, idx) => ({
-    id: p.id,
-    tag: p.callToAction || 'Oferta Especial',
-    title: p.title,
-    highlight: p.subtitle,
-    description: p.description,
-    cta: p.actionButton || 'Aproveitar',
-    imageUrl: p.image,
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const response = await api.get('/admin/banners?area=area_do_cliente');
+        setBanners(response.data || []);
+      } catch (error) {
+        console.error('Error fetching client banners:', error);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  // Re-added debug logging for troubleshooting
+  console.log('ClientPromoCarousel - Incoming promotions:', promotions);
+  const activePromotions = (promotions || []).filter(p => {
+    const isActive = p.isActive;
+    const isTargetMatch = p.targetArea === 'client' || p.targetArea === 'cliente' || p.targetArea === 'area_do_cliente';
+    const isStandard = p.type !== 'exclusive';
+    console.log(`Promo ID ${p.id}: isActive=${isActive}, targetArea=${p.targetArea}, type=${p.type}, isTargetMatch=${isTargetMatch}, isStandard=${isStandard}`);
+    return isActive && isTargetMatch && isStandard;
+  });
+
+  const combinedItems = [
+    ...banners.map(b => ({
+      id: `banner-${b.id}`,
+      tag: 'Destaque',
+      title: b.title,
+      highlight: '',
+      description: b.description,
+      cta: b.button_text || 'Saiba Mais',
+      imageUrl: b.image_url,
+      link: b.link
+    })),
+    ...activePromotions.map(p => ({
+      id: `promo-${p.id}`,
+      tag: p.callToAction || 'Oferta Especial',
+      title: p.title,
+      highlight: p.subtitle,
+      description: p.description,
+      cta: p.actionButton || 'Aproveitar',
+      imageUrl: p.image,
+      link: p.promotionUrl
+    }))
+  ];
+
+  const cards = combinedItems.length > 0 ? combinedItems.map((item, idx) => ({
+    ...item,
     accentColor: idx % 3 === 0 ? 'from-emerald-500 to-teal-400' : idx % 3 === 1 ? 'from-indigo-500 to-sky-500' : 'from-amber-500 to-rose-500',
-    link: p.promotionUrl,
-    isEmpty: false
+    isEmpty: false,
+    id: idx // Use index for indicator logic if needed, or keep original string IDs
   })) : [
     {
       id: 0,
@@ -81,109 +120,81 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
 
   return (
     <div className="mt-4 bg-white rounded-2xl shadow-md overflow-hidden flex flex-col">
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-44 overflow-hidden">
         <div
-          className={`absolute inset-0 bg-gradient-to-br ${activeCard.accentColor} opacity-90`}
+          className={`absolute inset-0 bg-gradient-to-br ${activeCard.accentColor}`}
         ></div>
         {!activeCard.isEmpty && (
           <img
             src={activeCard.imageUrl}
             alt={activeCard.title}
-            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        <div className="relative h-full flex flex-col justify-between p-3">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="relative h-full flex flex-col justify-between p-4">
           <div>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold bg-white/10 text-white border border-white/30 backdrop-blur-sm">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md shadow-sm">
               {activeCard.tag}
             </span>
           </div>
           <div>
-            <h2 className="text-base font-bold text-white leading-snug">
+            <h2 className="text-lg font-extrabold text-white leading-tight shadow-black/20">
               {activeCard.title}
             </h2>
-            <p className="mt-1 text-[11px] text-white/80 leading-snug">
-              {activeCard.highlight}
+            <p className="mt-1 text-xs text-white/80 font-medium">
+              {activeCard.highlight || 'Oportunidade única'}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-between p-3 gap-3">
-        <p className="text-xs text-gray-600 leading-relaxed">
+      <div className="flex-1 flex flex-col justify-between p-5 gap-5">
+        <p className="text-sm text-gray-500 leading-relaxed font-medium">
           {activeCard.description}
         </p>
 
         {!activeCard.isEmpty && (
           <button
             onClick={() => activeCard.link !== '#' && window.open(activeCard.link, '_blank')}
-            className="w-full inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+            className="w-full bg-[#10b981] hover:bg-[#0da06f] text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 text-sm uppercase tracking-wider"
           >
             {activeCard.cta}
           </button>
         )}
+      </div>
 
-        <div className="flex items-center justify-between mt-1">
-          <div className="flex items-center gap-2">
+      {cards.length > 1 && (
+        <div className="px-5 pb-5 flex items-center justify-between">
+          <div className="flex gap-2">
             <button
-              type="button"
               onClick={handlePrev}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-primary hover:border-primary/40 transition-colors bg-white"
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-100 bg-white text-gray-400 hover:text-primary transition-all shadow-sm"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
-              type="button"
               onClick={handleNext}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-primary hover:border-primary/40 transition-colors bg-white"
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-100 bg-white text-gray-400 hover:text-primary transition-all shadow-sm"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
-
-          <div className="flex items-center gap-1">
-            {cards.map((card) => (
+          <div className="flex gap-1.5">
+            {cards.map((_, index) => (
               <button
-                key={card.id}
-                type="button"
-                onClick={() => setActiveIndex(card.id)}
-                className={`h-2.5 rounded-full transition-all ${activeIndex === card.id
-                  ? 'w-5 bg-primary'
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
-                  }`}
-                aria-label={`Ir para o card ${card.id + 1}`}
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className={`transition-all duration-300 rounded-full ${activeIndex === index ? 'w-5 h-2 bg-[#10b981]' : 'w-2 h-2 bg-gray-200 hover:bg-gray-300'}`}
               />
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

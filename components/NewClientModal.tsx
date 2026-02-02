@@ -131,8 +131,15 @@ const initialFormData = {
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, existingClients, clientToEdit, acquisitionChannels, isIndividualPlan, onComingSoon }) => {
   const { t } = useLanguage();
-  const { services: contextServices, contractTemplates, units } = useData();
+  const { services: contextServices, contractTemplates, units, refreshUnits } = useData();
   const [formData, setFormData] = useState(initialFormData);
+
+  // Task 2: Fetch units when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      refreshUnits();
+    }
+  }, [isOpen, refreshUnits]);
   const [errors, setErrors] = useState<{ [key: string]: any }>({});
   const [useSocialName, setUseSocialName] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);

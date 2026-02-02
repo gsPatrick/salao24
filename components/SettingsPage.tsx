@@ -222,9 +222,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     };
 
     const handleUserSave = async (userData: any) => {
-        await saveUser(userData);
-        showNotification(t('userSavedSuccess'));
-        setIsUserModalOpen(false);
+        try {
+            await saveUser(userData);
+            showNotification(t('userSavedSuccess'));
+            setIsUserModalOpen(false);
+        } catch (error: any) {
+            console.error('Error saving user:', error);
+            alert('Erro ao salvar usuário: ' + (error.response?.data?.message || error.message));
+        }
     };
 
     const handleUserDelete = async (userId: number, userName: string) => {
@@ -242,9 +247,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     };
 
     const handleUnitSave = async (unitData: any) => {
-        await saveUnit(unitData);
-        showNotification(t('unitSavedSuccess'));
-        setIsUnitModalOpen(false);
+        try {
+            await saveUnit(unitData);
+            showNotification(t('unitSavedSuccess'));
+            setIsUnitModalOpen(false);
+        } catch (error: any) {
+            console.error('Error saving unit:', error);
+            alert('Erro ao salvar unidade: ' + (error.response?.data?.message || error.message));
+        }
     };
 
     const handleUnitDelete = async (unitId: number, unitName: string) => {
@@ -625,37 +635,42 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
 
     const { updateUser, user } = useAuth(); // Destructure updateUser from useAuth
     const handleSave = async () => {
-        const updatedTenant = await updateTenant({
-            name: salonName,
-            description,
-            cnpj_cpf: cnpjCpf,
-            phone,
-            email,
-            address,
-            primary_color: primaryColor,
-            working_hours: workingHours,
-            checkin_message: savedCheckinMessage,
-            terms_and_conditions: termsAndConditions,
-            settings: {
-                ...tenant?.settings,
-                appointment_interval: appointmentInterval,
-                cancel_advance_notice: cancelAdvanceNotice,
-                notifications
-            }
-        });
-
-        if (updatedTenant && user) {
-            // Sync the updated tenant with Auth Context to trigger UI updates immediately
-            updateUser({
-                ...user,
-                tenant: {
-                    ...user.tenant,
-                    ...updatedTenant
+        try {
+            const updatedTenant = await updateTenant({
+                name: salonName,
+                description,
+                cnpj_cpf: cnpjCpf,
+                phone,
+                email,
+                address,
+                primary_color: primaryColor,
+                working_hours: workingHours,
+                checkin_message: savedCheckinMessage,
+                terms_and_conditions: termsAndConditions,
+                settings: {
+                    ...tenant?.settings,
+                    appointment_interval: appointmentInterval,
+                    cancel_advance_notice: cancelAdvanceNotice,
+                    notifications
                 }
             });
-        }
 
-        onSave();
+            if (updatedTenant && user) {
+                // Sync the updated tenant with Auth Context to trigger UI updates immediately
+                updateUser({
+                    ...user,
+                    tenant: {
+                        ...user.tenant,
+                        ...updatedTenant
+                    }
+                });
+            }
+
+            onSave();
+        } catch (error: any) {
+            console.error('Error saving space settings:', error);
+            alert('Erro ao salvar configurações do espaço: ' + (error.response?.data?.message || error.message));
+        }
     };
 
 
@@ -666,10 +681,17 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
     };
 
     const handleSaveCheckinMessage = async () => {
-        setSavedCheckinMessage(editableCheckinMessage);
-        setIsEditingCheckin(false);
-        await updateTenant({ checkin_message: editableCheckinMessage });
-        onSave();
+        try {
+            await updateTenant({ checkin_message: editableCheckinMessage });
+            setSavedCheckinMessage(editableCheckinMessage);
+            setIsEditingCheckin(false);
+            // Assuming showNotification is available in this scope or passed as prop
+            // showNotification(t('checkinMessageSavedSuccess'));
+            onSave(); // Trigger a general save/refresh if needed
+        } catch (error: any) {
+            console.error('Error saving checkin message:', error);
+            alert('Erro ao salvar mensagem de check-in: ' + (error.response?.data?.message || error.message));
+        }
     };
 
     return (

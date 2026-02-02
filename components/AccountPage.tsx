@@ -20,9 +20,9 @@ interface AccountPageProps {
     isIndividualPlan?: boolean;
     selectedUnit?: string;
     onUnitChange?: (unit: string) => void;
-    units?: { id: number; name: string }[];
     promotions?: any[];
     onOpenPromoModal?: () => void;
+    unitData?: any;
 }
 
 // --- Mock Data (limpo) ---
@@ -215,90 +215,28 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
     </div>
 );
 
-const PerformanceChart: React.FC<{ data: any, labels: string[], t: (key: string) => string }> = ({ data, labels, t }) => {
-    if (!data) return null;
-
-    const metrics = [
-        { key: 'faturamento', name: t('accountRevenue'), color: 'bg-green-500' },
-        { key: 'atendimentos', name: t('accountAppointments'), color: 'bg-blue-500' },
-        { key: 'ticketMedio', name: t('accountAvgTicket'), color: 'bg-yellow-500' },
-        { key: 'clientes', name: t('clients'), color: 'bg-purple-500' },
-    ];
-
-    // Find the overall max value across all metrics for scaling
-    const maxValues = metrics.map(m => Math.max(...data[m.key]));
-    const overallMax = Math.max(...maxValues, 1);
-
-    return (
-        <div className="bg-white p-6 rounded-2xl shadow-lg">
-            <h2 className="text-xl font-bold text-secondary mb-4">{t('accountPerformanceChart')}</h2>
-            <div className="h-72 bg-light p-4 rounded-lg flex items-end justify-around gap-2 md:gap-4">
-                {labels.map((label, index) => (
-                    <div key={label} className="flex-1 flex flex-col items-center h-full">
-                        <div className="w-full h-full flex items-end justify-center gap-1">
-                            {metrics.map(metric => (
-                                <div
-                                    key={metric.key}
-                                    className={`w-1/4 rounded-t-md transition-all duration-300 hover:opacity-80 ${metric.color}`}
-                                    style={{ height: `${(data[metric.key][index] / overallMax) * 100}%` }}
-                                    title={`${metric.name}: ${data[metric.key][index]}`}
-                                ></div>
-                            ))}
-                        </div>
-                        <span className="text-xs font-semibold text-gray-500 mt-2">{label}</span>
-                    </div>
-                ))}
-            </div>
-            <div className="flex justify-center flex-wrap mt-4 gap-x-4 gap-y-2">
-                {metrics.map(metric => (
-                    <div key={metric.key} className="flex items-center text-sm text-gray-600">
-                        <span className={`w-3 h-3 rounded-full mr-2 ${metric.color}`}></span>
-                        <span>{metric.name}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const CashFlowChart: React.FC<{ data: any, labels: string[], t: (key: string) => string }> = ({ data, labels, t }) => {
-    if (!data) return null;
-    const maxVal = Math.max(...data.receitas, ...data.despesas, 1);
-    return (
-        <div className="bg-white p-6 rounded-2xl shadow-lg">
-            <h2 className="text-xl font-bold text-secondary mb-4">{t('accountCashFlowChart')}</h2>
-            <div className="h-72 bg-light p-4 rounded-lg flex items-end justify-around gap-2 md:gap-4">
-                {labels.map((label, index) => (
-                    <div key={label} className="flex-1 flex flex-col items-center h-full">
-                        <div className="w-full h-full flex items-end justify-center gap-1">
-                            <div className="w-1/3 bg-green-400 rounded-t-md" style={{ height: `${(data.receitas[index] / maxVal) * 100}%` }} title={`${t('accountRevenues')}: R$ ${data.receitas[index]}`}></div>
-                            <div className="w-1/3 bg-red-400 rounded-t-md" style={{ height: `${(data.despesas[index] / maxVal) * 100}%` }} title={`${t('accountExpenses')}: R$ ${data.despesas[index]}`}></div>
-                        </div>
-                        <span className="text-xs font-semibold text-gray-500 mt-2">{label}</span>
-                    </div>
-                ))}
-            </div>
-            <div className="flex justify-center flex-wrap mt-4 gap-x-4 gap-y-2">
-                <div className="flex items-center text-sm text-gray-600"><span className="w-3 h-3 rounded-full mr-2 bg-green-400"></span><span>{t('accountRevenues')}</span></div>
-                <div className="flex items-center text-sm text-gray-600"><span className="w-3 h-3 rounded-full mr-2 bg-red-400"></span><span>{t('accountExpenses')}</span></div>
-            </div>
-        </div>
-    );
-}
+// Charts removed to respect "absolute frontend"
 
 // Icons
 const DollarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0H8v1m4-1v-1m-4 5v1m-2-4h12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2z" /></svg>;
 const ClipboardCheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
 const CardUsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
 const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z" /></svg>;
-const TrendingUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
-const TrendingDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4-4-6-6" /></svg>;
 
 
-const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndividualPlan, selectedUnit, onUnitChange, units, promotions = [], onOpenPromoModal }) => {
+const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndividualPlan, selectedUnit, onUnitChange, units, promotions = [], onOpenPromoModal, unitData }) => {
     const { t } = useLanguage();
     const [timePeriod, setTimePeriod] = useState<'dia' | 'semana' | 'mensal' | 'anual'>('mensal');
-    const [data, setData] = useState(accountData[selectedUnit]?.[timePeriod] || {});
+    const [data, setData] = useState<any>({
+        faturamento: 'R$ 0,00',
+        atendimentos: '0',
+        ticketMedio: 'R$ 0,00',
+        clientes: '0',
+        chartLabels: [],
+        chartData: { faturamento: [], atendimentos: [], ticketMedio: [], clientes: [] },
+        cashFlowData: { receitas: [], despesas: [] },
+        transactions: []
+    });
 
     // Estado do carrossel de Promoções Exclusivas
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -311,7 +249,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
         }, 10000); // 10 segundos
 
         return () => clearInterval(interval);
-    }, []);
+    }, [totalSlides]);
 
     const [startDate, setStartDate] = useState(() => {
         const now = new Date();
@@ -337,9 +275,93 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
         }
     }, [startDate, endDate]);
 
+    // --- Real-time Data Integration ---
     useEffect(() => {
-        setData(accountData[selectedUnit]?.[timePeriod] || {});
-    }, [selectedUnit, timePeriod]);
+        if (!unitData) return;
+
+        const { transactions = [], appointments = [], clients = [] } = unitData;
+
+        // Filter dates
+        const filterStart = new Date(startDate);
+        filterStart.setHours(0, 0, 0, 0);
+        const filterEnd = new Date(endDate);
+        filterEnd.setHours(23, 59, 59, 999);
+
+        const periodTransactions = transactions.filter((t: any) => {
+            const d = new Date(t.date);
+            return d >= filterStart && d <= filterEnd;
+        });
+
+        const periodAppointments = appointments.filter((a: any) => {
+            const d = new Date(a.date);
+            return d >= filterStart && d <= filterEnd;
+        });
+
+        const newClients = clients.filter((c: any) => {
+            const d = new Date(c.registrationDate || c.createdAt);
+            return d >= filterStart && d <= filterEnd;
+        });
+
+        // Totals
+        const faturamentoVal = periodTransactions
+            .filter((t: any) => t.type === 'receita')
+            .reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
+
+        const atendimentosVal = periodAppointments.filter((a: any) => a.status === 'Atendido' || a.status === 'Completed').length;
+        const ticketMedioVal = atendimentosVal > 0 ? faturamentoVal / atendimentosVal : 0;
+        const clientesVal = newClients.length;
+
+        // Charting Logic (simplified mapping for current UI)
+        const labels: string[] = [];
+        const chartDataObj: any = { faturamento: [], atendimentos: [], ticketMedio: [], clientes: [] };
+        const cashFlowObj: any = { receitas: [], despesas: [] };
+
+        // Generate points (daily for now)
+        const diffDays = Math.ceil((filterEnd.getTime() - filterStart.getTime()) / (1000 * 60 * 60 * 24));
+        const step = diffDays > 31 ? Math.ceil(diffDays / 12) : 1;
+
+        for (let d = new Date(filterStart); d <= filterEnd; d.setDate(d.getDate() + step)) {
+            labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+
+            const sliceStart = new Date(d); sliceStart.setHours(0, 0, 0, 0);
+            const sliceEnd = new Date(d);
+            if (step > 1) sliceEnd.setDate(sliceEnd.getDate() + step - 1);
+            sliceEnd.setHours(23, 59, 59, 999);
+
+            const sliceTrans = periodTransactions.filter((t: any) => {
+                const date = new Date(t.date);
+                return date >= sliceStart && date <= sliceEnd;
+            });
+            const sliceAppts = periodAppointments.filter((a: any) => {
+                const date = new Date(a.date);
+                return date >= sliceStart && date <= sliceEnd;
+            });
+
+            const fat = sliceTrans.filter((t: any) => t.type === 'receita').reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
+            const desp = sliceTrans.filter((t: any) => t.type === 'despesa').reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
+            const atend = sliceAppts.filter((a: any) => a.status === 'Atendido' || a.status === 'Completed').length;
+
+            chartDataObj.faturamento.push(fat);
+            chartDataObj.atendimentos.push(atend);
+            chartDataObj.ticketMedio.push(atend > 0 ? fat / atend : 0);
+            chartDataObj.clientes.push(0);
+
+            cashFlowObj.receitas.push(fat);
+            cashFlowObj.despesas.push(desp);
+        }
+
+        setData({
+            faturamento: `R$ ${faturamentoVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            atendimentos: atendimentosVal.toString(),
+            ticketMedio: `R$ ${ticketMedioVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            clientes: clientesVal.toString(),
+            chartLabels: labels,
+            chartData: chartDataObj,
+            cashFlowData: cashFlowObj,
+            transactions: periodTransactions.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5)
+        });
+
+    }, [unitData, startDate, endDate, timePeriod]);
 
     // Funções de navegação do carrossel
     const navigateCarousel = (direction: 'prev' | 'next') => {
@@ -431,7 +453,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                         {isIndividualPlan ? (
                             <option value="Unidade Matriz">{t('accountUnit1')}</option>
                         ) : (
-                            units.map(unit => <option key={unit.id} value={unit.name}>{unit.name === 'Unidade Matriz' ? t('accountUnit1') : t('accountUnit2')}</option>)
+                            units?.map(unit => <option key={unit.id} value={unit.name}>{unit.name}</option>)
                         )}
                     </select>
                 </div>
@@ -547,10 +569,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <PerformanceChart data={data.chartData} labels={data.chartLabels} t={t} />
-                <CashFlowChart data={data.cashFlowData} labels={data.chartLabels} t={t} />
-            </div>
+            {/* Charts removed to respect "absolute frontend" */}
 
             <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 className="text-xl font-bold text-secondary mb-4">{t('accountLatestTransactions')} ({t(`period${timePeriod.charAt(0).toUpperCase() + timePeriod.slice(1)}`)})</h2>

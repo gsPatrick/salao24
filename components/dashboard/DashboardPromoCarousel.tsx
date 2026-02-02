@@ -33,9 +33,10 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
     useEffect(() => {
         const fetchBanners = async () => {
             try {
-                const response = await api.get('/super-admin/banners');
-                // API returns { success: true, data: [...] }
-                const data = response.data?.data || response.data || [];
+                // Task 3: Filter banners by painel_de_controle
+                const response = await api.get('/admin/banners?area=painel_de_controle');
+                // API returns array directly according to updated controller
+                const data = response.data || [];
                 setBanners(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Error fetching banners:', error);
@@ -53,6 +54,7 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
         ...banners.map(b => ({
             id: `banner-${b.id}`,
             title: b.title,
+            description: (b as any).description,
             image_url: b.image_url,
             button_text: b.button_text,
             link: b.link,
@@ -61,6 +63,7 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
         ...promotions.filter(p => p.isActive && p.targetArea === 'painel').map(p => ({
             id: `promo-${p.id}`,
             title: p.title,
+            description: p.description,
             image_url: p.image,
             button_text: p.actionButton || 'Compre Agora',
             link: p.promotionUrl,
@@ -105,51 +108,81 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
     ];
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-lg group">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+        <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 group">
+            <div className="flex justify-between items-center mb-5">
+                <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
                     Promoções em Destaque
                 </h3>
             </div>
 
             <div className="relative">
-                <div className="overflow-hidden rounded-lg">
+                <div className="overflow-hidden rounded-2xl">
                     <div
-                        className="flex transition-transform duration-500 ease-in-out"
+                        className="flex transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
                         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                     >
                         {finalItems.map((item: any) => (
                             <div key={item.id} className="min-w-full">
-                                <div className={`relative rounded-lg overflow-hidden h-48 sm:h-64 ${item.isEmpty ? 'bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center' : 'bg-gradient-to-r from-primary to-secondary'}`}>
-
+                                <div className={`flex flex-col ${item.isEmpty ? 'bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-8 items-center justify-center text-center' : ''}`}>
                                     {!item.isEmpty ? (
                                         <>
-                                            <div className="relative h-full">
+                                            {/* Image Section */}
+                                            <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden shadow-inner">
                                                 <img
                                                     src={item.image_url}
                                                     alt={item.title}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+
+                                                {/* Badge - Top Left */}
+                                                <div className="absolute top-4 left-4 inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] sm:text-xs font-bold shadow-lg">
+                                                    {item.subtitle}
+                                                </div>
+
+                                                {/* Title Overlay - Bottom */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-5">
+                                                    <h4 className="text-lg sm:text-xl font-extrabold text-white leading-tight mb-1">
+                                                        {item.title}
+                                                    </h4>
+                                                    {item.description && (
+                                                        <p className="text-[10px] sm:text-xs text-white/80 font-medium line-clamp-1">
+                                                            Resultados que encantam e fidelizam clientes
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
-                                                <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wider">{item.subtitle}</div>
-                                                <h4 className="text-xl font-bold mb-2">{item.title}</h4>
+
+                                            {/* Content Section below image */}
+                                            <div className="pt-5 pb-2">
+                                                {item.description && (
+                                                    <p className="text-sm text-gray-500 leading-relaxed mb-6 font-medium">
+                                                        {item.description}
+                                                    </p>
+                                                )}
+
                                                 <button
                                                     onClick={() => item.link !== '#' && window.open(item.link, '_blank')}
-                                                    className="bg-white text-secondary font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors mt-2 text-sm shadow-lg active:scale-95"
+                                                    className="w-full bg-[#10b981] hover:bg-[#0da06f] text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-95 text-sm uppercase tracking-wider"
                                                 >
                                                     {item.button_text}
                                                 </button>
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="text-center p-6">
+                                        <div className="py-12">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
                                             <h4 className="text-xl font-bold text-gray-400 mb-2">{item.title}</h4>
-                                            <p className="text-gray-400 text-sm mb-4">Crie uma campanha para aparecer aqui.</p>
+                                            <p className="text-gray-400 text-sm mb-6 max-w-[200px] mx-auto">Crie campanhas personalizadas para atrair mais clientes.</p>
+                                            <button className="px-6 py-2 bg-gray-200 text-gray-500 rounded-xl font-bold text-sm">Novo Banner</button>
                                         </div>
                                     )}
                                 </div>
@@ -157,38 +190,39 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
                         ))}
                     </div>
                 </div>
+            </div>
 
-                {finalItems.length > 1 && (
-                    <>
+            {/* Bottom Controls */}
+            {finalItems.length > 1 && (
+                <div className="flex justify-between items-center mt-6">
+                    <div className="flex gap-2.5">
                         <button
                             onClick={() => navigateCarousel('prev')}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg z-10 transition-all opacity-0 group-hover:opacity-100"
+                            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-100 bg-white text-gray-400 hover:text-primary hover:border-primary transition-all shadow-sm"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
                         <button
                             onClick={() => navigateCarousel('next')}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg z-10 transition-all opacity-0 group-hover:opacity-100"
+                            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-100 bg-white text-gray-400 hover:text-primary hover:border-primary transition-all shadow-sm"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
-                    </>
-                )}
-            </div>
+                    </div>
 
-            {finalItems.length > 1 && (
-                <div className="flex justify-center mt-4 space-x-2">
-                    {finalItems.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setCurrentSlide(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${currentSlide === index ? 'bg-primary' : 'bg-gray-300'}`}
-                        />
-                    ))}
+                    <div className="flex gap-1.5">
+                        {finalItems.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`transition-all duration-300 rounded-full ${currentSlide === index ? 'w-6 h-2 bg-[#10b981]' : 'w-2 h-2 bg-gray-200 hover:bg-gray-300'}`}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
