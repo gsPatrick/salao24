@@ -49,7 +49,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
     const socket = getSocket();
 
     socket.on('whatsapp:qr', ({ qr }) => {
-      console.log('QR Received');
+      console.log('QR Received', qr);
       setQrCode(qr);
       setConnectionStatus('qrcode');
       setIsLoading(false);
@@ -116,8 +116,10 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
   };
 
   const handleConnectWhatsApp = () => {
+    console.log('handleConnectWhatsApp called');
     setIsLoading(true);
     const socket = getSocket();
+    console.log('Emitting whatsapp:connect');
     socket.emit('whatsapp:connect');
   };
 
