@@ -1352,7 +1352,7 @@ const ExclusivePromotionsPage: React.FC<{
                                                 />
                                             </div>
                                             <p className="text-xs text-gray-500">
-                                                <span className="font-medium text-primary">Tamanho recomendado:</span> 1200x630px (Retangular)
+                                                <span className="font-medium text-primary">Tamanho recomendado:</span> 1200x220px (Retangular)
                                             </p>
                                         </div>
                                     </div>
