@@ -1087,7 +1087,7 @@ const ExclusivePromotionsPage: React.FC<{
                                         {exclusive.clicks || 0} cliques
                                     </div>
                                 </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-2 transition-opacity">
                                     <button
                                         onClick={() => onOpenExclusiveModal(exclusive)}
                                         className="text-sm font-semibold text-blue-600 hover:text-blue-800"
@@ -1441,7 +1441,7 @@ const MonthlyPackagesPage: React.FC<{
     onSavePromotion: (promotion: Promotion) => void;
     onDeletePromotion: (id: number) => void;
     onTogglePromotion: (id: number) => void;
-    onOpenPromoModal: () => void;
+    onOpenPromoModal: (promotion?: Promotion) => void;
     isPromoModalOpen: boolean;
     onClosePromoModal: () => void;
     editingPromotion: Promotion | null;
@@ -1661,7 +1661,7 @@ const MonthlyPackagesPage: React.FC<{
                                         }`}>
                                         {pkg.isActive ? 'Ativo' : 'Inativo'}
                                     </span>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-2 transition-opacity">
                                         <button
                                             onClick={() => onOpenPackageModal(pkg)}
                                             className="text-sm font-semibold text-blue-600 hover:text-blue-800"
@@ -1921,6 +1921,12 @@ const MonthlyPackagesPage: React.FC<{
                                             {promotion.clicks || 0} cliques
                                         </div>
                                         <div className="flex gap-2">
+                                            <button
+                                                onClick={() => onOpenPromoModal(promotion)}
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                                            >
+                                                Editar
+                                            </button>
                                             <button
                                                 onClick={() => onTogglePromotion(promotion.id)}
                                                 className={`text-sm font-semibold px-2 py-1 rounded ${promotion.isActive
