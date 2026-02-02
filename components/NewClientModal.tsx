@@ -761,8 +761,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     if (query.length > 1) {
       const combined = [
         ...contextServices.map(s => ({ ...s, type: 'service' as const })),
-        ...packages.filter(p => !p.category || p.category === 'Serviços').map(p => ({ ...p, type: 'package' as const })),
-        ...salonPlans.filter(p => !p.category || p.category === 'Serviços').map(p => ({ ...p, type: 'plan' as const }))
+        ...packages.map(p => ({ ...p, type: 'package' as const })),
+        ...salonPlans.map(p => ({ ...p, type: 'plan' as const }))
       ];
       setServiceSearchResults(
         combined.filter(item => item.name.toLowerCase().includes(query))
@@ -986,14 +986,14 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               name="planId"
               value={formData.planId?.toString()}
               onChange={handleChange}
-              options={salonPlans.filter(p => !p.category || p.category === 'Serviços').map(p => ({ value: p.id.toString(), label: p.name }))}
+              options={salonPlans.map(p => ({ value: p.id.toString(), label: p.name }))}
             />
             <SelectField
               label="Pacote"
               name="packageId"
               value={formData.packageId?.toString()}
               onChange={handleChange}
-              options={packages.filter(p => !p.category || p.category === 'Serviços').map(p => ({ value: p.id.toString(), label: p.name }))}
+              options={packages.map(p => ({ value: p.id.toString(), label: p.name }))}
             />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('relationshipSectionTitle')}</label>
