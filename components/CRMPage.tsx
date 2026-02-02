@@ -87,9 +87,12 @@ const ClientCard: React.FC<{
 }> = ({ client, onClick, onDragStart, isDragging, onOpenChat, appointments, services, professionals }) => {
     const { isBirthdayMonth, classification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
 
-    const cardClasses = `p-4 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-xl w-full text-left cursor-grab relative overflow-hidden ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
+    const cardClasses = `p-3 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-xl w-full text-left cursor-grab relative overflow-hidden ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
         } ${isDragging ? 'opacity-50' : ''}`;
-    const formattedBirthdate = client.birthdate ? new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'N/A';
+    const formattedBirthdate = client.birthdate ? (() => {
+        const [year, month, day] = client.birthdate.split('-');
+        return `${day}/${month}`;
+    })() : 'N/A';
 
     return (
         <div
