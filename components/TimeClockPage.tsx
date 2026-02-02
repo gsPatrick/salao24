@@ -462,7 +462,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const handleClockIn = async (photo: string) => {
         try {
-            await timeClockAPI.punch({ type: 'entrada', photo });
+            await timeClockAPI.punch({ type: 'entrada', photo, professionalId: professional?.id });
             const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             setStatus('clocked_in');
             setConfirmation(t('timeClockSuccessClockIn', { time: time, name: currentUser?.name.split(' ')[0] || '' }));
@@ -484,7 +484,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const handleClockOut = async (photo: string) => {
         try {
-            await timeClockAPI.punch({ type: 'saida', photo });
+            await timeClockAPI.punch({ type: 'saida', photo, professionalId: professional?.id });
             const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             setStatus('clocked_out');
             setConfirmation(t('timeClockSuccessClockOut', { time: time }));
@@ -520,7 +520,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const handleBreakStart = async (photo: string) => {
         try {
-            await timeClockAPI.punch({ type: 'saida_pausa', photo });
+            await timeClockAPI.punch({ type: 'saida_pausa', photo, professionalId: professional?.id });
             const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             setStatus('on_break');
             setConfirmation(t('timeClockSuccessBreakStart', { time: time }));
@@ -542,7 +542,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const handleBreakEnd = async (photo: string) => {
         try {
-            await timeClockAPI.punch({ type: 'retorno_pausa', photo });
+            await timeClockAPI.punch({ type: 'retorno_pausa', photo, professionalId: professional?.id });
             const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             setStatus('clocked_in');
             setConfirmation(t('timeClockSuccessBreakEnd', { time: time }));

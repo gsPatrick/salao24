@@ -240,6 +240,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         timeClockErrorNoGeolocation: 'Não foi possível obter sua localização. Verifique o GPS.',
         timeClockPhotoCaptured: 'Foto capturada com sucesso',
         timeClockTakingPhoto: 'Capturando foto para validação...',
+        timeClockCameraTitle: 'Tire uma Foto para Registro',
 
         // Dashboard content
         dashboardRevenue: 'Faturamento',
