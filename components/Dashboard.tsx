@@ -4169,10 +4169,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const sidebarItems = [
         { name: t('overview'), icon: <HomeIcon />, key: 'Visão Geral', internalKey: 'dashboard' },
         { name: t('dashboard'), icon: <DashboardIcon />, key: 'Painel de Controle', internalKey: 'dashboard' },
-        { name: t('chat'), icon: <ChatIcon />, key: 'Chat', internalKey: 'chat' },
         { name: t('marketing'), icon: <MarketingIcon />, key: 'Marketing', internalKey: 'marketing' },
         { name: t('aiAgent'), icon: <AIIcon />, key: 'Agente IA', internalKey: 'aiAgent' },
         { name: t('channels'), icon: <ChannelsIcon />, key: 'Canais', internalKey: 'channels' },
+        { name: t('chat'), icon: <ChatIcon />, key: 'Chat', internalKey: 'chat' },
         { name: t('myAgenda'), icon: <MyAgendaIcon />, key: 'Minha Agenda', internalKey: 'minhaAgenda' },
         { name: t('scheduling'), icon: <SidebarCalendarIcon />, key: 'Agendamento', internalKey: 'agenda' },
         { name: t('clients'), icon: <SidebarUsersIcon />, key: 'Clientes', internalKey: 'clientes' },
