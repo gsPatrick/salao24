@@ -594,9 +594,6 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             new: [], recurrent: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
         };
 
-        console.log('CRM Debug - Total Clients:', clients.length);
-        console.log('CRM Debug - Sample Client:', clients[0]);
-
         const filteredClients = clients.filter(client => {
             // Text Search
             const textSearchMatch = (() => {
@@ -641,7 +638,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
 
 
-        console.log('CRM Debug - Filtered Clients:', filteredClients.length);
+
 
         filteredClients.forEach(client => {
             // Debug client mapping
@@ -706,7 +703,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             }
         });
 
-        console.log('CRM Debug - Groups Result:', Object.keys(groups).map(k => `${k}: ${groups[k].length}`));
+
 
         // Sorting logic
         for (const key in groups) {

@@ -739,9 +739,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!isAuthenticated) return;
         setLoading(prev => ({ ...prev, crmSettings: true }));
         try {
-            console.log('DEBUG: Fetching CRM Settings...');
             const response = await crmAPI.getSettings();
-            console.log('DEBUG: CRM Settings Response:', response);
             setCrmSettings(response);
         } catch (error: any) {
             console.error('Error fetching CRM settings:', error);
