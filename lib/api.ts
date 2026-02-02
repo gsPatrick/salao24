@@ -515,6 +515,22 @@ export const aiAPI = {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
+    },
+    uploadVoice: async (audioBlob: Blob) => {
+        const formData = new FormData();
+        formData.append('voice', audioBlob, 'voice_sample.webm');
+        const response = await api.post('/ai/upload-voice', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+    uploadTrainingFile: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/ai/upload-training-file', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
     }
 };
 

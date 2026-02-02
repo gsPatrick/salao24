@@ -670,6 +670,8 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
     const [advancedPersonality, setAdvancedPersonality] = useState('Amigável e informal');
     const [customPersonality, setCustomPersonality] = useState('');
     const [chatKey, setChatKey] = useState(0);
+    const [trainingFiles, setTrainingFiles] = useState<any[]>([]);
+    const trainingFileInputRef = useRef<HTMLInputElement>(null);
     const [showNotification, setShowNotification] = useState(false);
     const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
     const [playingVoice, setPlayingVoice] = useState<string | null>(null);
@@ -760,6 +762,12 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                     setCustomPersonality(config.custom_personality || '');
                     setAdvancedPrebuiltVoice(config.voice_id || 'Sofia (Amigável)');
                     setIsAIEnabled(config.is_voice_enabled);
+                    setUseCustomVoice(config.use_custom_voice || false);
+                    if (config.use_custom_voice && config.custom_voice_url) {
+                        setCloningStatus('ready');
+                        setCloningStep('Sua voz clonada está pronta!');
+                    }
+                    setTrainingFiles(config.training_files || []);
 
                     if (config.voice_settings) {
                         setSpeed(config.voice_settings.speed || 1.0);
@@ -859,38 +867,48 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
         }
     }, [isIndividualPlan, isEssentialPlan, isAIEnabled, onActivateAI, selectedPlan]);
 
-    const handleCloneVoice = () => {
+    const handleCloneVoice = async () => {
         if (!customVoiceFile) return;
 
         setCloningStatus('processing');
         setCloningProgress(0);
         setCloningStep('Analisando características da voz...');
 
-        // Simulate analysis (3 seconds)
-        let progress = 0;
-        const interval1 = setInterval(() => {
-            progress += 10;
-            setCloningProgress(progress);
-            if (progress >= 100) {
-                clearInterval(interval1);
+        try {
+            // Upload actual voice sample
+            const uploadResponse = await aiAPI.uploadVoice(customVoiceFile);
+            if (!uploadResponse.success) throw new Error("Voice upload failed");
 
-                // Simulate training (4 seconds)
-                setCloningProgress(0);
-                setCloningStep('Treinando modelo de IA...');
-                progress = 0;
-                const interval2 = setInterval(() => {
-                    progress += 7;
-                    setCloningProgress(progress);
-                    if (progress >= 100) {
-                        clearInterval(interval2);
-                        setCloningProgress(100);
-                        setCloningStatus('ready');
-                        setCloningStep('Sua voz foi clonada com sucesso!');
-                        setUseCustomVoice(true); // Automatically enable custom voice
-                    }
-                }, 300);
-            }
-        }, 300);
+            // Simulate analysis (3 seconds)
+            let progress = 0;
+            const interval1 = setInterval(() => {
+                progress += 10;
+                setCloningProgress(progress);
+                if (progress >= 100) {
+                    clearInterval(interval1);
+
+                    // Simulate training (4 seconds)
+                    setCloningProgress(0);
+                    setCloningStep('Treinando modelo de IA...');
+                    progress = 0;
+                    const interval2 = setInterval(() => {
+                        progress += 7;
+                        setCloningProgress(progress);
+                        if (progress >= 100) {
+                            clearInterval(interval2);
+                            setCloningProgress(100);
+                            setCloningStatus('ready');
+                            setCloningStep('Sua voz foi clonada com sucesso!');
+                            setUseCustomVoice(true); // Automatically enable custom voice
+                        }
+                    }, 300);
+                }
+            }, 300);
+        } catch (error) {
+            setCloningStatus('error');
+            setCloningStep('Erro ao processar áudio.');
+            console.error(error);
+        }
     };
 
     const resetCloning = () => {
@@ -899,6 +917,22 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
         setCloningProgress(0);
         setCloningStep('');
         setUseCustomVoice(false);
+    };
+
+    const handleTrainingFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const response = await aiAPI.uploadTrainingFile(file);
+            if (response.success) {
+                setTrainingFiles(prev => [...prev, response.file]);
+                setShowNotification(true);
+            }
+        } catch (error) {
+            console.error("Failed to upload training file:", error);
+            alert("Erro ao enviar arquivo de treinamento.");
+        }
     };
 
 
@@ -943,6 +977,8 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                 custom_personality: customPersonality,
                 prompt_behavior: advancedScript,
                 voice_id: advancedPrebuiltVoice,
+                use_custom_voice: useCustomVoice,
+                training_files: trainingFiles,
                 voice_settings: {
                     speed, pitch, variation, pauses, expressiveness, breaths, tempoVariation
                 }
@@ -1135,9 +1171,30 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                         <label htmlFor="adv-script" className="block text-sm font-medium text-gray-300 mb-1">Roteiro de Atendimento</label>
                         <textarea id="adv-script" rows={5} placeholder="📄 Descreva como a IA deve saudar, quais informações pedir, como confirmar, etc." className="w-full p-3 border border-gray-500 bg-gray-800 text-white rounded-md" value={advancedScript} onChange={(e) => setAdvancedScript(e.target.value)}></textarea>
                     </div>
-                    <button type="button" className="w-full text-center font-semibold py-3 px-4 rounded-md border-2 border-dashed border-gray-500 text-gray-300 hover:border-primary hover:text-primary transition-colors">
+                    <input
+                        type="file"
+                        ref={trainingFileInputRef}
+                        onChange={handleTrainingFileUpload}
+                        className="hidden"
+                        accept=".pdf,.txt"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => trainingFileInputRef.current?.click()}
+                        className="w-full text-center font-semibold py-3 px-4 rounded-md border-2 border-dashed border-gray-500 text-gray-300 hover:border-primary hover:text-primary transition-colors"
+                    >
                         📂 Enviar arquivo para treinar (PDF, TXT)
                     </button>
+                    {trainingFiles.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                            {trainingFiles.map((f, i) => (
+                                <div key={i} className="flex items-center text-xs text-gray-400">
+                                    <CheckIcon className="w-4 h-4 text-green-500 mr-2" />
+                                    {f.name} ({(f.size / 1024).toFixed(1)} KB)
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </CollapsibleSection>
 
