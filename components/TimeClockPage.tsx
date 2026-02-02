@@ -178,9 +178,9 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const isManager = currentUser?.role === 'admin' || currentUser?.role === 'Gerente' || currentUser?.role === 'gerente' || currentUser?.role === 'Administrador';
-    const [activeTab, setActiveTab] = useState('myPunches');
-    const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>(professional?.id.toString() || '');
+    const isManager = currentUser?.role === 'admin' || currentUser?.role === 'Gerente' || currentUser?.role === 'gerente' || currentUser?.role === 'Administrador' || currentUser?.role === 'superadmin';
+    const [activeTab, setActiveTab] = useState(isManager && !professional ? 'teamManagement' : 'myPunches');
+    const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>(professional?.id?.toString() || '');
 
     // Fetch History
     useEffect(() => {
@@ -860,8 +860,16 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
                             <span className="text-gray-600 font-semibold">{t('timeClockCheckingLocation')}</span>
                         </div>
                     )}
-
-                    {!isLoadingLocation && status === 'not_clocked_in' && (
+                    {!isLoadingLocation && (
+                        <>
+                            {!professional && (
+                                <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 font-semibold rounded-lg animate-fade-in">
+                                    ⚠️ Você não tem um perfil de profissional cadastrado. Use a aba "Gestão de Equipe" para registrar pontos da equipe.
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {!isLoadingLocation && status === 'not_clocked_in' && professional && (
                         <div className="animate-fade-in">
                             <h1 className="text-2xl font-bold text-secondary">{t('timeClockHello', { name: currentUser?.name.split(' ')[0] || '' })}</h1>
                             <p className="text-gray-600 mt-2 mb-8">{t('timeClockPrompt')}</p>
