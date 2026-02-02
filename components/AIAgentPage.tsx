@@ -666,6 +666,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
     const [advancedPrebuiltVoice, setAdvancedPrebuiltVoice] = useState('Sofia (Amigável)');
     const [useCustomVoice, setUseCustomVoice] = useState(false);
     const [customVoiceFile, setCustomVoiceFile] = useState<File | null>(null);
+    const [customVoiceUrl, setCustomVoiceUrl] = useState<string | null>(null);
     const [advancedScript, setAdvancedScript] = useState('');
     const [advancedPersonality, setAdvancedPersonality] = useState('Amigável e informal');
     const [customPersonality, setCustomPersonality] = useState('');
@@ -763,6 +764,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                     setAdvancedPrebuiltVoice(config.voice_id || 'Sofia (Amigável)');
                     setIsAIEnabled(config.is_voice_enabled);
                     setUseCustomVoice(config.use_custom_voice || false);
+                    setCustomVoiceUrl(config.custom_voice_url || null);
                     if (config.use_custom_voice && config.custom_voice_url) {
                         setCloningStatus('ready');
                         setCloningStep('Sua voz clonada está pronta!');
@@ -879,6 +881,9 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
             const uploadResponse = await aiAPI.uploadVoice(customVoiceFile);
             if (!uploadResponse.success) throw new Error("Voice upload failed");
 
+            // Capture URL from response
+            setCustomVoiceUrl(uploadResponse.url);
+
             // Simulate analysis (3 seconds)
             let progress = 0;
             const interval1 = setInterval(() => {
@@ -913,10 +918,15 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
 
     const resetCloning = () => {
         setCustomVoiceFile(null);
+        setCustomVoiceUrl(null);
         setCloningStatus('idle');
         setCloningProgress(0);
         setCloningStep('');
         setUseCustomVoice(false);
+    };
+
+    const handleRemoveTrainingFile = (index: number) => {
+        setTrainingFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleTrainingFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -978,6 +988,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                 prompt_behavior: advancedScript,
                 voice_id: advancedPrebuiltVoice,
                 use_custom_voice: useCustomVoice,
+                custom_voice_url: customVoiceUrl,
                 training_files: trainingFiles,
                 voice_settings: {
                     speed, pitch, variation, pauses, expressiveness, breaths, tempoVariation
@@ -1188,9 +1199,20 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                     {trainingFiles.length > 0 && (
                         <div className="mt-2 space-y-1">
                             {trainingFiles.map((f, i) => (
-                                <div key={i} className="flex items-center text-xs text-gray-400">
-                                    <CheckIcon className="w-4 h-4 text-green-500 mr-2" />
-                                    {f.name} ({(f.size / 1024).toFixed(1)} KB)
+                                <div key={i} className="flex items-center justify-between text-xs text-gray-400 p-2 bg-gray-800 rounded-md group hover:bg-gray-700 transition-colors">
+                                    <div className="flex items-center">
+                                        <CheckIcon className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                                        <span>{f.name} ({(f.size / 1024).toFixed(1)} KB)</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveTrainingFile(i)}
+                                        className="text-gray-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Remover arquivo"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -1241,9 +1263,20 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                             <h4 className="font-bold text-lg text-white">{cloningStep}</h4>
                             <p className="text-sm text-gray-400">Teste a voz abaixo ou use a simulação de atendimento.</p>
                             <AudioPlayer duration="0:08" useCustomVoice={true} customVoiceFile={customVoiceFile} />
-                            <button onClick={resetCloning} className="text-sm text-red-400 hover:underline">
-                                Enviar outra amostra
-                            </button>
+                            <div className="flex flex-col gap-2 mt-2">
+                                <button onClick={resetCloning} className="text-sm text-gray-400 hover:text-white transition-colors underline">
+                                    Enviar outra amostra
+                                </button>
+                                <button
+                                    onClick={resetCloning}
+                                    className="text-sm text-red-500 hover:text-red-400 transition-colors flex items-center justify-center gap-1"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Excluir Voz Clonada
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
