@@ -12,6 +12,7 @@
     "@google/genai": "^1.22.0",
     "@supabase/supabase-js": "^2.86.0",
     "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.25",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.1",
