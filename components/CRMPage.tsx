@@ -594,6 +594,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             new: [], recurrent: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
         };
 
+        console.log('CRM Debug - Total Clients:', clients.length);
+        console.log('CRM Debug - Sample Client:', clients[0]);
+
         const filteredClients = clients.filter(client => {
             // Text Search
             const textSearchMatch = (() => {
@@ -636,7 +639,13 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             return dateMatch;
         });
 
+
+
+        console.log('CRM Debug - Filtered Clients:', filteredClients.length);
+
         filteredClients.forEach(client => {
+            // Debug client mapping
+            // console.log(`CRM Debug - Client ${client.name} (${client.id}) logic check`);
             // Priority 1: Birthday
             if (client.birthdate) {
                 const birthDate = new Date(client.birthdate);
@@ -677,6 +686,10 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             // Priority 4: New Client (Unprocessed/Leads)
             // Catch all for clients who don't have attended appointments yet and didn't fall into other categories
             const isAttended = client.status === 'Atendido' || client.status === 'concluido' || (client.total_visits && client.total_visits > 0);
+
+            // LOG DE DEBUG PARA "NEW"
+            // if (!isAttended) console.log(`CRM Debug - Client ${client.name} assigned to NEW directly. Status: ${client.status}, TotalVisits: ${client.totalVisits}`);
+
             if (!isAttended) {
                 groups.new.push(client);
                 return;
@@ -692,6 +705,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 }
             }
         });
+
+        console.log('CRM Debug - Groups Result:', Object.keys(groups).map(k => `${k}: ${groups[k].length}`));
 
         // Sorting logic
         for (const key in groups) {
