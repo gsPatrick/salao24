@@ -92,7 +92,7 @@ const ClientCard: React.FC<{
     const formattedBirthdate = client.birthdate ? new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'N/A';
 
     return (
-        <button
+        <div
             onClick={onClick}
             className={cardClasses}
             draggable="true"
@@ -210,7 +210,7 @@ const ClientCard: React.FC<{
                     })}
                 </div>
             )}
-        </button>
+        </div>
     );
 };
 
@@ -1260,7 +1260,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                     key={column.id}
                                     columnId={column.id}
                                     title={column.title}
-                                    clients={column.clients}
+                                    clients={(() => {
+                                        // Legacy / DB Key Mapping fallback
+                                        const key = column.id;
+                                        if (clientGroups[key]) return clientGroups[key];
+                                        if (key === 'lead') return clientGroups['new'] || [];
+                                        if (key === 'contacted') return clientGroups['scheduled'] || []; // Or maintain specific logic
+                                        if (key === 'lost') return clientGroups['inactive'] || [];
+                                        return [];
+                                    })()}
                                     icon={column.icon}
                                     config={column}
                                     isConfigOpen={openConfigColumnId === column.id}
