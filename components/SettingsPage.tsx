@@ -463,7 +463,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <div className="animate-fade-in">
                         <h2 className="text-xl font-bold text-secondary">{t('settingsTabAccessHistory')}</h2>
                         <p className="text-gray-500 text-sm mb-6">{t('settingsAccessHistoryDesc')}</p>
-                        <AccessHistoryPage logs={[]} users={users} />
+                        <AccessHistoryPage
+                            logs={users.filter(u => u.last_login_at).map(u => ({
+                                id: `login-${u.id}`,
+                                userId: u.id,
+                                action: 'login',
+                                details: 'acessou o sistema',
+                                timestamp: u.last_login_at
+                            }))}
+                            users={users}
+                        />
                     </div>
                 );
         }
@@ -745,6 +754,14 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                     <div><label className="block text-sm font-medium text-gray-700">Cidade</label><input type="text" value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                     <div><label className="block text-sm font-medium text-gray-700">CEP</label><input type="text" value={address.cep} onChange={e => setAddress({ ...address, cep: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                 </div>
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={handleSave}
+                        className="py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark"
+                    >
+                        Salvar Dados do Estabelecimento
+                    </button>
+                </div>
             </div>
 
             {/* Booking & Notifications (New) */}
@@ -815,59 +832,7 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                 </div>
             </div>
 
-            {/* QR Code Check-in */}
-            <div className="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-bold text-secondary">{t('settingsSpaceSectionQRCode')}</h2>
-                <p className="text-gray-500 text-sm mb-6">{t('settingsSpaceDescQRCode')}</p>
-                {isEditingCheckin ? (
-                    <div className="space-y-4 animate-fade-in">
-                        <div>
-                            <label htmlFor="check-message" className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelWelcomeMessage')}</label>
-                            <textarea
-                                id="check-message"
-                                value={editableCheckinMessage}
-                                onChange={e => setEditableCheckinMessage(e.target.value)}
-                                rows={4}
-                                className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">{t('settingsSpaceDescWelcomeMessage')}</p>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button type="button" onClick={() => setIsEditingCheckin(false)} className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                {t('cancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSaveCheckinMessage}
-                                className="py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark"
-                            >
-                                {t('settingsSpaceButtonSaveMessage')}
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-4 animate-fade-in">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelSavedMessage')}</label>
-                            <div className="mt-1 p-4 border border-gray-200 rounded-md bg-light text-gray-800 whitespace-pre-wrap">
-                                {savedCheckinMessage}
-                            </div>
-                        </div>
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setEditableCheckinMessage(savedCheckinMessage);
-                                    setIsEditingCheckin(true);
-                                }}
-                                className="py-2 px-6 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                            >
-                                {t('settingsSpaceButtonEditMessage')}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+
 
             {/* Terms and Conditions (New) */}
             <div className="bg-white p-6 rounded-2xl shadow-lg">

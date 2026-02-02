@@ -465,21 +465,33 @@ const mapUserFromAPI = (apiUser: any): SystemUser => ({
     ...apiUser,
     avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
     suspended: apiUser.is_active === false,
+    lastLoginAt: apiUser.last_login_at || apiUser.lastLoginAt,
 });
 
-const mapTenantFromAPI = (apiTenant: any): Tenant => ({
-    ...apiTenant,
-    description: apiTenant.description,
-    primaryColor: apiTenant.primary_color || apiTenant.primaryColor,
-    primary_color: apiTenant.primary_color || apiTenant.primary_color,
-    cnpj_cpf: apiTenant.cnpj_cpf,
-    working_hours: apiTenant.business_hours || apiTenant.working_hours,
-    checkin_message: apiTenant.checkin_message,
-    termsAndConditions: apiTenant.terms_and_conditions,
-    nextBillingDate: apiTenant.next_billing_date,
-    trialEndsAt: apiTenant.trial_ends_at,
-    subscriptionStatus: apiTenant.subscription_status,
-});
+const mapTenantFromAPI = (apiTenant: any): Tenant => {
+    const mapped = {
+        ...apiTenant,
+        description: apiTenant.description,
+        primaryColor: apiTenant.primary_color || apiTenant.primaryColor,
+        primary_color: apiTenant.primary_color || apiTenant.primaryColor,
+        cnpj_cpf: apiTenant.cnpj_cpf,
+        working_hours: apiTenant.business_hours || apiTenant.working_hours,
+        checkin_message: apiTenant.checkin_message,
+        termsAndConditions: apiTenant.terms_and_conditions,
+        nextBillingDate: apiTenant.next_billing_date,
+        trialEndsAt: apiTenant.trial_ends_at,
+        subscriptionStatus: apiTenant.subscription_status,
+    };
+
+    // Ensure bank_info pixKey is mapped back from chave_pix
+    if (mapped.settings?.bank_info) {
+        if (mapped.settings.bank_info.chave_pix && !mapped.settings.bank_info.pixKey) {
+            mapped.settings.bank_info.pixKey = mapped.settings.bank_info.chave_pix;
+        }
+    }
+
+    return mapped;
+};
 
 const mapUnitFromAPI = (apiUnit: any): Unit => ({
     ...apiUnit,
@@ -949,7 +961,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const apiData = {
                 title: template.name,
                 type: template.type,
-                content: template.content
+                content: template.content,
+                logo: template.logo
             };
             let response;
             if (template.id) {

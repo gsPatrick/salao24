@@ -33,7 +33,8 @@ const ContractPage: React.FC<ContractPageProps> = ({ onBack }) => {
             id: documentToEdit?.id,
             name: data.title,
             type: modalType,
-            content: data.content
+            content: data.content,
+            logo: data.logo
         });
 
         if (success) {

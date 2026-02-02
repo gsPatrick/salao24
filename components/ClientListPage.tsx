@@ -222,11 +222,16 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
         // Search Query Filter
         if (searchQuery) {
             const query = searchQuery.toLowerCase().replace(/[.\-/() ]/g, '');
-            filtered = filtered.filter(client =>
-                client.name.toLowerCase().includes(query) ||
-                client.phone.replace(/[.\-/() ]/g, '').includes(query) ||
-                (client.cpf && client.cpf.replace(/[.\-/() ]/g, '').includes(query))
-            );
+            filtered = filtered.filter(client => {
+                const searchStr = (
+                    client.name +
+                    client.phone.replace(/[.\-/() ]/g, '') +
+                    (client.cpf ? client.cpf.replace(/[.\-/() ]/g, '') : '') +
+                    (client.planName || '') +
+                    (client.packageNames ? client.packageNames.join(' ') : '')
+                ).toLowerCase();
+                return searchStr.includes(query);
+            });
         }
 
         return filtered;

@@ -97,6 +97,11 @@ const App: React.FC = () => {
   const [subscriptionBlocked, setSubscriptionBlocked] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
 
+  // Scroll to top on page change
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
+
   // Listen for subscription blocked events from API interceptor
   useEffect(() => {
     const handleSubscriptionBlocked = () => setSubscriptionBlocked(true);
