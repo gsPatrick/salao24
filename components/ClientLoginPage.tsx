@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../lib/api';
 import LanguageSelector from './LanguageSelector';
 
 const GoogleIcon: React.FC = () => (
@@ -37,8 +38,11 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [mode, setMode] = useState<'login' | 'signup'>('login');
 
+    const nameRef = useRef<HTMLInputElement>(null);
     const emailRef = useRef<HTMLInputElement>(null);
+    const phoneRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
 
     const handleLogin = async (event: React.FormEvent) => {
@@ -58,6 +62,44 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
             }
         } else {
             setError(result.error || t('loginInvalidCredentials'));
+            setIsLoading(false);
+        }
+    };
+
+    const handleSignUp = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        const name = nameRef.current?.value || '';
+        const email = emailRef.current?.value || '';
+        const phone = phoneRef.current?.value || '';
+        const password = passwordRef.current?.value || '';
+
+        try {
+            const response = await authAPI.register({
+                userName: name,
+                email,
+                phone,
+                password,
+                userType: 'client'
+            });
+
+            if (response.success) {
+                // After signup, automatically login
+                const loginResult = await login(email, password, false);
+                if (loginResult.success) {
+                    const storedUser = localStorage.getItem('authUser');
+                    if (storedUser) {
+                        onLoginSuccess(JSON.parse(storedUser));
+                    }
+                }
+            } else {
+                setError(response.message || 'Erro ao realizar cadastro');
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erro ao realizar cadastro');
+        } finally {
             setIsLoading(false);
         }
     };
@@ -96,10 +138,10 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>{t('loginEntering') || 'Entrando...'}</span>
+                    <span>{mode === 'login' ? (t('loginEntering') || 'Entrando...') : 'Cadastrando...'}</span>
                 </>
             ) : (
-                t('clientLoginEnter') || 'Entrar na Área do Cliente'
+                mode === 'login' ? (t('clientLoginEnter') || 'Entrar na Área do Cliente') : 'Criar minha Conta'
             )}
         </>
     );
@@ -119,13 +161,43 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                 <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
                     <div>
                         <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-secondary">
-                            {t('clientLoginTitle') || 'Bem-vindo, Cliente!'}
+                            {mode === 'login' ? (t('clientLoginTitle') || 'Bem-vindo, Cliente!') : 'Criar sua Conta'}
                         </h2>
                         <p className="mt-2 text-center text-sm text-gray-600">
-                            {t('clientLoginSubtitle') || 'Acesse seus agendamentos e histórico'}
+                            {mode === 'login'
+                                ? (t('clientLoginSubtitle') || 'Acesse seus agendamentos e histórico')
+                                : 'Preencha seus dados para começar'}
                         </p>
                     </div>
-                    <form className="space-y-6" onSubmit={handleLogin}>
+                    <form className="space-y-4" onSubmit={mode === 'login' ? handleLogin : handleSignUp}>
+                        {mode === 'signup' && (
+                            <>
+                                <div>
+                                    <label htmlFor="user-name" className="sr-only font-bold">Nome Completo</label>
+                                    <input
+                                        id="user-name"
+                                        name="name"
+                                        type="text"
+                                        ref={nameRef}
+                                        required
+                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                        placeholder="Seu nome completo"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="user-phone" className="sr-only font-bold">WhatsApp</label>
+                                    <input
+                                        id="user-phone"
+                                        name="phone"
+                                        type="tel"
+                                        ref={phoneRef}
+                                        required
+                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                        placeholder="Seu WhatsApp"
+                                    />
+                                </div>
+                            </>
+                        )}
                         <div>
                             <label htmlFor="email-address" className="sr-only font-bold">{t('loginEmailAddress') || 'E-mail'}</label>
                             <input
@@ -137,7 +209,6 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                                 required
                                 className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
                                 placeholder={t('loginYourEmail') || 'Seu e-mail'}
-                                defaultValue="juliana.costa@example.com"
                             />
                         </div>
                         <div className="relative">
@@ -151,7 +222,6 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                                 required
                                 className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
                                 placeholder={t('loginPassword') || 'Senha'}
-                                defaultValue="123"
                             />
                             <button
                                 type="button"
@@ -172,6 +242,30 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                             <SubmitButtonContent />
                         </button>
                     </form>
+
+                    {mode === 'login' && (
+                        <div className="text-center text-sm">
+                            <span className="text-gray-600">Ainda não tem conta? </span>
+                            <button
+                                onClick={() => { setMode('signup'); setError(null); }}
+                                className="font-bold text-primary hover:text-primary-dark transition-colors"
+                            >
+                                Cadastre-se aqui
+                            </button>
+                        </div>
+                    )}
+
+                    {mode === 'signup' && (
+                        <div className="text-center text-sm">
+                            <span className="text-gray-600">Já possui uma conta? </span>
+                            <button
+                                onClick={() => { setMode('login'); setError(null); }}
+                                className="font-bold text-primary hover:text-primary-dark transition-colors"
+                            >
+                                Faça login
+                            </button>
+                        </div>
+                    )}
 
                     <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
