@@ -140,7 +140,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
             return;
         }
 
-        onSave({ ...itemToEdit, ...formData, isFavorite });
+        const sanitizedPrice = formData.price.replace(',', '.');
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite });
         handleClose();
     };
 

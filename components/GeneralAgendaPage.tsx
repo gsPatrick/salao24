@@ -13,10 +13,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 
 // --- Mock Data ---
-const mockUnits = [
-  { id: 1, name: 'Unidade Matriz' },
-  { id: 2, name: 'Unidade Filial' }
-];
 
 const formatDateForLookup = (date: Date): string => {
   const year = date.getFullYear();
@@ -82,7 +78,7 @@ const UserPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-
 
 const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUser, isIndividualPlan, professionals: propProfessionals, onComingSoon }) => {
   const { t } = useLanguage();
-  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, saveAppointment, updateAppointmentStatus, saveClient, refreshAppointments } = useData();
+  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, units: contextUnits, saveAppointment, updateAppointmentStatus, saveClient, refreshAppointments } = useData();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
@@ -719,7 +715,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         onSave={handleSaveBlock}
         professionals={propProfessionals || contextProfessionals}
         currentDate={currentDate}
-        units={mockUnits}
+        units={contextUnits}
       />
       <SchedulingLinkModal
         isOpen={isLinkModalOpen}

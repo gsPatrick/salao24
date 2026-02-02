@@ -245,16 +245,16 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">{t('procedure')}</label>
-                    <select value={service} onChange={e => setService(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white disabled:bg-gray-700 disabled:text-white disabled:opacity-70">
-                      <option value="" style={{ backgroundColor: 'white', color: 'black' }}>Selecione...</option>
-                      {contextServices.map(s => <option key={s.id} value={s.name} style={{ backgroundColor: 'white', color: 'black' }}>{s.name}</option>)}
+                    <select value={service} onChange={e => setService(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
+                      <option value="">Selecione...</option>
+                      {contextServices.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">{t('professional')}</label>
-                    <select value={professional} onChange={e => setProfessional(e.target.value)} required disabled={isEditing || professionalsToShow.length === 1} className="mt-1 w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white disabled:bg-gray-700 disabled:text-white disabled:opacity-70">
-                      <option value="" style={{ backgroundColor: 'white', color: 'black' }}>Selecione...</option>
-                      {professionalsToShow.map(p => <option key={p.id} value={p.name} style={{ backgroundColor: 'white', color: 'black' }}>{p.name}</option>)}
+                    <select value={professional} onChange={e => setProfessional(e.target.value)} required disabled={isEditing || professionalsToShow.length === 1} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
+                      <option value="">Selecione...</option>
+                      {professionalsToShow.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                     </select>
                   </div>
                   <div>
