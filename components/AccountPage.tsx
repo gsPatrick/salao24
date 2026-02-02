@@ -517,13 +517,16 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                                     <div key={promo.id || index} className="min-w-full px-2">
                                         <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                             <img
-                                                src={promo.image || "https://via.placeholder.com/400x200"}
+                                                src={promo.bannerImage || promo.image || "https://via.placeholder.com/400x200"}
                                                 alt={promo.title}
                                                 className="w-full h-56 object-contain rounded-lg mb-3 bg-gray-50"
                                             />
                                             <h4 className="font-semibold text-gray-800 text-sm mb-2">{promo.title}</h4>
                                             <p className="text-xs text-gray-600 mb-3 line-clamp-2">{promo.description}</p>
-                                            <button className="w-full bg-primary text-white text-sm py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors">
+                                            <button
+                                                onClick={() => promo.bannerLink && window.open(promo.bannerLink, '_blank')}
+                                                className={`w-full bg-primary text-white text-sm py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors ${!promo.bannerLink && 'opacity-50 cursor-not-allowed'}`}
+                                            >
                                                 {promo.actionButton || 'Ver Mais'}
                                             </button>
                                         </div>
