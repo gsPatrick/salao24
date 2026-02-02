@@ -102,7 +102,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             setErrors(newErrors);
             return;
         }
-        onSave({ ...itemToEdit, ...formData, isFavorite });
+        const sanitizedPrice = formData.price.replace(',', '.');
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite });
         handleClose();
     };
 

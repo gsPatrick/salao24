@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface NewPackageModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: any) => void;
-  itemToEdit?: any | null;
-  categories: string[];
-  onAddCategory: (category: string) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: any) => void;
+    itemToEdit?: any | null;
+    categories: string[];
+    onAddCategory: (category: string) => void;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '' };
@@ -73,7 +73,7 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
             handleChange(e);
         }
         if (errors.category) {
-            setErrors(prev => ({ ...prev, category: ''}));
+            setErrors(prev => ({ ...prev, category: '' }));
         }
     };
 
@@ -104,18 +104,19 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
             return;
         }
 
-        onSave({ ...itemToEdit, ...formData, sessions: Number(formData.sessions) || formData.sessions, isFavorite });
+        const sanitizedPrice = formData.price.replace(',', '.');
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, sessions: Number(formData.sessions) || formData.sessions, isFavorite });
         handleClose();
     };
-    
+
     const isFormValid = useMemo(() => {
         return Object.values(formData).every(value => !!value) && Object.values(errors).every(error => !error);
     }, [formData, errors]);
 
     if (!isOpen && !isExiting) return null;
-    
+
     const title = itemToEdit ? 'Editar Pacote' : 'Novo Pacote';
-    
+
     const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text') => (
         <div>
             <input name={name} type={type} value={formData[name as keyof typeof formData]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} required className={`w-full p-2 border rounded ${errors[name] ? 'border-red-500' : 'border-gray-300'}`} />
