@@ -197,6 +197,7 @@ interface MonthlyPackage {
     description?: string;
     duration?: number;
     isActive?: boolean;
+    usageType?: string;
     createdAt?: string;
 }
 
@@ -2068,6 +2069,7 @@ const MonthlyPackagesPage: React.FC<{
                                             price: parseFloat(formData.get('price') as string),
                                             description: formData.get('description') as string,
                                             duration: parseInt(formData.get('duration') as string),
+                                            usageType: editingPackage?.usageType || 'Promoção',
                                             isActive: editingPackage?.isActive ?? true,
                                             createdAt: editingPackage?.createdAt || new Date().toISOString()
                                         };
@@ -4050,7 +4052,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Canais': return <ChannelsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} navigate={navigate} onComingSoon={onComingSoon} />;
             case 'Chat': return <ChatPage onBack={handleBackToDashboard} targetClientId={chatClientTarget} onClearTarget={() => setChatClientTarget(null)} onComingSoon={onComingSoon} />;
             case 'Promoção': return <MonthlyPackagesPage
-                monthlyPackages={monthlyPackages}
+                monthlyPackages={monthlyPackages.filter(p => p.usageType === 'Promoção')}
                 packageSubscriptions={packageSubscriptions}
                 onSavePackage={handleSaveMonthlyPackage}
                 onDeletePackage={handleDeleteMonthlyPackage}

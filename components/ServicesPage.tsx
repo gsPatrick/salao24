@@ -199,7 +199,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                         <div className="flex justify-end mb-4">
                             <button onClick={() => openModal('package')} className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg">+ Novo Pacote</button>
                         </div>
-                        {renderList(packages, 'package')}
+                        {renderList(packages.filter(p => !p.usageType || p.usageType === 'Serviços'), 'package')}
                     </div>
                 )}
                 {activeTab === 'plans' && (
@@ -207,7 +207,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                         <div className="flex justify-end mb-4">
                             <button onClick={() => openModal('plan')} className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg">+ Novo Plano</button>
                         </div>
-                        {renderList(plans, 'plan')}
+                        {renderList(plans.filter(p => !p.usageType || p.usageType === 'Serviços'), 'plan')}
                     </div>
                 )}
             </div>
@@ -232,6 +232,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                     itemToEdit={itemToEdit}
                     categories={serviceCategories}
                     onAddCategory={onAddServiceCategory}
+                    usageType="Serviços"
                 />
             )}
             {modalType === 'plan' && (
@@ -242,6 +243,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                     itemToEdit={itemToEdit}
                     categories={serviceCategories}
                     onAddCategory={onAddServiceCategory}
+                    usageType="Serviços"
                 />
             )}
         </>

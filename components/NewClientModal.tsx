@@ -127,11 +127,13 @@ const initialFormData = {
   howTheyFoundUs: '',
   indicatedBy: '',
   observations: '',
+  planId: '',
+  packageId: '',
 };
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, existingClients, clientToEdit, acquisitionChannels, isIndividualPlan, onComingSoon }) => {
   const { t } = useLanguage();
-  const { services: contextServices, contractTemplates, units, refreshUnits } = useData();
+  const { services: contextServices, contractTemplates, units, refreshUnits, salonPlans, packages } = useData();
   const [formData, setFormData] = useState(initialFormData);
 
   // State for dynamically fetched acquisition channels
@@ -390,6 +392,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
           indicatedBy: clientToEdit.indicatedBy || '',
           observations: clientToEdit.observations || '',
+          planId: clientToEdit.planId || '',
+          packageId: clientToEdit.packageId || '',
         });
         setPhoto(clientToEdit.photo);
         setProcedurePhotos(clientToEdit.procedurePhotos || []);
@@ -399,7 +403,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         setAttachedDocuments(clientToEdit.documents?.filter((d: any) => d.type === 'Anexo').map((doc: any) => ({
           title: doc.name,
           fileName: doc.fileName || doc.name,
-          file: null
+          file: null,
+          content: doc.content // Map content back
         })) || []);
         setServicesOfInterest(clientToEdit.servicesOfInterest || []);
         setUseSocialName(!!clientToEdit.socialName && clientToEdit.name === clientToEdit.socialName);
@@ -672,22 +677,25 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const handleAddDocument = () => {
     if (selectedDocument) {
-      if (!stagedDocuments.some(d => d.id === selectedDocument.id)) {
-        setStagedDocuments([
-          ...stagedDocuments,
-          { ...selectedDocument, signed: false }, // Add signed property
-        ]);
-        setDocumentSearch('');
-        setSelectedDocument(null);
-        setDocumentSearchResults([]);
-      } else {
-        alert('Este documento já foi adicionado.');
-      }
+      // Allow multiple versions of the same template by using a timestamp in the unique ID for the staged list
+      const newStagedDoc = {
+        ...selectedDocument,
+        stagedId: Date.now(), // Unique ID for the UI list
+        signed: false
+      };
+
+      setStagedDocuments([
+        ...stagedDocuments,
+        newStagedDoc,
+      ]);
+      setDocumentSearch('');
+      setSelectedDocument(null);
+      setDocumentSearchResults([]);
     }
   };
 
-  const handleRemoveDocument = (documentIdToRemove: number) => {
-    setStagedDocuments(stagedDocuments.filter(d => d.id !== documentIdToRemove));
+  const handleRemoveDocument = (stagedIdToRemove: number) => {
+    setStagedDocuments(stagedDocuments.filter(d => d.stagedId !== stagedIdToRemove));
   };
 
   const handleOpenSignatureModal = (doc: ClientDocument) => {
@@ -700,7 +708,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
     setStagedDocuments(prevDocs =>
       prevDocs.map(doc =>
-        doc.id === documentToSign.id
+        doc.stagedId === documentToSign.stagedId
           ? { ...doc, signed: true, signatureImg: signatureData.signature, userPhoto: signatureData.photo }
           : doc
       )
@@ -721,12 +729,22 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const handleAddAttachedDocument = () => {
     if (newDocTitle.trim() && newDocFile) {
-      setAttachedDocuments(prev => [...prev, { title: newDocTitle, file: newDocFile }]);
-      setNewDocTitle('');
-      setNewDocFile(null);
-      if (docFileInputRef.current) {
-        docFileInputRef.current.value = '';
-      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setAttachedDocuments(prev => [...prev, {
+          title: newDocTitle,
+          file: newDocFile,
+          fileName: newDocFile.name,
+          content: base64 // Store base64 content
+        }]);
+        setNewDocTitle('');
+        setNewDocFile(null);
+        if (docFileInputRef.current) {
+          docFileInputRef.current.value = '';
+        }
+      };
+      reader.readAsDataURL(newDocFile);
     } else {
       alert('Por favor, preencha o título e selecione um arquivo PDF.');
     }
@@ -741,10 +759,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     setServiceSearch(query);
     setSelectedService(null); // Clear selection when user types
     if (query.length > 1) {
+      const combined = [
+        ...contextServices.map(s => ({ ...s, type: 'service' as const })),
+        ...packages.filter(p => !p.category || p.category === 'Serviços').map(p => ({ ...p, type: 'package' as const })),
+        ...salonPlans.filter(p => !p.category || p.category === 'Serviços').map(p => ({ ...p, type: 'plan' as const }))
+      ];
       setServiceSearchResults(
-        contextServices.filter(
-          service => service.name.toLowerCase().includes(query)
-        )
+        combined.filter(item => item.name.toLowerCase().includes(query))
       );
     } else {
       setServiceSearchResults([]);
@@ -753,6 +774,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const handleAddService = () => {
     if (selectedService) {
+      const typedService = selectedService as any;
+      if (typedService.type === 'package') {
+        setFormData(prev => ({ ...prev, packageId: typedService.id }));
+      } else if (typedService.type === 'plan') {
+        setFormData(prev => ({ ...prev, planId: typedService.id }));
+      }
+
       if (!servicesOfInterest.includes(selectedService.name)) {
         setServicesOfInterest([...servicesOfInterest, selectedService.name]);
       }
@@ -782,13 +810,14 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       return;
     }
 
-    const { cep, street, number, complement, neighborhood, city, state, fullName, ...restOfData } = formData;
+    const { cep, street, number, complement, neighborhood, city, state, fullName, planId, packageId, ...restOfData } = formData;
 
     const attachedDocsToSave = attachedDocuments.map(doc => ({
       name: doc.title,
       fileName: doc.fileName || doc.file?.name,
       type: 'Anexo',
       signed: false,
+      content: doc.content // Ensure content is saved
     }));
 
     const existingHistory = clientToEdit?.history || [];
@@ -831,6 +860,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       tags: clientToEdit?.tags || [],
       documents: [...stagedDocuments, ...attachedDocsToSave],
       servicesOfInterest: servicesOfInterest,
+      planId: planId ? parseInt(planId.toString()) : null,
+      packageId: packageId ? parseInt(packageId.toString()) : null,
     };
     onSave(finalData);
     handleClose();
@@ -949,6 +980,20 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                 { value: 'Viúvo(a)', label: t('maritalStatusWidowed') },
               ]}
               error={errors.maritalStatus}
+            />
+            <SelectField
+              label="Plano"
+              name="planId"
+              value={formData.planId?.toString()}
+              onChange={handleChange}
+              options={salonPlans.filter(p => !p.category || p.category === 'Serviços').map(p => ({ value: p.id.toString(), label: p.name }))}
+            />
+            <SelectField
+              label="Pacote"
+              name="packageId"
+              value={formData.packageId?.toString()}
+              onChange={handleChange}
+              options={packages.filter(p => !p.category || p.category === 'Serviços').map(p => ({ value: p.id.toString(), label: p.name }))}
             />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('relationshipSectionTitle')}</label>

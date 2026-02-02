@@ -79,7 +79,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
 
     const cardClasses = `p-4 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 hover:shadow-lg w-full text-left cursor-pointer relative overflow-hidden ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
         }`;
-    const formattedBirthdate = new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const formattedBirthdate = new Date(client.birthdate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
 
     const handleDownloadDocument = (doc: any) => {
         try {

@@ -112,6 +112,7 @@ export interface Package {
     category?: string;
     suspended?: boolean;
     isFavorite?: boolean;
+    usageType?: string;
     [key: string]: any;
 }
 
@@ -402,6 +403,8 @@ const mapClientFromAPI = (apiClient: any): Client => ({
     tags: apiClient.tags || [],
     crmColumnId: apiClient.crm_column_id,
     crmData: apiClient.crm_data,
+    planId: apiClient.plan_id,
+    packageId: apiClient.package_id,
     isActive: apiClient.is_active,
     blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
 });
@@ -487,6 +490,7 @@ const mapPackageFromAPI = (apiPackage: any): Package => ({
     ...apiPackage,
     suspended: apiPackage.is_suspended !== undefined ? apiPackage.is_suspended : apiPackage.suspended,
     isFavorite: apiPackage.is_favorite !== undefined ? apiPackage.is_favorite : apiPackage.isFavorite,
+    usageType: apiPackage.usageType || apiPackage.usage_type,
 });
 
 const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
@@ -1037,6 +1041,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...pkg,
                 is_suspended: pkg.suspended,
                 is_favorite: pkg.isFavorite,
+                usage_type: pkg.usageType,
             };
             let response;
             if (pkg.id) {

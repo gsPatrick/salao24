@@ -8,11 +8,12 @@ interface NewPlanModalProps {
     itemToEdit?: any | null;
     categories: string[];
     onAddCategory: (category: string) => void;
+    usageType?: string;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '' };
 
-const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory }) => {
+const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
     const { t } = useLanguage();
     const [formData, setFormData] = useState(initialFormData);
     // FIX: Broaden the type of the 'errors' state to 'any' for its values to resolve a TypeScript type error on assignment.
@@ -103,7 +104,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             return;
         }
         const sanitizedPrice = formData.price.replace(',', '.');
-        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite });
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite, usageType: itemToEdit?.usageType || usageType || 'Serviços' });
         handleClose();
     };
 

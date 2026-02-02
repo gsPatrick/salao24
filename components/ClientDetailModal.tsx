@@ -76,6 +76,8 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-
 const VisitsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2zm0 14h.01M7 17h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2zm10-14h.01M17 3h5a2 2 0 012 2v5a2 2 0 01-2 2h-5a2 2 0 01-2-2V5a2 2 0 012-2zm0 14h.01M17 17h5a2 2 0 012 2v5a2 2 0 01-2 2h-5a2 2 0 01-2-2v-5a2 2 0 012-2z" /></svg>;
 const UserPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
 const MapPinIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>;
+const StarIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-5 w-5"} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
+const PackageIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-5 w-5"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg>;
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-8a1 1 0 11-2 0 1 1 0 012 0z" /></svg>;
 const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
@@ -114,7 +116,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock }) => {
     const { t } = useLanguage();
-    const { saveClient } = useData();
+    const { saveClient, salonPlans, packages } = useData();
     const [isExiting, setIsExiting] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [activeSubTab, setActiveSubTab] = useState('servicos');
@@ -516,14 +518,26 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const handleDownloadDocument = (doc: any) => {
         if (!localClient) return;
+        if (doc.content && doc.content.startsWith('data:application/pdf;base64,')) {
+            const link = document.createElement('a');
+            link.href = doc.content;
+            link.download = doc.fileName || `${doc.name.replace(/ /g, '_')}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+        }
         try {
             const { jsPDF } = jspdf;
             const pdf = new jsPDF();
             pdf.text(`Documento: ${doc.name}`, 10, 10);
             pdf.text(`Cliente: ${localClient.name}`, 10, 20);
             pdf.text(`CPF: ${localClient.cpf}`, 10, 30);
-            pdf.text(`Status: Assinado`, 10, 40);
-            pdf.text(`Conteúdo: ${doc.content || 'N/A'}`, 10, 50);
+            pdf.text(`Status: ${doc.signed ? 'Assinado' : 'Pendente'}`, 10, 40);
+            if (doc.content) {
+                const splitText = pdf.splitTextToSize(doc.content, 180);
+                pdf.text(splitText, 10, 50);
+            }
             const filename = `${doc.name.replace(/ /g, '_')}_${localClient.name.replace(/ /g, '_')}.pdf`;
             pdf.save(filename);
         } catch (error) {
@@ -533,12 +547,24 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const handleViewDocument = (doc: any) => {
         if (!localClient) return;
+        if (doc.content && doc.content.startsWith('data:application/pdf;base64,')) {
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write(`<iframe width='100%' height='100%' src='${doc.content}'></iframe>`);
+            } else {
+                alert('Erro ao abrir nova janela. Verifique as configurações de bloqueador de pop-ups.');
+            }
+            return;
+        }
         try {
             const { jsPDF } = jspdf;
             const pdf = new jsPDF();
             pdf.text(`Documento: ${doc.name}`, 10, 10);
             pdf.text(`Cliente: ${localClient.name}`, 10, 20);
-            pdf.text(`Conteúdo: ${doc.content || 'N/A'}`, 10, 30);
+            if (doc.content) {
+                const splitText = pdf.splitTextToSize(doc.content, 180);
+                pdf.text(splitText, 10, 30);
+            }
             pdf.output('dataurlnewwindow');
         } catch (error) {
             console.error("Failed to generate PDF for viewing:", error);
@@ -688,15 +714,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const animationClass = isOpen && !isExiting ? 'animate-bounce-in' : 'opacity-0 scale-95';
 
     const howTheyFoundUsValue = localClient.howTheyFoundUs + (localClient.howTheyFoundUs === 'Indicação' && localClient.indicatedBy ? ` (${localClient.indicatedBy})` : '');
-    const registrationDate = new Date(localClient.registrationDate);
-    const registrationDateFormatted = !isNaN(registrationDate.getTime())
+    const registrationDate = localClient.registrationDate ? new Date(localClient.registrationDate) : null;
+    const registrationDateFormatted = registrationDate && !isNaN(registrationDate.getTime())
         ? registrationDate.toLocaleDateString('pt-BR')
-        : 'data invalida';
-    const lastVisitDate = new Date(localClient.lastVisit);
-    const lastVisitDateFormatted = localClient.lastVisit && !isNaN(lastVisitDate.getTime())
-        ? lastVisitDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+        : 'Pendente';
+    const lastVisitDateFormatted = localClient.lastVisit && !isNaN(new Date(localClient.lastVisit).getTime())
+        ? new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
         : 'N/A';
-    const fullAddress = localClient.address ? `${localClient.address.street}, ${localClient.address.number} - ${localClient.address.neighborhood}, ${localClient.address.city} - ${localClient.address.state}, ${localClient.address.cep}` : '';
+    const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
 
 
     const classificationBadges: { [key: string]: { text: string, icon: string, classes: string } } = {
@@ -797,6 +822,26 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     </div>
                 </InfoSection>
 
+                {(localClient.planId || localClient.packageId) && (
+                    <InfoSection title="Planos e Pacotes">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                            {localClient.planId && (
+                                <InfoItem
+                                    icon={<StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" />}
+                                    label="Plano"
+                                    value={salonPlans.find(p => p.id === localClient.planId)?.name || 'N/A'}
+                                />
+                            )}
+                            {localClient.packageId && (
+                                <InfoItem
+                                    icon={<PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />}
+                                    label="Pacote"
+                                    value={packages.find(p => p.id === localClient.packageId)?.name || 'N/A'}
+                                />
+                            )}
+                        </div>
+                    </InfoSection>
+                )}
                 <InfoSection title={t('financialSummary')}>
                     <div className="space-y-3">
                         <p className="flex justify-between text-sm"><span className="text-black">{t('totalSpent')}:</span> <span className="font-bold text-black">{financialSummary.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
@@ -804,16 +849,18 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         <p className="flex justify-between text-sm"><span className="text-black">{t('mostFrequentService')}:</span> <span className="font-bold text-black">{financialSummary.mostFrequentService}</span></p>
                     </div>
                 </InfoSection>
-                {localClient.preferences && localClient.preferences.length > 0 && (
-                    <InfoSection title={t('observationsAndPreferences')}>
-                        <ul className="list-disc list-inside space-y-1">
-                            {localClient.preferences.map((pref, index) => (
-                                <li key={index} className="text-sm text-gray-600">{pref}</li>
-                            ))}
-                        </ul>
-                    </InfoSection>
-                )}
-            </div>
+                {
+                    localClient.preferences && localClient.preferences.length > 0 && (
+                        <InfoSection title={t('observationsAndPreferences')}>
+                            <ul className="list-disc list-inside space-y-1">
+                                {localClient.preferences.map((pref, index) => (
+                                    <li key={index} className="text-sm text-gray-600">{pref}</li>
+                                ))}
+                            </ul>
+                        </InfoSection>
+                    )
+                }
+            </div >
         );
     };
 
@@ -1114,6 +1161,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
                         {activeTab === 'contracts' && localClient.documents && (
                             <div className="space-y-4">
+                                {onEdit && (
+                                    <div className="flex justify-end mb-2">
+                                        <button
+                                            onClick={() => onEdit(localClient)}
+                                            className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                            Adicionar Contrato / Anexo
+                                        </button>
+                                    </div>
+                                )}
                                 {localClient.documents.map((doc, index) => (
                                     <div key={index} className="flex justify-between items-center bg-white p-3 rounded-lg border">
                                         <div>
