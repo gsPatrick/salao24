@@ -288,6 +288,10 @@ export const tenantsAPI = {
         const response = await api.get('/tenants', { params });
         return response.data;
     },
+    getFilterOptions: async () => {
+        const response = await api.get('/tenants/filter-options');
+        return response.data;
+    },
     getCurrent: async () => {
         const response = await api.get('/tenants/current');
         return response.data;

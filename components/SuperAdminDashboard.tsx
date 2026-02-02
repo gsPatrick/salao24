@@ -32,7 +32,13 @@ export const SuperAdminTenantsPage: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-    const [filters, setFilters] = useState({ country: '', state: '', neighborhood: '' });
+    const [filters, setFilters] = useState({ country: '', state: '', city: '', neighborhood: '' });
+    const [filterOptions, setFilterOptions] = useState<{ countries: string[], states: string[], cities: string[], neighborhoods: string[] }>({
+        countries: [],
+        states: [],
+        cities: [],
+        neighborhoods: []
+    });
 
     const fetchTenants = async () => {
         try {
@@ -45,6 +51,19 @@ export const SuperAdminTenantsPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const fetchOptions = async () => {
+        try {
+            const res = await tenantsAPI.getFilterOptions();
+            setFilterOptions(res.data);
+        } catch (error) {
+            console.error("Error fetching filter options:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchOptions();
+    }, []);
 
     useEffect(() => {
         fetchTenants();
@@ -68,36 +87,50 @@ export const SuperAdminTenantsPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-secondary mb-6">Gestão de Salões (Tenants)</h2>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">País</label>
-                    <input
-                        type="text"
-                        placeholder="Filtrar por país..."
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                    <select
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
                         value={filters.country}
                         onChange={(e) => setFilters({ ...filters, country: e.target.value })}
-                    />
+                    >
+                        <option value="">Todos</option>
+                        {filterOptions.countries.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                 </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
-                    <input
-                        type="text"
-                        placeholder="Filtrar por estado..."
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                    <select
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
                         value={filters.state}
                         onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                    />
+                    >
+                        <option value="">Todos</option>
+                        {filterOptions.states.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Cidade</label>
+                    <select
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
+                        value={filters.city}
+                        onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                    >
+                        <option value="">Todos</option>
+                        {filterOptions.cities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                 </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bairro</label>
-                    <input
-                        type="text"
-                        placeholder="Filtrar por bairro..."
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary"
+                    <select
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
                         value={filters.neighborhood}
                         onChange={(e) => setFilters({ ...filters, neighborhood: e.target.value })}
-                    />
+                    >
+                        <option value="">Todos</option>
+                        {filterOptions.neighborhoods.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
                 </div>
             </div>
 
