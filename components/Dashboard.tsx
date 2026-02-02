@@ -1490,6 +1490,7 @@ const MonthlyPackagesPage: React.FC<{
         const { t } = useLanguage();
         const [view, setView] = useState<'packages' | 'subscriptions' | 'promotions'>('packages');
         const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'active' | 'expiring' | 'expired' | 'archived'>('all');
+        const [promoAreaFilter, setPromoAreaFilter] = useState<'all' | 'client' | 'painel'>('all');
         const [imageFile, setImageFile] = useState<File | null>(null);
         const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
         const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1526,6 +1527,10 @@ const MonthlyPackagesPage: React.FC<{
         const activePackages = monthlyPackages.filter(p => p.isActive);
         const activeSubscriptions = packageSubscriptions.filter(s => s.isActive);
         const activePromotions = promotions.filter(p => p.isActive);
+        const filteredPromotions = promotions.filter(p => {
+            const matchesArea = promoAreaFilter === 'all' || p.targetArea === promoAreaFilter;
+            return matchesArea;
+        });
 
         // Verificar assinaturas próximas ao vencimento (7 dias)
         const expiringSoonSubscriptions = packageSubscriptions.filter(subscription => {
@@ -1905,7 +1910,43 @@ const MonthlyPackagesPage: React.FC<{
 
                 {view === 'promotions' && (
                     <div className="space-y-4 mt-6">
-                        {promotions.map((promotion) => (
+                        {/* Filtro de Área de Exibição */}
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <h3 className="text-sm font-medium text-gray-700">Filtrar por Área de Exibição:</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => setPromoAreaFilter('all')}
+                                        className={`px-3 py-1 text-sm rounded-full transition-colors ${promoAreaFilter === 'all'
+                                            ? 'bg-primary text-white'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Todas ({promotions.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setPromoAreaFilter('painel')}
+                                        className={`px-3 py-1 text-sm rounded-full transition-colors ${promoAreaFilter === 'painel'
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Painel de Controle ({promotions.filter(p => p.targetArea === 'painel').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setPromoAreaFilter('client')}
+                                        className={`px-3 py-1 text-sm rounded-full transition-colors ${promoAreaFilter === 'client'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Área do Cliente ({promotions.filter(p => p.targetArea === 'client').length})
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {filteredPromotions.map((promotion) => (
                             <div key={promotion.id} className="bg-white p-5 rounded-xl shadow-lg border border-transparent hover:border-primary transition-all duration-300">
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
@@ -1980,7 +2021,7 @@ const MonthlyPackagesPage: React.FC<{
                             </div>
                         ))}
 
-                        {promotions.length === 0 && (
+                        {filteredPromotions.length === 0 && (
                             <div className="text-center py-12">
                                 <div className="text-gray-400 mb-4">
                                     <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4031,7 +4072,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onEditSubscriptionNotes={handleEditSubscriptionNotes}
                 onDownloadSubscriptionReport={handleDownloadSubscriptionReport}
                 // Props para promoções
-                promotions={promotions}
+                promotions={promotions.filter(p => p.type !== 'exclusive')}
                 onSavePromotion={handleSavePromotion}
                 onDeletePromotion={handleDeletePromotion}
                 onTogglePromotion={handleTogglePromotion}
