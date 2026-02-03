@@ -89,7 +89,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
 
     // Filtrar apenas profissionais com atendimento ativo (não suspensos, não arquivados e com agenda aberta)
     const activeProfessionals = sourceList.filter(p =>
-      !p.suspended && !p.archived
+      !p.suspended && !p.archived && p.openSchedule !== false
     );
 
     if (isIndividualPlan && currentUser) {

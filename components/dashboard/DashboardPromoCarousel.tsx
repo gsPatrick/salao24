@@ -9,7 +9,11 @@ interface PromoBanner {
     image_url: string;
     button_text: string;
     link: string;
+    call_to_action?: string;
+    mobile_image_url?: string;
 }
+
+
 
 interface Promotion {
     id: number;
@@ -19,9 +23,13 @@ interface Promotion {
     promotionUrl: string;
     actionButton: string;
     description: string;
+    callToAction: string;
+
     targetArea: 'cliente' | 'painel';
     isActive: boolean;
+    mobileImage?: string;
 }
+
 
 interface DashboardPromoCarouselProps {
     promotions?: Promotion[];
@@ -31,6 +39,17 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
     const [banners, setBanners] = useState<PromoBanner[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -60,8 +79,12 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
             image_url: b.image_url,
             button_text: b.button_text,
             link: b.link,
-            subtitle: b.subtitle || 'Destaque'
+            subtitle: b.subtitle || 'Destaque',
+            callToAction: b.call_to_action || '',
+            mobile_image_url: b.mobile_image_url
         })),
+
+
 
         ...promotions.filter(p => p.isActive && p.targetArea === 'painel').map(p => ({
             id: `promo-${p.id}`,
@@ -70,8 +93,10 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
             image_url: p.image,
             button_text: p.actionButton || 'Compre Agora',
             link: p.promotionUrl,
-            subtitle: p.subtitle || 'Promoção'
+            subtitle: p.subtitle || 'Promoção',
+            callToAction: p.callToAction || ''
         }))
+
     ];
 
     // Rotação automática a cada 5 segundos
@@ -137,10 +162,11 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
                                             {/* Image Section */}
                                             <div className="relative h-48 sm:h-56 rounded-2xl overflow-hidden shadow-inner bg-gray-50 flex items-center justify-center">
                                                 <img
-                                                    src={item.image_url}
+                                                    src={(isMobile && item.mobile_image_url) ? item.mobile_image_url : item.image_url}
                                                     alt={item.title}
                                                     className="w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
                                                 />
+
 
                                                 {/* Badge - Top Left */}
                                                 <div className="absolute top-4 left-4 inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] sm:text-xs font-bold shadow-lg">
@@ -152,11 +178,12 @@ export const DashboardPromoCarousel: React.FC<DashboardPromoCarouselProps> = ({ 
                                                     <h4 className="text-lg sm:text-xl font-extrabold text-white leading-tight mb-1">
                                                         {item.title}
                                                     </h4>
-                                                    {item.description && (
-                                                        <p className="text-[10px] sm:text-xs text-white/80 font-medium line-clamp-1">
-                                                            Resultados que encantam e fidelizam clientes
+                                                    {item.callToAction && (
+                                                        <p className="text-[10px] sm:text-xs text-white/90 font-medium line-clamp-1">
+                                                            {item.callToAction}
                                                         </p>
                                                     )}
+
                                                 </div>
                                             </div>
 

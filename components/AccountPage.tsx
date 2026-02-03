@@ -203,14 +203,15 @@ const accountData: { [key: string]: { [key: string]: any } } = {
 };
 
 
-const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; }> = ({ title, value, icon, color }) => (
+const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; description?: string; }> = ({ title, value, icon, color, description }) => (
     <div className="bg-white p-6 rounded-2xl shadow-lg flex items-center space-x-4 transform transition-transform hover:-translate-y-1">
         <div className={`p-3 rounded-full ${color}`}>
             {icon}
         </div>
-        <div>
+        <div className="flex-1">
             <p className="text-sm text-gray-500 font-medium">{title}</p>
             <p className="text-2xl font-bold text-secondary">{value}</p>
+            {description && <p className="text-[10px] text-gray-400 mt-1 leading-tight">{description}</p>}
         </div>
     </div>
 );
@@ -240,7 +241,19 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
 
     // Estado do carrossel de Promoções Exclusivas
     const [currentSlide, setCurrentSlide] = useState(0);
-    const totalSlides = promotions.length || 1; // Total de promoções exclusivas
+    const activePromos = promotions.filter(p => p.isActive);
+    const totalSlides = activePromos.length || 1; // Total de promoções exclusivas ativas
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
 
     // Rotação automática a cada 10 segundos
     useEffect(() => {
@@ -491,10 +504,10 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard title={t('accountRevenue')} value={data.faturamento} icon={<DollarIcon />} color="bg-green-100 text-green-600" />
+                <StatCard title={t('accountRevenue')} value={data.faturamento} icon={<DollarIcon />} color="bg-green-100 text-green-600" description="Total de receitas recebidas no período selecionado." />
                 <StatCard title={t('accountAppointments')} value={data.atendimentos} icon={<ClipboardCheckIcon />} color="bg-blue-100 text-blue-600" />
                 <StatCard title={t('accountAvgTicket')} value={data.ticketMedio} icon={<TicketIcon />} color="bg-yellow-100 text-yellow-600" />
-                <StatCard title={t('clients')} value={data.clientes} icon={<CardUsersIcon />} color="bg-purple-100 text-purple-600" />
+                <StatCard title={t('clients')} value={data.clientes} icon={<CardUsersIcon />} color="bg-purple-100 text-purple-600" description="Novos clientes cadastrados no período selecionado." />
             </div>
 
             {/* Promoções Exclusivas para Clientes */}
@@ -512,17 +525,22 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                 <div className="relative">
                     <div className="overflow-hidden rounded-lg">
                         <div className="flex transition-transform duration-300 ease-in-out" id="exclusive-carousel">
-                            {promotions && promotions.length > 0 ? (
-                                promotions.map((promo, index) => (
+                            {promotions && promotions.filter(p => p.isActive).length > 0 ? (
+                                promotions.filter(p => p.isActive).map((promo, index) => (
+
                                     <div key={promo.id || index} className="min-w-full px-2">
                                         <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                             <img
-                                                src={promo.bannerImage || promo.image || "https://via.placeholder.com/400x200"}
+                                                src={(isMobile && promo.mobile_image_url) ? promo.mobile_image_url : (promo.bannerImage || promo.image || "https://via.placeholder.com/400x200")}
                                                 alt={promo.title}
                                                 className="w-full h-56 object-contain rounded-lg mb-3 bg-gray-50"
                                             />
-                                            <h4 className="font-semibold text-gray-800 text-sm mb-2">{promo.title}</h4>
+
+                                            <p className="text-[10px] text-primary font-bold uppercase mb-1">{promo.callToAction}</p>
+                                            <h4 className="font-semibold text-gray-800 text-sm mb-1">{promo.title}</h4>
+                                            <p className="text-[11px] text-gray-500 mb-2 italic">{promo.subtitle}</p>
                                             <p className="text-xs text-gray-600 mb-3 line-clamp-2">{promo.description}</p>
+
                                             <button
                                                 onClick={() => promo.bannerLink && window.open(promo.bannerLink, '_blank')}
                                                 className={`w-full bg-primary text-white text-sm py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors ${!promo.bannerLink && 'opacity-50 cursor-not-allowed'}`}

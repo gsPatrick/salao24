@@ -175,6 +175,18 @@ export const appointmentsAPI = {
         const response = await api.get('/appointments/availability', { params });
         return response.data;
     },
+    getBlocks: async (params?: any) => {
+        const response = await api.get('/appointments/blocks/all', { params });
+        return response.data;
+    },
+    createBlock: async (data: any) => {
+        const response = await api.post('/appointments/blocks', data);
+        return response.data;
+    },
+    deleteBlock: async (id: number) => {
+        const response = await api.delete(`/appointments/blocks/${id}`);
+        return response.data;
+    },
 };
 
 export const financeAPI = {
@@ -232,6 +244,10 @@ export const stockAPI = {
     },
     toggleFavorite: async (id: number) => {
         const response = await api.patch(`/stock/products/${id}/favorite`);
+        return response.data;
+    },
+    deleteCategory: async (category: string) => {
+        const response = await api.delete(`/stock/categories/${category}`);
         return response.data;
     },
 };
@@ -363,8 +379,21 @@ export const superAdminAPI = {
     getBanners: async () => {
         const response = await api.get('/super-admin/banners');
         return response.data;
+    },
+    createBanner: async (data: any) => {
+        const response = await api.post('/super-admin/banners', data);
+        return response.data;
+    },
+    updateBanner: async (id: number, data: any) => {
+        const response = await api.put(`/super-admin/banners/${id}`, data);
+        return response.data;
+    },
+    deleteBanner: async (id: number) => {
+        const response = await api.delete(`/super-admin/banners/${id}`);
+        return response.data;
     }
 };
+
 
 export const timeClockAPI = {
     getHistory: async (params?: { professionalId?: string }) => {

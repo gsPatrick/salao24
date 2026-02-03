@@ -69,6 +69,11 @@ const IdCardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 
 const CakeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V8a1 1 0 011-1h12a1 1 0 011 1v7.546zM12 12.5a.5.5 0 110-1 .5.5 0 010 1zM3 21h18v-1a1 1 0 00-1-1H4a1 1 0 00-1 1v1z" /></svg>;
 const QuestionMarkCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>;
+const BuildingStorefrontIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+);
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>;
 const PhotoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>;
 const ContractIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
@@ -482,7 +487,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             }
         } else if (isConfirmingAction === 'unblock' && onUnblock) {
             onUnblock(localClient.id);
-            setLocalClient(prev => prev ? { ...prev, blocked: { status: false, reason: '' } } : null);
+            const updatedClient = { ...localClient, blocked: { status: false, reason: '' } };
+            setLocalClient(updatedClient);
+            if (onSave) {
+                onSave(updatedClient);
+            }
         }
 
         setIsConfirmingAction(null);
@@ -763,6 +772,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         {localClient.rg && <InfoItem icon={<IdCardIcon />} label="RG" value={localClient.rg} />}
                         <InfoItem icon={<CakeIcon />} label={t('birthDate')} value={new Date(localClient.birthdate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} />
                         {localClient.maritalStatus && <InfoItem icon={<UsersIcon />} label={t('maritalStatus')} value={localClient.maritalStatus} />}
+                        {localClient.preferredUnit && <InfoItem icon={<BuildingStorefrontIcon />} label="Unidade de Preferência" value={localClient.preferredUnit} />}
                     </div>
                     {localClient.relationships && localClient.relationships.length > 0 && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1037,7 +1047,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="border-b border-gray-200 px-6 no-print">
                         <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                             <TabButton tabName="info" label={t('info')} icon={<InfoIcon />} />
-                            <TabButton tabName="history" label={t('serviceHistory')} icon={<HistoryIcon />} />
+                            <TabButton tabName="history" label="Histórico" icon={<HistoryIcon />} />
                             <TabButton tabName="contracts" label={t('contract')} icon={<ContractIcon />} />
                             <TabButton tabName="photos" label={t('photos')} icon={<PhotoIcon />} />
                         </nav>
@@ -1070,6 +1080,40 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     {/* Content based on sub-tab */}
                                     {activeSubTab === 'servicos' && (
                                         <>
+                                            {/* Sessions Tracking Section */}
+                                            {(localClient.packages?.length > 0 || localClient.packageId || localClient.planId) && (
+                                                <div className="mb-8">
+                                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Controle de Sessões (Pacotes/Planos)</h4>
+                                                    <div className="space-y-3">
+                                                        {localClient.packages?.map((pkg: any, idx: number) => (
+                                                            <div key={idx} className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                                                                <div className="flex justify-between items-center mb-2">
+                                                                    <p className="font-bold text-blue-900">{pkg.name || 'Pacote'}</p>
+                                                                    <span className="text-xs font-semibold bg-blue-200 text-blue-800 px-2 py-1 rounded">PACOTE</span>
+                                                                </div>
+                                                                <div className="grid grid-cols-3 gap-4 text-center">
+                                                                    <div>
+                                                                        <p className="text-xs text-blue-700 uppercase">Realizados</p>
+                                                                        <p className="text-xl font-bold text-green-700">{pkg.used_sessions || 0}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs text-blue-700 uppercase">Pendentes</p>
+                                                                        <p className="text-xl font-bold text-orange-700">{(pkg.total_sessions || pkg.sessions || 0) - (pkg.used_sessions || 0)}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs text-blue-700 uppercase">Total</p>
+                                                                        <p className="text-xl font-bold text-blue-900">{pkg.total_sessions || pkg.sessions || '-'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {!localClient.packages?.length && (localClient.packageId || localClient.planId) && (
+                                                            <p className="text-sm text-gray-500 italic">Dados de sessões detalhados não disponíveis para o pacote/plano atual.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('servicesPerformed')} ({completedServices.length})</h4>
                                             <div className="space-y-4 mb-6">
                                                 {completedServices.length > 0

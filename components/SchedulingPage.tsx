@@ -91,7 +91,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         serviceId: selection.service.id
                     });
                     if (response.success) {
-                        setSelection(prev => ({ ...prev, availableSlots: response.data }));
+                        setSelection(prev => ({ ...prev, availableSlots: response.data.slots || [] }));
                     }
                 } catch (error) {
                     console.error('Error fetching availability:', error);
@@ -256,9 +256,19 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                 );
 
             case 3: {
-                const qualifiedProfessionals = professionalsToShow.filter(prof =>
-                    selection.service?.professional_ids?.includes(prof.id)
-                );
+                const hasSpecificProfessionals = selection.service?.professional_ids && selection.service.professional_ids.length > 0;
+
+                const qualifiedProfessionals = professionalsToShow.filter(prof => {
+                    const matchesService = hasSpecificProfessionals
+                        ? selection.service?.professional_ids?.includes(prof.id)
+                        : true;
+
+                    // Allow if openSchedule is true OR undefined/null (default to open)
+                    const isOpen = prof.openSchedule !== false;
+                    const isActive = !prof.suspended && !prof.archived;
+
+                    return matchesService && isActive && isOpen;
+                });
                 const showAnyProfessional = selection.service?.allowAny && !isIndividualPlan;
                 const displayOptions = [...qualifiedProfessionals];
                 if (showAnyProfessional) {

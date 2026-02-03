@@ -244,7 +244,6 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
     };
 
     const handleEditClient = (client: Client) => {
-        setIsDetailModalOpen(false);
         setClientToEdit(client);
         setIsNewClientModalOpen(true);
     };

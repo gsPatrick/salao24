@@ -58,6 +58,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
     const [itemToEdit, setItemToEdit] = useState<any | null>(null);
     const [filterQuery, setFilterQuery] = useState('');
     const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+    const [showSuspended, setShowSuspended] = useState(false);
 
     const openModal = (type: 'service' | 'package' | 'plan', item?: any) => {
         setModalType(type);
@@ -98,7 +99,8 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
         const filteredItems = items.filter(item => {
             const matchesQuery = item.name.toLowerCase().includes(filterQuery.toLowerCase());
             const matchesFavorite = !showOnlyFavorites || item.isFavorite;
-            return matchesQuery && matchesFavorite;
+            const matchesSuspended = showSuspended || !item.suspended;
+            return matchesQuery && matchesFavorite && matchesSuspended;
         });
 
         return filteredItems.length > 0 ? (
@@ -175,6 +177,13 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                     >
                         {showOnlyFavorites ? <StarIconSolid /> : <StarIconOutline />}
                         Mostrar Apenas Favoritos
+                    </button>
+                    <button
+                        onClick={() => setShowSuspended(!showSuspended)}
+                        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-colors ${showSuspended ? 'bg-primary text-white shadow' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'}`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        {showSuspended ? 'Ocultar Suspensos' : 'Mostrar Suspensos'}
                     </button>
                 </div>
 

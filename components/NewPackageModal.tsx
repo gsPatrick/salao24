@@ -139,7 +139,34 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                             <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" className="w-full p-2 border rounded" />
                             {renderInput('duration', 'Duração (por sessão)')}
                             {renderInput('price', 'Preço do Pacote (ex: 100,00)')}
-                            {renderInput('sessions', 'Quantidade de Sessões', 'number')}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Quantidade de Sessões</label>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String(Math.max(1, (Number(prev.sessions) || 0) - 1)) }))}
+                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        name="sessions"
+                                        type="number"
+                                        value={formData.sessions}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        className={`flex-grow p-2 border rounded-lg text-center font-semibold text-lg ${errors.sessions ? 'border-red-500' : 'border-gray-300'}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String((Number(prev.sessions) || 0) + 1) }))}
+                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
+                            </div>
                             <div>
                                 <select name="category" value={isCreatingCategory ? '__CREATE_NEW__' : formData.category} onChange={handleCategoryChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.category ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Categoria</option>

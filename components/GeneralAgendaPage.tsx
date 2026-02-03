@@ -54,16 +54,6 @@ interface Notification {
   message: string;
 }
 
-interface TimeBlock {
-  id: number;
-  professionalId: number;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:MM
-  endTime: string; // HH:MM
-  reason: string;
-  unit: string;
-}
-
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
 const QRCodeIcon = () => (
   <svg className="w-full h-full text-secondary" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +68,7 @@ const UserPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-
 
 const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUser, isIndividualPlan, professionals: propProfessionals, onComingSoon }) => {
   const { t } = useLanguage();
-  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, units: contextUnits, saveAppointment, updateAppointmentStatus, saveClient, refreshAppointments } = useData();
+  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, units: contextUnits, blocks: contextBlocks, saveAppointment, updateAppointmentStatus, saveClient, saveBlock, deleteBlock, refreshAppointments } = useData();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
@@ -89,10 +79,6 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
   // State for blocking time
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-  const [blocks, setBlocks] = useState<TimeBlock[]>([
-    { id: 101, professionalId: 2, date: '2024-10-28', startTime: '12:00', endTime: '13:00', reason: 'Almoço', unit: 'all' },
-    { id: 102, professionalId: 1, date: '2024-10-28', startTime: '15:00', endTime: '16:00', reason: 'Médico', unit: 'Unidade Matriz' },
-  ]);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false); // New State
   const [isCheckinModalOpen, setIsCheckinModalOpen] = useState(false);
   const [isQrGenerated, setIsQrGenerated] = useState(false);
@@ -138,10 +124,18 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     // Usar os profissionais passados como prop, ou fallback para contextProfessionals
     const availableProfessionals = propProfessionals || contextProfessionals;
 
-    // Filtrar apenas profissionais ativos (não suspensos e não arquivados)
-    const activeProfessionals = availableProfessionals.filter(p =>
-      !p.suspended && !p.archived
-    );
+
+    // Filtrar apenas profissionais ativos (não suspensos e não arquivados) e com agenda aberta
+    const activeProfessionals = availableProfessionals.filter(p => {
+      // Allow if openSchedule is true OR undefined/null (default to open)
+      const isOpen = p.openSchedule !== false;
+      const isCurrentUser = currentUser && p.email === currentUser.email;
+
+      // Always show current user even if schedule is closed, otherwise respect flags
+      if (isCurrentUser) return !p.suspended && !p.archived;
+
+      return !p.suspended && !p.archived && isOpen;
+    });
 
     let baseProfessionals;
     if (isIndividualPlan && currentUser) {
@@ -215,17 +209,16 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     await updateAppointmentStatus(appointmentId, newStatus);
   };
 
-  const handleSaveBlock = (blockData: Omit<TimeBlock, 'id'>) => {
-    const newBlock: TimeBlock = {
-      id: Date.now(),
+  const handleSaveBlock = async (blockData: any) => {
+    await saveBlock({
       ...blockData,
-    };
-    setBlocks(prev => [...prev, newBlock]);
+    });
+    setIsBlockModalOpen(false);
   };
 
-  const handleDeleteBlock = (blockId: number) => {
+  const handleDeleteBlock = async (blockId: number) => {
     if (window.confirm('Tem certeza que deseja remover este bloqueio?')) {
-      setBlocks(prev => prev.filter(b => b.id !== blockId));
+      await deleteBlock(blockId);
     }
   };
 
@@ -456,7 +449,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
       const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
       return apptDate === dateKey;
     }); // Using contextAppointments
-    const blocksForDay = blocks.filter(b => b.date === dateKey);
+    const blocksForDay = contextBlocks.filter(b => b.date === dateKey);
 
     if (viewMode === 'day') {
       return (
@@ -600,7 +593,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                   className="mt-1 block w-full max-w-xs p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 >
                   <option value="all">Todos os Profissionais</option>
-                  {(propProfessionals || contextProfessionals).filter(p => !p.suspended && !p.archived).map(prof => <option key={prof.id} value={prof.id}>{prof.name}</option>)}
+                  {(propProfessionals || contextProfessionals).filter(p => !p.suspended && !p.archived && p.openSchedule === true).map(prof => <option key={prof.id} value={prof.id}>{prof.name}</option>)}
                 </select>
               </div>
             )}

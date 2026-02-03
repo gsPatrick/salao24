@@ -11,8 +11,18 @@ interface Client {
   [key: string]: any;
 }
 
+interface Professional {
+  id: number;
+  name: string;
+  photo?: string;
+  birthdate?: string;
+  occupation?: string;
+  [key: string]: any;
+}
+
 interface ReferralRankingProps {
   clients: Client[];
+  professionals?: Professional[];
 }
 
 interface ReferrerStats {
@@ -29,25 +39,46 @@ interface ReferrerStats {
 }
 
 // FIX: Changed to a named export to resolve module resolution errors.
-export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients }) => {
+export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients, professionals = [] }) => {
   const { t } = useLanguage();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // Filter clients who have a birthday in the current month
-  const birthdayProfessionals = useMemo(() => {
+  // Filter individuals who have a birthday in the current month
+  const birthdayIndividuals = useMemo(() => {
     const currentMonth = new Date().getMonth(); // 0-indexed
-    return clients.filter(client => {
-      if (!client.birth_date && !client.birthDate) return false;
-      const birthDate = new Date(client.birth_date || client.birthDate);
+
+    const clientsBirthdays = clients.filter(client => {
+      const bdate = client.birthdate || client.birth_date || client.birthDate;
+      if (!bdate) return false;
+      const birthDate = new Date(bdate);
       return birthDate.getMonth() === currentMonth;
     }).map(client => ({
-      id: client.id,
+      id: `client-${client.id}`,
       name: client.name,
       photo: client.photo || client.photo_url || 'https://via.placeholder.com/150',
-      role: 'Cliente', // Since these are clients, not professionals
-      birthday: new Date(client.birth_date || client.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
+      role: 'Cliente',
+      birthday: new Date(client.birthdate || client.birth_date || client.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
     }));
-  }, [clients]);
+
+    const professionalsBirthdays = professionals.filter(pro => {
+      const bdate = pro.birthdate || pro.birth_date || pro.birthDate;
+      if (!bdate) return false;
+      const birthDate = new Date(bdate);
+      return birthDate.getMonth() === currentMonth;
+    }).map(pro => ({
+      id: `pro-${pro.id}`,
+      name: pro.name,
+      photo: pro.photo || pro.photo_url || 'https://via.placeholder.com/150',
+      role: pro.occupation || 'Profissional',
+      birthday: new Date(pro.birthdate || pro.birth_date || pro.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
+    }));
+
+    return [...clientsBirthdays, ...professionalsBirthdays].sort((a, b) => {
+      const dayA = parseInt(a.birthday.split('/')[0]);
+      const dayB = parseInt(b.birthday.split('/')[0]);
+      return dayA - dayB;
+    });
+  }, [clients, professionals]);
 
   const ranking = useMemo(() => {
     const referrers: { [key: string]: ReferrerStats } = {};
@@ -168,9 +199,9 @@ export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients }) => 
           {t('referralBirthdaysTitle')}
         </h3>
         <p className="text-sm text-gray-600 mb-4">{t('referralBirthdaysSubtitle')}</p>
-        {birthdayProfessionals.length > 0 ? (
+        {birthdayIndividuals.length > 0 ? (
           <ul className="space-y-3">
-            {birthdayProfessionals.map(pro => (
+            {birthdayIndividuals.map(pro => (
               <li key={pro.id} className="flex items-center justify-between bg-light p-3 rounded-lg">
                 <div className="flex items-center gap-3">
                   <img

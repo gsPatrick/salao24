@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData } from '../contexts/DataContext';
 
 interface NewPlanModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ const initialFormData = { name: '', description: '', duration: '', price: '', se
 
 const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
     const { t } = useLanguage();
+    const { units } = useData();
     const [formData, setFormData] = useState(initialFormData);
     // FIX: Broaden the type of the 'errors' state to 'any' for its values to resolve a TypeScript type error on assignment.
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
@@ -167,9 +169,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                             <div>
                                 <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Unidade</option>
-                                    <option>Unidade Matriz</option>
-                                    <option>Unidade Filial</option>
-                                    <option>Ambas</option>
+                                    <option value="Ambas">Ambas as unidades</option>
+                                    {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
                             </div>

@@ -135,7 +135,7 @@ const NoAppointmentsCard: React.FC = () => (
 
 const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ currentUser, onBack, navigate, onComingSoon }) => {
     const { t } = useLanguage();
-    const { appointments: contextAppointments, clients: contextClients, professionals: contextProfessionals, saveClient, saveAppointment, updateAppointmentStatus } = useData();
+    const { appointments: contextAppointments, clients: contextClients, professionals: contextProfessionals, services: contextServices, saveClient, saveAppointment, updateAppointmentStatus } = useData();
 
     const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -143,7 +143,13 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
     // Derive professional data
     const professionalData = useMemo(() => {
         if (!currentUser) return null;
-        return contextProfessionals.find(p => p.email === currentUser.email) || contextProfessionals[0];
+        const match = contextProfessionals.find(p => p.email?.toLowerCase() === currentUser.email?.toLowerCase());
+        if (match) return match;
+
+        // Only fallback to the first active professional if no email match is found
+        // and only if the current user is an admin/manager who might be viewing this.
+        // For actual professionals, email should always match.
+        return contextProfessionals.find(p => !p.suspended && !p.archived) || null;
     }, [currentUser, contextProfessionals]);
 
     // Derive schedule from appointments
@@ -250,13 +256,17 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
         }
 
         if (client && client.id) {
-            // 3) Create Appointment
+            // 3) Find the service ID
+            const selectedService = contextServices.find(s => s.name === payload.serviceName);
+
+            // 4) Create Appointment
             await saveAppointment({
                 clientId: client.id,
                 professionalId: targetProfessionalId,
                 date: payload.date,
                 time: payload.time,
-                service: payload.serviceName,
+                service_id: selectedService ? selectedService.id : undefined,
+                service: payload.serviceName, // Keep for UI compatibility
                 status: 'Agendado',
             });
         }

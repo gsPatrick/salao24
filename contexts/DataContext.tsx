@@ -215,6 +215,16 @@ export interface Product {
     [key: string]: any;
 }
 
+export interface TimeBlock {
+    id: number;
+    professionalId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    reason: string;
+    unit?: string;
+}
+
 export interface Unit {
     id: number;
     name: string;
@@ -247,12 +257,14 @@ export interface DataContextType {
     tenant: Tenant | null;
     units: Unit[];
     products: Product[];
+    blocks: TimeBlock[];
     crmSettings: CrmSettings | null;
     promotions: any[];
     packages: Package[];
     salonPlans: SalonPlan[];
     contractTemplates: ContractTemplate[];
     serviceCategories: string[];
+    occupations: string[];
 
     // Loading states
     loading: {
@@ -270,6 +282,7 @@ export interface DataContextType {
         packages: boolean;
         contractTemplates: boolean;
         salonPlans: boolean;
+        blocks: boolean;
     };
 
     // Error states
@@ -288,6 +301,7 @@ export interface DataContextType {
         packages: string | null;
         contractTemplates: string | null;
         salonPlans: string | null;
+        blocks: string | null;
     };
 
     // Refresh functions
@@ -305,6 +319,7 @@ export interface DataContextType {
     refreshPromotions: () => Promise<void>;
     refreshPackages: () => Promise<void>;
     refreshSalonPlans: () => Promise<void>;
+    refreshBlocks: () => Promise<void>;
     refreshAll: () => Promise<void>;
 
     // CRUD handlers
@@ -341,6 +356,8 @@ export interface DataContextType {
     saveAppointment: (appointment: Partial<Appointment>) => Promise<Appointment | null>;
     updateAppointmentStatus: (id: number, status: string) => Promise<Appointment | null>;
     cancelAppointment: (id: number) => Promise<boolean>;
+    saveBlock: (block: Partial<TimeBlock>) => Promise<TimeBlock | null>;
+    deleteBlock: (id: number) => Promise<boolean>;
 
     saveTransaction: (transaction: Partial<Transaction>) => Promise<Transaction | null>;
     deleteTransaction: (id: number) => Promise<boolean>;
@@ -350,6 +367,8 @@ export interface DataContextType {
 
     updateTenant: (tenant: Partial<Tenant>) => Promise<Tenant | null>;
     uploadTenantLogo: (file: File) => Promise<string | null>;
+    addOccupation: (newOcc: string) => Promise<void>;
+    deleteOccupation: (occToDelete: string) => Promise<void>;
 
     saveUnit: (unit: Partial<Unit>) => Promise<Unit | null>;
     deleteUnit: (id: number) => Promise<boolean>;
@@ -359,6 +378,7 @@ export interface DataContextType {
     toggleSuspendProduct: (id: number) => Promise<Product | null>;
     updateStockQuantity: (id: number, change: number) => Promise<Product | null>;
     toggleFavoriteProduct: (id: number) => Promise<Product | null>;
+    deleteProductCategory: (category: string) => Promise<void>;
 
     updateCrmSettings: (data: Partial<CrmSettings>) => Promise<CrmSettings | null>;
     updateClientCrm: (clientId: number, data: any) => Promise<Client | null>;
@@ -411,6 +431,7 @@ const mapClientFromAPI = (apiClient: any): Client => ({
     packageId: apiClient.package_id,
     isActive: apiClient.is_active,
     blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
+    preferredUnit: apiClient.preferred_unit,
 });
 
 const mapServiceFromAPI = (apiService: any): Service => ({
@@ -428,10 +449,10 @@ const mapProfessionalFromAPI = (apiProfessional: any): Professional => ({
     lunchStart: apiProfessional.lunch_start,
     lunchEnd: apiProfessional.lunch_end,
     endTime: apiProfessional.end_time,
-    allowOvertime: apiProfessional.allow_overtime,
-    openSchedule: apiProfessional.open_schedule,
-    suspended: apiProfessional.is_suspended,
-    archived: apiProfessional.is_archived,
+    allowOvertime: !!apiProfessional.allow_overtime,
+    openSchedule: apiProfessional.open_schedule !== undefined && apiProfessional.open_schedule !== null ? !!apiProfessional.open_schedule : true,
+    suspended: !!apiProfessional.is_suspended,
+    archived: !!apiProfessional.is_archived,
     specialties: apiProfessional.specialties || [],
 });
 
@@ -523,6 +544,16 @@ const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
     logo: apiTemplate.logo || null
 });
 
+const mapBlockFromAPI = (apiBlock: any): TimeBlock => ({
+    id: apiBlock.id,
+    professionalId: apiBlock.professional_id,
+    date: apiBlock.date,
+    startTime: apiBlock.start_time,
+    endTime: apiBlock.end_time,
+    reason: apiBlock.reason,
+    unit: apiBlock.unit,
+});
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { isAuthenticated } = useAuth();
 
@@ -544,8 +575,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [packages, setPackages] = useState<Package[]>([]);
     const [salonPlans, setSalonPlans] = useState<SalonPlan[]>([]);
     const [serviceCategories, setServiceCategories] = useState<string[]>([]);
+    const [blocks, setBlocks] = useState<TimeBlock[]>([]);
+    const [occupations, setOccupations] = useState<string[]>([]);
 
-    // Automatically update categories from services, packages, and plans
+    // Automatically update categories and occupations
     useEffect(() => {
         const categories = new Set<string>();
         services.forEach(s => s.category && categories.add(s.category));
@@ -555,7 +588,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const combined = new Set([...prev, ...Array.from(categories)]);
             return Array.from(combined).sort();
         });
-    }, [services, packages, salonPlans]);
+
+        const occSet = new Set<string>([
+            'Cabelereiro(a)',
+            'Barbeiro',
+            'Manicure',
+            'Pedicure',
+            'Esteticista',
+            'Recepcionista',
+            'Gerente'
+        ]);
+        professionals.forEach(p => p.occupation && occSet.add(p.occupation));
+
+        // Add hidden/custom occupations from settings if they exist
+        if (tenant?.settings?.custom_occupations) {
+            tenant.settings.custom_occupations.forEach((occ: string) => occSet.add(occ));
+        }
+        if (tenant?.settings?.hidden_occupations) {
+            tenant.settings.hidden_occupations.forEach((occ: string) => occSet.delete(occ));
+        }
+
+        setOccupations(Array.from(occSet).sort());
+    }, [services, packages, salonPlans, professionals, tenant]);
 
     // Loading state
     const [loading, setLoading] = useState({
@@ -809,12 +863,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await contractsAPI.list();
             setContractTemplates(response.map(mapContractTemplateFromAPI));
-            setErrors(prev => ({ ...prev, contractTemplates: null }));
         } catch (err: any) {
             console.error('Error fetching contract templates:', err);
             setErrors(prev => ({ ...prev, contractTemplates: err.message }));
         } finally {
             setLoading(prev => ({ ...prev, contractTemplates: false }));
+        }
+    }, [isAuthenticated]);
+
+    const refreshBlocks = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, blocks: true }));
+        try {
+            const response = await appointmentsAPI.getBlocks();
+            const mapped = (response.data || response || []).map(mapBlockFromAPI);
+            setBlocks(mapped);
+        } catch (error: any) {
+            console.error('Error fetching blocks:', error);
+            setErrors(prev => ({ ...prev, blocks: error.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, blocks: false }));
         }
     }, [isAuthenticated]);
 
@@ -835,8 +903,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             refreshPackages(),
             refreshSalonPlans(),
             refreshContractTemplates(),
+            refreshBlocks(),
         ]);
-    }, [refreshClients, refreshProfessionals, refreshServices, refreshAppointments, refreshTransactions, refreshUsers, refreshTenant, refreshUnits, refreshProducts, refreshCrmSettings, refreshNotifications, refreshPromotions, refreshPackages, refreshSalonPlans, refreshContractTemplates]);
+    }, [
+        refreshClients,
+        refreshProfessionals,
+        refreshServices,
+        refreshAppointments,
+        refreshTransactions,
+        refreshUsers,
+        refreshTenant,
+        refreshUnits,
+        refreshProducts,
+        refreshCrmSettings,
+        refreshNotifications,
+        refreshPromotions,
+        refreshPackages,
+        refreshSalonPlans,
+        refreshContractTemplates,
+        refreshBlocks,
+    ]);
 
     // Initial data fetch when authenticated
     useEffect(() => {
@@ -862,9 +948,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 relationships: client.relationships,
                 last_visit: client.lastVisit,
                 total_visits: client.totalVisits,
-                status: client.blocked?.status ? 'blocked' : client.status,
-                blocked_reason: client.blocked?.reason || client.blockReason,
+                status: client.blocked?.status ? 'blocked' : (client.status === 'blocked' ? 'active' : client.status),
+                blocked_reason: client.blocked?.status ? (client.blocked?.reason || client.blockReason) : '',
                 is_active: client.isActive ?? true,
+                preferred_unit: client.preferredUnit,
             };
 
             let response;
@@ -1234,6 +1321,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const saveBlock = async (block: Partial<TimeBlock>): Promise<TimeBlock | null> => {
+        try {
+            const apiData = {
+                ...block,
+                professional_id: block.professionalId,
+                start_time: block.startTime,
+                end_time: block.endTime,
+            };
+            const response = await appointmentsAPI.createBlock(apiData);
+            await refreshBlocks();
+            return mapBlockFromAPI(response.data);
+        } catch (error) {
+            console.error('Error saving block:', error);
+            return null;
+        }
+    };
+
+    const deleteBlock = async (id: number): Promise<boolean> => {
+        try {
+            await appointmentsAPI.deleteBlock(id);
+            await refreshBlocks();
+            return true;
+        } catch (error) {
+            console.error('Error deleting block:', error);
+            return false;
+        }
+    };
+
     const saveTransaction = async (transaction: Partial<Transaction>): Promise<Transaction | null> => {
         try {
             // Map frontend fields to API fields
@@ -1354,6 +1469,37 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const addOccupation = useCallback(async (newOcc: string) => {
+        if (!tenant) return;
+        const currentCustom = tenant.settings?.custom_occupations || [];
+        if (!currentCustom.includes(newOcc)) {
+            const updatedCustom = [...currentCustom, newOcc];
+            await updateTenant({
+                settings: {
+                    ...tenant.settings,
+                    custom_occupations: updatedCustom
+                }
+            });
+        }
+    }, [tenant, updateTenant]);
+
+    const deleteOccupation = useCallback(async (occToDelete: string) => {
+        if (!tenant) return;
+        const currentHidden = tenant.settings?.hidden_occupations || [];
+        const currentCustom = tenant.settings?.custom_occupations || [];
+
+        const updatedCustom = currentCustom.filter((occ: string) => occ !== occToDelete);
+        const updatedHidden = !currentHidden.includes(occToDelete) ? [...currentHidden, occToDelete] : currentHidden;
+
+        await updateTenant({
+            settings: {
+                ...tenant.settings,
+                custom_occupations: updatedCustom,
+                hidden_occupations: updatedHidden
+            }
+        });
+    }, [tenant, updateTenant]);
+
     const uploadTenantLogo = async (file: File): Promise<string | null> => {
         if (!tenant?.id) return null;
         try {
@@ -1413,7 +1559,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // My backend model uses underscored: true so it expects snake_case or sequelize might handle if we send standard JSON.
             // Let's manually map for safety.
             const apiData = {
-                ...product,
+                name: product.name,
+                category: product.category,
                 purchase_price: product.purchaseValue,
                 min_stock_level: product.lowStockAlert,
                 stock_quantity: product.quantity,
@@ -1476,6 +1623,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch (error) {
             console.error('Error toggling product favorite:', error);
             return null;
+        }
+    };
+
+    const deleteProductCategory = async (category: string): Promise<void> => {
+        try {
+            await stockAPI.deleteCategory(category);
+            await refreshProducts();
+        } catch (error) {
+            console.error('Error deleting product category:', error);
         }
     };
 
@@ -1578,6 +1734,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 packages,
                 salonPlans,
                 serviceCategories,
+                occupations,
+                addOccupation,
+                deleteOccupation,
                 loading,
                 errors,
                 refreshClients,
@@ -1613,6 +1772,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 saveAppointment,
                 updateAppointmentStatus,
                 cancelAppointment,
+                saveBlock,
+                deleteBlock,
                 saveTransaction,
                 deleteTransaction,
                 saveUser,
@@ -1626,6 +1787,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 toggleSuspendProduct,
                 updateStockQuantity,
                 toggleFavoriteProduct,
+                deleteProductCategory,
                 updateCrmSettings,
                 updateClientCrm,
                 savePromotion,
@@ -1639,6 +1801,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 deleteSalonPlan,
                 toggleSuspendSalonPlan,
                 toggleFavoriteSalonPlan,
+                blocks,
+                notifications,
                 getClientById,
                 getProfessionalById,
                 getServiceById,

@@ -79,12 +79,13 @@ const ClientCard: React.FC<{
     client: any;
     onClick: () => void;
     onDragStart: (e: React.DragEvent) => void;
+    onDragEnd: () => void;
     isDragging: boolean;
     onOpenChat?: (clientId: number) => void;
     appointments: any[];
     services: Service[];
     professionals: Professional[];
-}> = ({ client, onClick, onDragStart, isDragging, onOpenChat, appointments, services, professionals }) => {
+}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals }) => {
     const { isBirthdayMonth, classification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
 
     const cardClasses = `p-3 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-xl w-full text-left cursor-grab relative ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
@@ -100,6 +101,7 @@ const ClientCard: React.FC<{
             className={cardClasses}
             draggable="true"
             onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
         >
             {isBirthdayMonth && <Confetti />}
             <div className="flex items-start space-x-4 relative z-10">
@@ -233,6 +235,7 @@ const KanbanColumn: React.FC<{
     onDrop: (e: React.DragEvent) => void;
     onDragEnter: (e: React.DragEvent) => void;
     onDragLeave: (e: React.DragEvent) => void;
+    onDragEnd: () => void;
     isDropTarget: boolean;
     draggedClientId: number | null;
     isIndividualPlan: boolean;
@@ -242,7 +245,7 @@ const KanbanColumn: React.FC<{
     appointments: any[];
     services: Service[];
     professionals: Professional[];
-}> = ({ columnId, title, icon, clients, config, isConfigOpen, onToggleConfig, onConfigChange, onCardClick, onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave, isDropTarget, draggedClientId, isIndividualPlan, currentUser, navigate, onOpenChat, appointments, services, professionals }) => {
+}> = ({ columnId, title, icon, clients, config, isConfigOpen, onToggleConfig, onConfigChange, onCardClick, onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave, onDragEnd, isDropTarget, draggedClientId, isIndividualPlan, currentUser, navigate, onOpenChat, appointments, services, professionals }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
@@ -415,6 +418,7 @@ const KanbanColumn: React.FC<{
                         client={client}
                         onClick={() => onCardClick(client)}
                         onDragStart={(e) => onDragStart(e, client.id)}
+                        onDragEnd={onDragEnd}
                         isDragging={draggedClientId === client.id}
                         onOpenChat={onOpenChat}
                         appointments={appointments}
@@ -499,24 +503,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages && Array.isArray(crmSettings.funnel_stages) && crmSettings.funnel_stages.length > 0) {
-            const fetchedStages = crmSettings.funnel_stages;
-            const hasRecurrent = fetchedStages.some((s: any) => s.id === 'recurrent');
-
-            if (!hasRecurrent) {
-                const newStage = { id: 'recurrent', title: 'Recorrentes (Ativos)', icon: '💎', visible: true, deletable: true, configTitle: 'Fidelização', configDescription: 'Manter engajamento com cliente ativo.', isAIActionActive: false };
-                const newIndex = fetchedStages.findIndex((s: any) => s.id === 'new');
-                const newStages = [...fetchedStages];
-                if (newIndex >= 0) {
-                    newStages.splice(newIndex + 1, 0, newStage);
-                } else {
-                    newStages.unshift(newStage);
-                }
-                setColumnsConfig(newStages);
-                // Optionally save back to server to persist for future
-                // updateCrmSettings({ funnel_stages: newStages }); 
-            } else {
-                setColumnsConfig(fetchedStages);
-            }
+            setColumnsConfig(crmSettings.funnel_stages);
         }
     }, [crmSettings]);
 
@@ -749,6 +736,11 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         setDraggedClientId(clientId);
     };
 
+    const handleDragEnd = () => {
+        setDraggedClientId(null);
+        setDragOverColumnId(null);
+    };
+
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
     };
@@ -767,7 +759,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         e.preventDefault();
         setDragOverColumnId(null);
         setDraggedClientId(null);
-        const clientId = parseInt(e.dataTransfer.getData('clientId'), 10);
+        const rawClientId = e.dataTransfer.getData('clientId');
+        const clientId = rawClientId ? parseInt(rawClientId, 10) : null;
 
         setCardPositions(currentPositions => {
             if (!clientId || !currentPositions) return currentPositions;
@@ -791,8 +784,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
             // Immutable update
             const newPositions = { ...currentPositions };
-            newPositions[sourceColumnId] = newPositions[sourceColumnId].filter(c => c.id !== clientId);
-            newPositions[targetColumnId] = [...newPositions[targetColumnId], draggedClient];
+            newPositions[sourceColumnId] = (newPositions[sourceColumnId] || []).filter(c => c.id !== clientId);
+            newPositions[targetColumnId] = [...(newPositions[targetColumnId] || []), draggedClient];
 
             return newPositions;
         });
@@ -1280,6 +1273,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                     onDrop={(e) => handleDrop(e, column.id)}
                                     onDragEnter={(e) => handleDragEnter(e, column.id)}
                                     onDragLeave={handleDragLeave}
+                                    onDragEnd={handleDragEnd}
                                     isDropTarget={dragOverColumnId === column.id}
                                     draggedClientId={draggedClientId}
                                     isIndividualPlan={isIndividualPlan}

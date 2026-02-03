@@ -109,7 +109,7 @@ const initialFormData = {
 
 const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onClose, onSave, professionalToEdit }) => {
     const { t } = useLanguage();
-    const { units, refreshUnits } = useData();
+    const { units, refreshUnits, occupations, addOccupation, deleteOccupation } = useData();
     const [formData, setFormData] = useState(initialFormData);
 
     // Task 2: Fetch units when modal opens
@@ -131,13 +131,12 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const [isExiting, setIsExiting] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
     const [isFetchingCep, setIsFetchingCep] = useState(false);
-    const [allOccupations, setAllOccupations] = useState(['Cabelereiro(a)', 'Barbeiro', 'Manicure', 'Pedicure', 'Esteticista', 'Recepcionista', 'Gerente']);
-    const [isCreatingOccupation, setIsCreatingOccupation] = useState(false);
-    const [newOccupation, setNewOccupation] = useState('');
     const [allSpecialties, setAllSpecialties] = useState(['Corte', 'Coloração', 'Manicure', 'Pedicure', 'Estética Facial', 'Barba', 'Sobrancelha']);
     const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-    const [allowOvertime, setAllowOvertime] = useState(false);
+    const [isCreatingOccupation, setIsCreatingOccupation] = useState(false);
+    const [newOccupation, setNewOccupation] = useState('');
     const [openSchedule, setOpenSchedule] = useState(true);
+    const [allowOvertime, setAllowOvertime] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -277,8 +276,9 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 setSelectedSpecialties(professionalToEdit.specialties || []);
                 setAllowOvertime(professionalToEdit.allowOvertime || false);
                 setOpenSchedule(professionalToEdit.openSchedule ?? true);
-                if (professionalToEdit.occupation && !allOccupations.includes(professionalToEdit.occupation)) {
-                    setAllOccupations(prev => [...prev, professionalToEdit.occupation].sort());
+                if (professionalToEdit.occupation && !occupations.includes(professionalToEdit.occupation)) {
+                    // This logic might need to be handled by the addOccupation/deleteOccupation from context
+                    // For now, assuming occupations context handles its own state
                 }
                 setDocuments(professionalToEdit.documents?.map((doc: any) => ({
                     title: doc.title,
@@ -289,7 +289,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 resetForm();
             }
         }
-    }, [isOpen, professionalToEdit]);
+    }, [isOpen, professionalToEdit, occupations]);
 
     const handleClose = () => { setIsExiting(true); handleStopCamera(); setTimeout(() => { onClose(); setIsExiting(false); }, 300); };
     const formatCPF = (value: string) => value.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
@@ -337,12 +337,23 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         }
     };
     const handleOccupationChange = (e: React.ChangeEvent<HTMLSelectElement>) => { if (e.target.value === '__CREATE_NEW__') setIsCreatingOccupation(true); else { setIsCreatingOccupation(false); handleChange(e); } };
-    const handleCreateOccupation = () => {
-        const trimmedOccupation = newOccupation.trim();
-        if (trimmedOccupation && !allOccupations.includes(trimmedOccupation)) {
-            setAllOccupations(prev => [...prev, trimmedOccupation].sort());
-            setFormData(prev => ({ ...prev, occupation: trimmedOccupation }));
-            setNewOccupation(''); setIsCreatingOccupation(false);
+    const handleCreateOccupation = async () => {
+        if (newOccupation.trim()) {
+            await addOccupation(newOccupation.trim());
+            setFormData({ ...formData, occupation: newOccupation.trim() });
+            setNewOccupation('');
+            setIsCreatingOccupation(false);
+        }
+    };
+
+    const handleDeleteOccupation = async (occ: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm(`Deseja realmente excluir o cargo "${occ}"?`)) {
+            await deleteOccupation(occ);
+            if (formData.occupation === occ) {
+                setFormData({ ...formData, occupation: '' });
+            }
         }
     };
     const handleAddSpecialty = (spec?: string | React.MouseEvent) => {
@@ -519,13 +530,35 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                         <div>
                             <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">Cargo *</label>
                             <select id="occupation" name="occupation" value={isCreatingOccupation ? '__CREATE_NEW__' : formData.occupation} onChange={handleOccupationChange} onBlur={handleBlur} required className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${errors.occupation ? 'border-red-500' : 'border-gray-300'}`}>
-                                <option value="">Selecione...</option>
-                                {allOccupations.map(occ => <option key={occ} value={occ}>{occ}</option>)}
+                                <option value="">{t('selectOccupation')}</option>
+                                {occupations.map(occ => (
+                                    <option key={occ} value={occ}>{occ}</option>
+                                ))}
                                 <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar novo cargo --</option>
                             </select>
                             {isCreatingOccupation && (
                                 <div className="flex items-center gap-2 mt-2"><input type="text" value={newOccupation} onChange={(e) => setNewOccupation(e.target.value)} placeholder="Novo cargo" className="flex-grow p-2 border rounded" autoFocus /><button type="button" onClick={handleCreateOccupation} className="px-4 py-2 bg-gray-200 rounded">Criar</button></div>
                             )}
+
+                            {/* Role management list */}
+                            {!isCreatingOccupation && occupations.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {occupations.map(occ => (
+                                        <span key={occ} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {occ}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleDeleteOccupation(occ, e)}
+                                                className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                title="Excluir cargo"
+                                            >
+                                                &times;
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
                             {errors.occupation && <p className="text-xs text-red-600 mt-1">{errors.occupation}</p>}
                         </div>
                         <div className="md:col-span-2">

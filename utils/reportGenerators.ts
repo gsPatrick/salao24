@@ -56,11 +56,27 @@ export const generateSchedulingReport = (t: (key: string) => string, appointment
 };
 
 export const generateClientReport = (t: (key: string) => string, clients: any[]) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const newClientsMonth = clients.filter(c => {
+        const regDate = c.registrationDate ? new Date(c.registrationDate) : null;
+        return regDate && regDate.getMonth() === currentMonth && regDate.getFullYear() === currentYear;
+    }).length;
+
+    const birthdaysMonth = clients.filter(c => {
+        const bdateStr = c.birthdate || c.birth_date;
+        if (!bdateStr) return false;
+        const bdate = new Date(bdateStr);
+        return bdate.getMonth() === currentMonth;
+    }).length;
+
     return {
         summary: {
             [t('reportSummaryTotalClients')]: clients.length,
-            [t('reportSummaryNewClientsMonth')]: 0, // Need registration date to calc
-            [t('reportSummaryBirthdaysMonth')]: 0, // Need birthdate to calc
+            [t('reportSummaryNewClientsMonth')]: newClientsMonth,
+            [t('reportSummaryBirthdaysMonth')]: birthdaysMonth,
             [t('reportSummaryAverageFrequency')]: 'N/A',
         },
         details: clients.map(c => ({

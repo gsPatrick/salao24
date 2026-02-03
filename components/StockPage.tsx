@@ -28,6 +28,7 @@ const StockPage: React.FC<StockPageProps> = ({
         toggleSuspendProduct: onSuspendProduct,
         updateStockQuantity: onUpdateQuantity,
         toggleFavoriteProduct: onToggleFavorite,
+        deleteProductCategory,
     } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -46,6 +47,13 @@ const StockPage: React.FC<StockPageProps> = ({
         const trimmedCategory = newCategory.trim();
         if (trimmedCategory && !productCategories.includes(trimmedCategory)) {
             setProductCategories(prev => [...prev, trimmedCategory].sort());
+        }
+    };
+
+    const handleCategoryDelete = async (category: string) => {
+        if (window.confirm(`Tem certeza que deseja remover a categoria "${category}" de todos os produtos? Ela deixará de existir se nenhum produto a utilizar.`)) {
+            await deleteProductCategory(category);
+            setCategoryFilter('');
         }
     };
 
@@ -160,17 +168,26 @@ const StockPage: React.FC<StockPageProps> = ({
                                     />
                                 </div>
 
-                                <div className="relative w-full sm:w-48">
+                                <div className="relative w-full sm:w-64 flex gap-2">
                                     <select
                                         value={categoryFilter}
                                         onChange={(e) => setCategoryFilter(e.target.value)}
-                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white"
+                                        className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white"
                                     >
                                         <option value="">Todas Categorias</option>
                                         {productCategories.map(cat => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
                                     </select>
+                                    {categoryFilter && (
+                                        <button
+                                            onClick={() => handleCategoryDelete(categoryFilter)}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-md border border-red-200 shadow-sm"
+                                            title="Excluir Categoria Selecionada"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <button

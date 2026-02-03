@@ -127,8 +127,8 @@ const initialFormData = {
   howTheyFoundUs: '',
   indicatedBy: '',
   observations: '',
-  planId: '',
-  packageId: '',
+  reminders: [] as any[],
+  blocked: { status: false, reason: '' },
 };
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, existingClients, clientToEdit, acquisitionChannels, isIndividualPlan, onComingSoon }) => {
@@ -393,8 +393,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
           indicatedBy: clientToEdit.indicatedBy || '',
           observations: clientToEdit.observations || '',
-          planId: clientToEdit.planId || '',
-          packageId: clientToEdit.packageId || '',
+          reminders: clientToEdit.reminders || [],
+          blocked: clientToEdit.blocked || { status: false, reason: '' },
         });
         setPhoto(clientToEdit.photo);
         setProcedurePhotos(clientToEdit.procedurePhotos || []);
@@ -814,7 +814,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       return;
     }
 
-    const { cep, street, number, complement, neighborhood, city, state, fullName, planId, packageId, ...restOfData } = formData;
+    const { cep, street, number, complement, neighborhood, city, state, fullName, planId, packageId, reminders, blocked, ...restOfData } = formData;
 
     const attachedDocsToSave = attachedDocuments.map(doc => ({
       name: doc.title,
@@ -864,11 +864,17 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       tags: clientToEdit?.tags || [],
       documents: [...stagedDocuments, ...attachedDocsToSave],
       servicesOfInterest: servicesOfInterest,
-      planId: planId ? parseInt(planId.toString()) : null,
-      packageId: packageId ? parseInt(packageId.toString()) : null,
+      reminders: reminders,
+      blocked: blocked,
     };
     onSave(finalData);
-    handleClose();
+    if (clientToEdit) {
+      // If we are editing, we just close and the parent (ClientDetailModal) should still be open
+      // or at least we don't force a list refresh that closes everything.
+      onClose();
+    } else {
+      handleClose();
+    }
   };
 
   if (!isOpen && !isExiting) return null;
@@ -984,20 +990,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                 { value: 'Viúvo(a)', label: t('maritalStatusWidowed') },
               ]}
               error={errors.maritalStatus}
-            />
-            <SelectField
-              label="Plano"
-              name="planId"
-              value={formData.planId?.toString()}
-              onChange={handleChange}
-              options={salonPlans.map(p => ({ value: p.id.toString(), label: p.name }))}
-            />
-            <SelectField
-              label="Pacote"
-              name="packageId"
-              value={formData.packageId?.toString()}
-              onChange={handleChange}
-              options={packages.map(p => ({ value: p.id.toString(), label: p.name }))}
             />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('relationshipSectionTitle')}</label>

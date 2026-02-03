@@ -302,7 +302,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
     }, []);
 
     const checkWorkHours = (action: 'in' | 'out') => {
-        const isOvertimeAllowed = professional?.allowOvertime ?? true;
+        const isOvertimeAllowed = professional?.allowOvertime === true;
 
         if (isOvertimeAllowed || !professional || !professional.startTime || !professional.endTime) {
             return { success: true, message: '' };

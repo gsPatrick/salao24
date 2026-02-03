@@ -8,6 +8,8 @@ import { paymentsAPI } from '../lib/api';
 
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser as User, Unit, Tenant } from '../contexts/DataContext';
+import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
+
 
 // --- Interfaces ---
 interface WorkingHour {
@@ -742,8 +744,8 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                 <h2 className="text-xl font-bold text-secondary">Dados do Estabelecimento</h2>
                 <p className="text-gray-500 text-sm mb-6">Informações oficiais da sua unidade.</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div><label className="block text-sm font-medium text-gray-700">CNPJ / CPF</label><input type="text" value={cnpjCpf} onChange={e => setCnpjCpf(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700">Telefone</label><input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">CNPJ / CPF</label><input type="text" value={cnpjCpf} onChange={e => setCnpjCpf(formatCPFOrCNPJ(e.target.value))} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Telefone</label><input type="text" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                     <div><label className="block text-sm font-medium text-gray-700">E-mail</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                 </div>
 
@@ -752,7 +754,8 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
                     <div><label className="block text-sm font-medium text-gray-700">Número</label><input type="text" value={address.number} onChange={e => setAddress({ ...address, number: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                     <div><label className="block text-sm font-medium text-gray-700">Bairro</label><input type="text" value={address.neighborhood} onChange={e => setAddress({ ...address, neighborhood: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
                     <div><label className="block text-sm font-medium text-gray-700">Cidade</label><input type="text" value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700">CEP</label><input type="text" value={address.cep} onChange={e => setAddress({ ...address, cep: e.target.value })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">CEP</label><input type="text" value={address.cep} onChange={e => setAddress({ ...address, cep: formatCEP(e.target.value) })} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" /></div>
+
                 </div>
                 <div className="mt-6 flex justify-end">
                     <button

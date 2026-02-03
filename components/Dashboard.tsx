@@ -171,9 +171,10 @@ interface Promotion {
     type?: 'standard' | 'exclusive';
     callToAction: string;    // Chamada
     title: string;          // Título da Promoção
-    subtitle: string;       // Subtítulo da Promoção
+    subtitle?: string;      // Subtítulo da Promoção
     description: string;    // Descrição
     image: string;          // Imagem da Promoção
+    mobileImage?: string;   // Banner Mobile
     promotionUrl: string;   // URL da Promoção
     targetArea: 'client' | 'painel'; // Área de Exibição
     actionButton: string;   // Botão: chamada para ação
@@ -184,6 +185,7 @@ interface Promotion {
     createdAt: string;
     imageFile?: File; // campo para upload
     clicks?: number; // contador de cliques
+
     profileTarget?: string;
     locationCountry?: string;
     locationState?: string;
@@ -243,10 +245,11 @@ interface PaymentRecord {
 interface ExclusivePromotion {
     id: number;
     title: string;
-    subtitle: string;       // Subtítulo da Promoção Exclusiva
+    subtitle?: string;       // Subtítulo da Promoção Exclusiva
     callToAction: string;   // Chamada
     description: string;
     bannerImage: string;
+    mobileImage?: string;   // Suporte mobile
     bannerLink: string;
     actionButton: string;    // Botão: chamada para ação
     startDate: string;      // Data de início
@@ -261,6 +264,8 @@ interface ExclusivePromotion {
     locationCity?: string;
     locationNeighborhood?: string; // contador de cliques
 }
+
+
 
 interface DashboardProps {
     goBack: () => void;
@@ -311,14 +316,15 @@ const rolePermissions: { [key: string]: { [key: string]: PermissionDetails } } =
 };
 
 
-const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; }> = ({ title, value, icon, color }) => (
+const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; description?: string; }> = ({ title, value, icon, color, description }) => (
     <div className="bg-white p-6 rounded-2xl shadow-lg flex items-center space-x-4 transform transition-transform hover:-translate-y-1">
         <div className={`p-3 rounded-full ${color}`}>
             {icon}
         </div>
-        <div>
+        <div className="flex-1">
             <p className="text-sm text-gray-500 font-medium">{title}</p>
             <p className="text-2xl font-bold text-secondary">{value}</p>
+            {description && <p className="text-[10px] text-gray-400 mt-1 leading-tight">{description}</p>}
         </div>
     </div>
 );
@@ -529,7 +535,10 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+    const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
+    const [mobileImagePreviewUrl, setMobileImagePreviewUrl] = useState<string | null>(null);
     const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+
 
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -548,8 +557,11 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
         if (!isPromoModalOpen) {
             setImageFile(null);
             setImagePreviewUrl(null);
+            setMobileImageFile(null);
+            setMobileImagePreviewUrl(null);
         }
     }, [isPromoModalOpen]);
+
 
     const handleFileSelect = (selectedFile: File | null) => {
         setImageFile(selectedFile);
@@ -563,6 +575,20 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
             setImagePreviewUrl(null);
         }
     };
+
+    const handleMobileFileSelect = (selectedFile: File | null) => {
+        setMobileImageFile(selectedFile);
+        if (selectedFile) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setMobileImagePreviewUrl(event.target?.result as string);
+            };
+            reader.readAsDataURL(selectedFile);
+        } else {
+            setMobileImagePreviewUrl(null);
+        }
+    };
+
 
     const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
     const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); };
@@ -716,13 +742,18 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     imageUrl = `data:image/jpeg;base64,${imagePreviewUrl?.split(',')[1] || ''}`;
                                 }
 
+                                let mobileImageUrl = editingPromotion?.mobileImage || '';
+                                if (mobileImageFile) {
+                                    mobileImageUrl = `data:image/jpeg;base64,${mobileImagePreviewUrl?.split(',')[1] || ''}`;
+                                }
+
                                 const promotion: Promotion = {
                                     id: editingPromotion?.id || Date.now(),
                                     callToAction: formData.get('callToAction') as string,
                                     title: formData.get('title') as string,
-                                    subtitle: formData.get('subtitle') as string,
                                     description: formData.get('description') as string,
                                     image: imageUrl,
+                                    mobileImage: mobileImageUrl,
                                     promotionUrl: formData.get('promotionUrl') as string || '',
                                     targetArea: formData.get('targetArea') as 'client' | 'painel',
                                     profileTarget: formData.get('profileTarget') as string,
@@ -738,6 +769,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     createdAt: editingPromotion?.createdAt || new Date().toISOString()
                                 };
                                 onSavePromotion(promotion);
+
                             }} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Chamada</label>
@@ -763,17 +795,8 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo da Promoção</label>
-                                    <input
-                                        name="subtitle"
-                                        type="text"
-                                        required
-                                        defaultValue={editingPromotion?.subtitle || ''}
-                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                        placeholder="Ex: Aproveite agora mesmo"
-                                    />
-                                </div>
+                                {/* Subtitle removed as requested */}
+
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
@@ -873,9 +896,9 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
-                                    <div className="space-y-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Desktop</label>
                                         <div
                                             onDragOver={handleDragOver}
                                             onDragLeave={handleDragLeave}
@@ -906,8 +929,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4M8 32l9.172-9.172a4 4 0 015.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
                                                     <div className="flex text-sm text-gray-600">
-                                                        <p className="pl-1">Arraste e solte ou clique para selecionar</p>
-                                                        <p className="text-xs text-gray-500">Imagem, até 5MB</p>
+                                                        <p className="pl-1">Desktop</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -919,11 +941,49 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                                 accept="image/*"
                                             />
                                         </div>
-                                        <p className="text-xs text-gray-500">
-                                            <span className="font-medium text-primary">Tamanho recomendado:</span> 1080x1080px (Quadrado 1:1)
-                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Mobile</label>
+                                        <div
+                                            onClick={() => {
+                                                const mobileInput = document.createElement('input');
+                                                mobileInput.type = 'file';
+                                                mobileInput.accept = 'image/*';
+                                                mobileInput.onchange = (e) => {
+                                                    const file = (e.target as HTMLInputElement).files?.[0];
+                                                    if (file) handleMobileFileSelect(file);
+                                                };
+                                                mobileInput.click();
+                                            }}
+                                            className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${mobileImageFile ? 'border-primary bg-primary/10' : 'border-gray-300'
+                                                }`}
+                                        >
+                                            {mobileImagePreviewUrl || editingPromotion?.mobileImage ? (
+                                                <div className="text-center relative">
+                                                    <img
+                                                        src={mobileImagePreviewUrl || editingPromotion?.mobileImage}
+                                                        alt="Mobile Preview"
+                                                        className="mx-auto max-h-40 rounded-md shadow-md"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleMobileFileSelect(null); }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-1 text-center">
+                                                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                    <p className="text-sm text-gray-600">Mobile</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
+
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Link da Campanha</label>
@@ -1010,7 +1070,10 @@ const ExclusivePromotionsPage: React.FC<{
 }) => {
         const [bannerFile, setBannerFile] = useState<File | null>(null);
         const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
+        const [mobileBannerFile, setMobileBannerFile] = useState<File | null>(null);
+        const [mobileBannerPreviewUrl, setMobileBannerPreviewUrl] = useState<string | null>(null);
         const fileInputRef = useRef<HTMLInputElement>(null);
+
 
         const handleBannerSelect = (selectedFile: File | null) => {
             setBannerFile(selectedFile);
@@ -1025,12 +1088,29 @@ const ExclusivePromotionsPage: React.FC<{
             }
         };
 
+        const handleMobileBannerSelect = (selectedFile: File | null) => {
+            setMobileBannerFile(selectedFile);
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setMobileBannerPreviewUrl(event.target?.result as string);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                setMobileBannerPreviewUrl(null);
+            }
+        };
+
+
         useEffect(() => {
             if (!isExclusiveModalOpen) {
                 setBannerFile(null);
                 setBannerPreviewUrl(null);
+                setMobileBannerFile(null);
+                setMobileBannerPreviewUrl(null);
             }
         }, [isExclusiveModalOpen]);
+
 
         return (
             <div className="container mx-auto px-6 py-8">
@@ -1170,13 +1250,18 @@ const ExclusivePromotionsPage: React.FC<{
                                         bannerImageUrl = `data:image/jpeg;base64,${bannerPreviewUrl?.split(',')[1] || ''}`;
                                     }
 
+                                    let mobileBannerUrl = formData.get('mobileBannerUrl') as string;
+                                    if (mobileBannerFile) {
+                                        mobileBannerUrl = `data:image/jpeg;base64,${mobileBannerPreviewUrl?.split(',')[1] || ''}`;
+                                    }
+
                                     const exclusive: ExclusivePromotion = {
                                         id: editingExclusive?.id || Date.now(),
                                         title: formData.get('title') as string,
-                                        subtitle: formData.get('subtitle') as string,
                                         callToAction: formData.get('callToAction') as string,
                                         description: formData.get('description') as string,
                                         bannerImage: bannerImageUrl,
+                                        mobileImage: mobileBannerUrl,
                                         bannerLink: formData.get('bannerLink') as string,
                                         profileTarget: formData.get('profileTarget') as string,
                                         locationCountry: formData.get('locationCountry') as string,
@@ -1189,6 +1274,7 @@ const ExclusivePromotionsPage: React.FC<{
                                         isActive: editingExclusive?.isActive ?? true,
                                         createdAt: editingExclusive?.createdAt || new Date().toISOString()
                                     };
+
                                     onSaveExclusive(exclusive);
                                 }} className="space-y-4">
                                     <div>
@@ -1215,17 +1301,8 @@ const ExclusivePromotionsPage: React.FC<{
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo da Promoção Exclusiva</label>
-                                        <input
-                                            name="subtitle"
-                                            type="text"
-                                            required
-                                            defaultValue={editingExclusive?.subtitle || ''}
-                                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                            placeholder="Subtítulo da promoção exclusiva"
-                                        />
-                                    </div>
+                                    {/* Subtitle removed as requested */}
+
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
@@ -1314,9 +1391,9 @@ const ExclusivePromotionsPage: React.FC<{
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
-                                        <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Banner Desktop</label>
                                             <div
                                                 onClick={() => fileInputRef.current?.click()}
                                                 className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${bannerFile ? 'border-primary bg-primary/10' : 'border-gray-300'
@@ -1342,7 +1419,7 @@ const ExclusivePromotionsPage: React.FC<{
                                                         <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4M8 32l9.172-9.172a4 4 0 015.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                         </svg>
-                                                        <p className="text-sm text-gray-600">Clique para selecionar imagem</p>
+                                                        <p className="text-sm text-gray-600">Desktop</p>
                                                     </div>
                                                 )}
                                                 <input
@@ -1353,11 +1430,49 @@ const ExclusivePromotionsPage: React.FC<{
                                                     accept="image/*"
                                                 />
                                             </div>
-                                            <p className="text-xs text-gray-500">
-                                                <span className="font-medium text-primary">Tamanho recomendado:</span> 1200x220px (Retangular)
-                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Banner Mobile</label>
+                                            <div
+                                                onClick={() => {
+                                                    const mobileInput = document.createElement('input');
+                                                    mobileInput.type = 'file';
+                                                    mobileInput.accept = 'image/*';
+                                                    mobileInput.onchange = (e) => {
+                                                        const file = (e.target as HTMLInputElement).files?.[0];
+                                                        if (file) handleMobileBannerSelect(file);
+                                                    };
+                                                    mobileInput.click();
+                                                }}
+                                                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${mobileBannerFile ? 'border-primary bg-primary/10' : 'border-gray-300'
+                                                    }`}
+                                            >
+                                                {mobileBannerPreviewUrl || editingExclusive?.mobileImage ? (
+                                                    <div className="text-center relative">
+                                                        <img
+                                                            src={mobileBannerPreviewUrl || editingExclusive?.mobileImage}
+                                                            alt="Mobile Preview"
+                                                            className="mx-auto max-h-40 rounded-md shadow-md"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); setMobileBannerFile(null); }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-1 text-center">
+                                                        <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                        <p className="text-sm text-gray-600">Mobile</p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Link da Campanha</label>
@@ -1493,9 +1608,15 @@ const MonthlyPackagesPage: React.FC<{
         const [view, setView] = useState<'packages' | 'subscriptions' | 'promotions'>('packages');
         const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'active' | 'expiring' | 'expired' | 'archived'>('all');
         const [promoAreaFilter, setPromoAreaFilter] = useState<'all' | 'client' | 'painel'>('all');
+        const [promoSearchTerm, setPromoSearchTerm] = useState('');
+        const [promoCategoryFilter, setPromoCategoryFilter] = useState('all');
+
         const [imageFile, setImageFile] = useState<File | null>(null);
         const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+        const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
+        const [mobileImagePreviewUrl, setMobileImagePreviewUrl] = useState<string | null>(null);
         const fileInputRef = useRef<HTMLInputElement>(null);
+
 
         const handleFileSelect = (selectedFile: File | null) => {
             setImageFile(selectedFile);
@@ -1510,6 +1631,20 @@ const MonthlyPackagesPage: React.FC<{
             }
         };
 
+        const handleMobileFileSelect = (selectedFile: File | null) => {
+            setMobileImageFile(selectedFile);
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setMobileImagePreviewUrl(event.target?.result as string);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                setMobileImagePreviewUrl(null);
+            }
+        };
+
+
         const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
         const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
         const handleDrop = (e: React.DragEvent) => {
@@ -1523,16 +1658,25 @@ const MonthlyPackagesPage: React.FC<{
             if (!isPromoModalOpen) {
                 setImageFile(null);
                 setImagePreviewUrl(null);
+                setMobileImageFile(null);
+                setMobileImagePreviewUrl(null);
             }
         }, [isPromoModalOpen]);
+
 
         const activePackages = monthlyPackages.filter(p => p.isActive);
         const activeSubscriptions = packageSubscriptions.filter(s => s.isActive);
         const activePromotions = promotions.filter(p => p.isActive);
         const filteredPromotions = promotions.filter(p => {
             const matchesArea = promoAreaFilter === 'all' || p.targetArea === promoAreaFilter;
-            return matchesArea;
+            const matchesSearch = !promoSearchTerm ||
+                p.title.toLowerCase().includes(promoSearchTerm.toLowerCase()) ||
+                (p.subtitle && p.subtitle.toLowerCase().includes(promoSearchTerm.toLowerCase())) ||
+                (p.description && p.description.toLowerCase().includes(promoSearchTerm.toLowerCase()));
+            const matchesCategory = promoCategoryFilter === 'all' || p.profileTarget === promoCategoryFilter;
+            return matchesArea && matchesSearch && matchesCategory;
         });
+
 
         // Verificar assinaturas próximas ao vencimento (7 dias)
         const expiringSoonSubscriptions = packageSubscriptions.filter(subscription => {
@@ -1912,9 +2056,39 @@ const MonthlyPackagesPage: React.FC<{
 
                 {view === 'promotions' && (
                     <div className="space-y-4 mt-6">
-                        {/* Filtro de Área de Exibição */}
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        {/* Filtros de Busca e Área */}
+                        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-4">
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por título, descrição ou salão..."
+                                        value={promoSearchTerm}
+                                        onChange={(e) => setPromoSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    />
+                                    <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <div className="w-full md:w-64">
+                                    <select
+                                        value={promoCategoryFilter}
+                                        onChange={(e) => setPromoCategoryFilter(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary transition-all"
+                                    >
+                                        <option value="all">Todas as Categorias</option>
+                                        <option value="salao_beleza">Salão de Beleza</option>
+                                        <option value="bem_estar">Bem-estar e estética</option>
+                                        <option value="estudio_beleza">Estúdio de beleza</option>
+                                        <option value="podologia">Podologia</option>
+                                        <option value="barbearia">Barbearia</option>
+                                        <option value="esmaltaria">Esmaltaria</option>
+                                        <option value="outros">Outros segmentos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 border-t border-gray-100">
                                 <h3 className="text-sm font-medium text-gray-700">Filtrar por Área de Exibição:</h3>
                                 <div className="flex flex-wrap gap-2">
                                     <button
@@ -1948,80 +2122,96 @@ const MonthlyPackagesPage: React.FC<{
                             </div>
                         </div>
 
-                        {filteredPromotions.map((promotion) => (
-                            <div key={promotion.id} className="bg-white p-5 rounded-xl shadow-lg border border-transparent hover:border-primary transition-all duration-300">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-800">{promotion.title}</h3>
-                                        <p className="text-sm text-gray-600">{promotion.subtitle}</p>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        <div className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            {promotion.clicks || 0} cliques
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredPromotions.map((promotion) => (
+                                <div key={promotion.id} className="bg-white rounded-2xl shadow-lg border border-transparent hover:border-primary transition-all duration-300 overflow-hidden group flex flex-col">
+                                    <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                                        <img
+                                            src={promotion.image || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1000&auto=format&fit=crop"}
+                                            alt={promotion.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                        <div className="absolute top-3 left-3">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${promotion.targetArea === 'painel' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white shadow-md'}`}>
+                                                {promotion.targetArea === 'painel' ? 'Painel' : 'Cliente'}
+                                            </span>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="absolute top-3 right-3 flex flex-col gap-2">
+                                            <div className="bg-white/90 backdrop-blur-sm text-blue-800 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                {promotion.clicks || 0}
+                                            </div>
+                                            <div className={`w-3 h-3 rounded-full self-end shadow-sm ${promotion.isActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-5 flex flex-col flex-1">
+                                        <div className="mb-3 flex-1">
+                                            <h3 className="text-lg font-bold text-gray-800 line-clamp-1 group-hover:text-primary transition-colors">{promotion.title}</h3>
+                                            <p className="text-xs text-primary font-semibold mb-1 uppercase tracking-tight">{promotion.callToAction}</p>
+                                            <p className="text-sm text-gray-600 line-clamp-2 h-10">{promotion.description}</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center text-[11px] text-gray-500 font-medium">
+                                                <div className="flex items-center gap-1">
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <button
+                                                    onClick={() => onOpenPromoModal(promotion)}
+                                                    className="col-span-1 py-2 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex justify-center items-center"
+                                                    title="Editar"
+                                                >
+                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.586a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => onTogglePromotion(promotion.id)}
+                                                    className={`col-span-1 py-2 text-xs font-bold border rounded-lg transition-colors flex justify-center items-center ${promotion.isActive ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'border-green-200 bg-green-50 hover:bg-green-100 text-green-700'}`}
+                                                    title={promotion.isActive ? 'Pausar' : 'Ativar'}
+                                                >
+                                                    {promotion.isActive ? (
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => onDeletePromotion(promotion.id)}
+                                                    className="col-span-1 py-2 text-xs font-bold border border-red-100 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors flex justify-center items-center"
+                                                    title="Excluir"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <button
-                                                onClick={() => onOpenPromoModal(promotion)}
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                                                onClick={() => onPromotionClick(promotion.id, promotion.promotionUrl)}
+                                                className="w-full py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                                             >
-                                                Editar
-                                            </button>
-                                            <button
-                                                onClick={() => onTogglePromotion(promotion.id)}
-                                                className={`text-sm font-semibold px-2 py-1 rounded ${promotion.isActive
-                                                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                                    : 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                    }`}
-                                            >
-                                                {promotion.isActive ? 'Pausar' : 'Ativar'}
-                                            </button>
-                                            <button
-                                                onClick={() => onDeletePromotion(promotion.id)}
-                                                className="text-sm font-semibold text-red-600 hover:text-red-800"
-                                            >
-                                                Excluir
+                                                {promotion.actionButton || 'Ver Oferta'}
                                             </button>
                                         </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <span className="text-gray-500">Chamada:</span>
-                                        <p className="font-medium">{promotion.callToAction}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">Área:</span>
-                                        <p className="font-medium">{promotion.targetArea === 'painel' ? 'Painel de Controle' : 'Área do Cliente'}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">Período:</span>
-                                        <p className="font-medium">{new Date(promotion.startDate).toLocaleDateString('pt-BR')} - {new Date(promotion.endDate).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">Botão:</span>
-                                        <button
-                                            onClick={() => onPromotionClick(promotion.id, promotion.promotionUrl)}
-                                            className="font-medium text-primary hover:text-primary-dark underline"
-                                        >
-                                            {promotion.actionButton}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {
-                                    promotion.description && (
-                                        <div className="mt-3 pt-3 border-t border-gray-100">
-                                            <p className="text-sm text-gray-600">{promotion.description}</p>
-                                        </div>
-                                    )
-                                }
-                            </div>
-                        ))}
 
                         {filteredPromotions.length === 0 && (
                             <div className="text-center py-12">
@@ -2369,12 +2559,20 @@ const MonthlyPackagesPage: React.FC<{
                                             imageUrl = `data:image/jpeg;base64,${imagePreviewUrl?.split(',')[1] || ''}`;
                                         }
 
+                                        let mobileImageUrl = formData.get('mobileImageUrl') as string;
+                                        if (mobileImageFile) {
+                                            mobileImageUrl = `data:image/jpeg;base64,${mobileImagePreviewUrl?.split(',')[1] || ''}`;
+                                        }
+
+
                                         const promotion: any = {
                                             callToAction: formData.get('callToAction') as string,
                                             title: formData.get('title') as string,
-                                            subtitle: formData.get('subtitle') as string,
                                             description: formData.get('description') as string,
+
                                             image: imageUrl || editingPromotion?.image || '',
+                                            mobileImage: mobileImageUrl || editingPromotion?.mobileImage || '',
+
                                             promotionUrl: formData.get('promotionUrl') as string || '',
                                             targetArea: formData.get('targetArea') as 'client' | 'painel',
                                             profileTarget: formData.get('profileTarget') as string,
@@ -2394,11 +2592,11 @@ const MonthlyPackagesPage: React.FC<{
                                         onSavePromotion(promotion);
                                     }} className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Chamada</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Chamada (Opcional)</label>
                                             <input
                                                 name="callToAction"
                                                 type="text"
-                                                required
+
                                                 defaultValue={editingPromotion?.callToAction || ''}
                                                 className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                                 placeholder="Ex: Oferta Limitada!"
@@ -2406,7 +2604,7 @@ const MonthlyPackagesPage: React.FC<{
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Título da Promoção</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Título de Promoção Exclusivo</label>
                                             <input
                                                 name="title"
                                                 type="text"
@@ -2417,17 +2615,6 @@ const MonthlyPackagesPage: React.FC<{
                                             />
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Subtítulo da Promoção</label>
-                                            <input
-                                                name="subtitle"
-                                                type="text"
-                                                required
-                                                defaultValue={editingPromotion?.subtitle || ''}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                                placeholder="Ex: Aproveite agora mesmo"
-                                            />
-                                        </div>
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
@@ -2526,9 +2713,9 @@ const MonthlyPackagesPage: React.FC<{
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Imagem da Campanha</label>
-                                            <div className="space-y-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Banner Principal</label>
                                                 <div
                                                     onDragOver={handleDragOver}
                                                     onDragLeave={handleDragLeave}
@@ -2558,7 +2745,7 @@ const MonthlyPackagesPage: React.FC<{
                                                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4M8 32l9.172-9.172a4 4 0 015.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                             </svg>
                                                             <div className="flex text-sm text-gray-600">
-                                                                <p className="pl-1">Arraste e solte ou clique para selecionar</p>
+                                                                <p className="pl-1">Clique para imagem desktop</p>
                                                             </div>
                                                         </div>
                                                     )}
@@ -2570,11 +2757,51 @@ const MonthlyPackagesPage: React.FC<{
                                                         accept="image/*"
                                                     />
                                                 </div>
-                                                <p className="text-xs text-gray-500">
-                                                    <span className="font-medium text-primary">Tamanho recomendado:</span> 1080x1080px (Quadrado 1:1)
-                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Banner Mobile</label>
+                                                <div
+                                                    onClick={() => {
+                                                        const mobileInput = document.createElement('input');
+                                                        mobileInput.type = 'file';
+                                                        mobileInput.accept = 'image/*';
+                                                        mobileInput.onchange = (e) => {
+                                                            const file = (e.target as HTMLInputElement).files?.[0];
+                                                            if (file) handleMobileFileSelect(file);
+                                                        };
+                                                        mobileInput.click();
+                                                    }}
+                                                    className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${mobileImageFile ? 'border-primary bg-primary/10' : 'border-gray-300'
+                                                        }`}
+                                                >
+                                                    {mobileImagePreviewUrl || editingPromotion?.mobileImage ? (
+                                                        <div className="text-center relative">
+                                                            <img
+                                                                src={mobileImagePreviewUrl || editingPromotion?.mobileImage}
+                                                                alt="Mobile Preview"
+                                                                className="mx-auto max-h-40 rounded-md shadow-md"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); handleMobileFileSelect(null); }}
+                                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1 text-center">
+                                                            <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                            <div className="flex text-sm text-gray-600">
+                                                                <p className="pl-1">Clique para imagem mobile</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
+
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Botão: chamada para ação</label>
@@ -2715,6 +2942,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         transactions,
         appointments,
         clients,
+        professionals,
         saveService,
         deleteService,
         toggleSuspendService,
@@ -3044,24 +3272,49 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const dashboardData = {
     };
 
+    // Destructure all needed data from context
+    const {
+        products,
+        services,
+        packages,
+        salonPlans,
+        units
+    } = useData();
+
     // --- UNIT DATA ---
     const currentUnitData = useMemo(() => {
-        return allData[selectedUnit] || {
-            clients: [],
-            professionals: [],
-            services: [],
-            packages: [],
-            plans: [],
-            products: [],
-            transactions: [],
-            appointments: [],
-            marketingCampaigns: [],
+        // Filter helper based on unit name comparison
+        const filterByUnit = (list: any[]) => {
+            if (!selectedUnit || selectedUnit === 'Todas as Unidades' || selectedUnit === 'Matriz') {
+                // If no unit or common names, we might want to show all or filter by a default
+                // But usually selectedUnit is the actual unit name. 
+                // If the list items have a 'unit' property that matches.
+                return list;
+            }
+            return list.filter(item =>
+                item.unit === selectedUnit ||
+                item.preferredUnit === selectedUnit ||
+                item.preferred_unit === selectedUnit ||
+                item.unitName === selectedUnit
+            );
+        };
+
+        return {
+            clients: filterByUnit(clients),
+            professionals: filterByUnit(professionals),
+            services: services, // Services are typically global for the salon
+            packages: packages,
+            plans: salonPlans,
+            products: filterByUnit(products),
+            transactions: filterByUnit(transactions),
+            appointments: filterByUnit(appointments),
+            marketingCampaigns: [], // Not currently in useData but can be added if needed
             directMailCampaigns: [],
             acquisitionChannels: [],
         };
-    }, [allData, selectedUnit]);
+    }, [clients, professionals, transactions, appointments, services, packages, salonPlans, products, selectedUnit]);
 
-    const availableUnits = useMemo(() => Object.keys(allData), [allData]);
+    const availableUnits = useMemo(() => units.map(u => u.name), [units]);
 
     const createDataHandler = (dataType: keyof typeof currentUnitData) => (newItem: any) => {
         setAllData((prevData: any) => {
@@ -3713,7 +3966,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     const DashboardOverviewContent = () => {
-        const { transactions, appointments, clients } = currentUnitData;
+        const { transactions, appointments, clients, professionals } = currentUnitData;
         const { promotions, notifications: contextNotifications, refreshNotifications } = useData();
         const periodKey = derivedPeriod === 'mes' ? 'mensal' : derivedPeriod;
         const [summary, setSummary] = useState<any>(null);
@@ -3928,7 +4181,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* Stat Cards (alinhados ao período selecionado: Hoje/Semana/Mês/Anual) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <div className={animateContent ? 'animate-fade-slide-up-1' : 'opacity-100'}>
-                        <StatCard title={t('dashboardRevenue')} value={kpisForPeriod.faturamento} icon={<DollarIcon />} color="bg-green-100 text-green-600" />
+                        <StatCard title={t('dashboardRevenue')} value={kpisForPeriod.faturamento} icon={<DollarIcon />} color="bg-green-100 text-green-600" description="Total de faturamento financeiro (receitas) no período." />
                     </div>
                     <div className={animateContent ? 'animate-fade-slide-up-2' : 'opacity-100'}>
                         <StatCard title={t('dashboardAppointments')} value={kpisForPeriod.atendimentos} icon={<ClipboardCheckIcon />} color="bg-blue-100 text-blue-600" />
@@ -3940,7 +4193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <StatCard title={t('dashboardAvgTicket')} value={kpisForPeriod.ticketMedio} icon={<TicketIcon />} color="bg-yellow-100 text-yellow-600" />
                     </div>
                     <div className={animateContent ? 'animate-fade-slide-up-5' : 'opacity-100'}>
-                        <StatCard title={t('dashboardNewClients')} value={kpisForPeriod.clientesHoje} icon={<CardUsersIcon />} color="bg-purple-100 text-purple-600" />
+                        <StatCard title={t('dashboardNewClients')} value={kpisForPeriod.clientesHoje} icon={<CardUsersIcon />} color="bg-purple-100 text-purple-600" description="Novos clientes cadastrados através dos canais de captação." />
                     </div>
                 </div>
 
@@ -3960,7 +4213,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <AcquisitionChannelsChart clients={currentUnitData.clients || []} startDate={startDate} endDate={endDate} />
                     </div>
                     <div className={animateContent ? 'animate-fade-slide-up-5' : 'opacity-100'}>
-                        <ReferralRanking clients={currentUnitData.clients || []} />
+                        <ReferralRanking clients={currentUnitData.clients || []} professionals={professionals || []} />
                     </div>
                 </div>
 
@@ -4028,10 +4281,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 isIndividualPlan={isIndividualPlan}
                 selectedUnit={selectedUnit}
                 onUnitChange={onUnitChange}
-                units={Object.keys(allData).map((name, id) => ({ id, name }))}
+                units={units.map(u => ({ id: u.id, name: u.name }))}
                 promotions={promotions.filter(p => p.type === 'exclusive')}
                 onOpenPromoModal={handleOpenPromoModal}
-                unitData={allData[selectedUnit]}
+                unitData={currentUnitData}
             />;
             case 'Super Admin: Salões': return <SuperAdminTenantsPage />;
             case 'Super Admin: Banners': return <SuperAdminBannersPage />;
