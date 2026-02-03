@@ -263,11 +263,10 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         ? selection.service?.professional_ids?.includes(prof.id)
                         : true;
 
-                    // Allow if openSchedule is true OR undefined/null (default to open)
-                    const isOpen = prof.openSchedule !== false;
+                    // Ignore openSchedule flag to ensure professionals appear
                     const isActive = !prof.suspended && !prof.archived;
 
-                    return matchesService && isActive && isOpen;
+                    return matchesService && isActive;
                 });
                 const showAnyProfessional = selection.service?.allowAny && !isIndividualPlan;
                 const displayOptions = [...qualifiedProfessionals];
