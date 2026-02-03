@@ -228,7 +228,8 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
           description: v.description,
           youtubeId: v.video_url, // Backend uses video_url for the id
           duration: v.duration ? `${Math.floor(v.duration / 60)}:${(v.duration % 60).toString().padStart(2, '0')} min` : '5:00 min',
-          category: v.category || 'Geral'
+          category: v.category || 'Geral',
+          order: v.order || 0
         }));
         setVideos(mappedVideos);
       }
@@ -309,10 +310,22 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
       const [draggedVideo] = categoryVideos.splice(draggedIndex, 1);
       categoryVideos.splice(targetIndex, 0, draggedVideo);
 
+      // Create orders array for API
+      const orders = categoryVideos.map((v, index) => ({
+        id: v.id,
+        order: index
+      }));
+
       // Update the full videos array with reordered category videos
       setVideos(prev => {
         const otherVideos = prev.filter(v => v.category !== category);
         return [...otherVideos, ...categoryVideos];
+      });
+
+      // Persist to backend
+      trainingAPI.reorder(orders).catch(err => {
+        console.error('Error persisting video order:', err);
+        // Optional: revert local state or show message
       });
     }
 
@@ -328,6 +341,11 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
     (acc[video.category] = acc[video.category] || []).push(video);
     return acc;
   }, {} as Record<string, Video[]>);
+
+  // Ensure videos are sorted by order within each category
+  Object.keys(categorizedVideos).forEach(cat => {
+    categorizedVideos[cat].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+  });
 
   const categoryOrder = ["Visão Geral e Dashboard", "Agenda", "Clientes e CRM", "Serviços", "Financeiro e Estoque", "Configurações e Equipe", "Ferramentas Avançadas", "Geral"];
 

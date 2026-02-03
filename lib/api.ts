@@ -720,6 +720,10 @@ export const trainingAPI = {
     delete: async (id: number) => {
         const response = await api.delete(`/super-admin/training-videos/${id}`);
         return response.data;
+    },
+    reorder: async (orders: { id: number; order: number }[]) => {
+        const response = await api.patch('/super-admin/training-videos/reorder', { orders });
+        return response.data;
     }
 };
 
