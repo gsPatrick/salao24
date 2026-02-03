@@ -384,8 +384,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
                                             type="text"
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
-                                            placeholder={selectedChat.status === 'active' ? "Agente IA está respondendo..." : (isListening ? "Ouvindo..." : "Escreva sua mensagem...")}
-                                            className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-gray-100"
+                                            placeholder={selectedChat.status === 'active' ? "Agente IA está no controle..." : (isListening ? "Ouvindo..." : "Escreva sua mensagem...")}
+                                            className={`flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 ${selectedChat.status === 'active' ? 'bg-gray-50 opacity-50 cursor-not-allowed' : 'bg-white'}`}
                                             disabled={selectedChat.status === 'active'}
                                         />
                                         <button
@@ -407,7 +407,18 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
                                         </button>
                                     </form>
                                     {selectedChat.status === 'active' && (
-                                        <p className="text-[10px] text-center text-orange-600 font-semibold mt-2">⚠️ Pause o Agente IA acima para enviar mensagens manuais.</p>
+                                        <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center justify-between animate-pulse">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-orange-600 text-lg">🤖</span>
+                                                <p className="text-xs text-orange-800 font-medium">O Agente IA está atendendo este cliente agora.</p>
+                                            </div>
+                                            <button
+                                                onClick={handleToggleAi}
+                                                className="text-[10px] bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 px-3 rounded-lg transition-colors uppercase"
+                                            >
+                                                Pausar para responder
+                                            </button>
+                                        </div>
                                     )}
                                 </footer>
                             </>
