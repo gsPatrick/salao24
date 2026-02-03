@@ -127,14 +127,8 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
     // Filtrar apenas profissionais ativos (não suspensos e não arquivados) e com agenda aberta
     const activeProfessionals = availableProfessionals.filter(p => {
-      // Allow if openSchedule is true OR undefined/null (default to open)
-      const isOpen = p.openSchedule !== false;
-      const isCurrentUser = currentUser && p.email === currentUser.email;
-
-      // Always show current user even if schedule is closed, otherwise respect flags
-      if (isCurrentUser) return !p.suspended && !p.archived;
-
-      return !p.suspended && !p.archived && isOpen;
+      // Show all active professionals regardless of openSchedule status for the agenda view
+      return !p.suspended && !p.archived;
     });
 
     let baseProfessionals;

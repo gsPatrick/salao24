@@ -268,11 +268,11 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
 
                     return matchesService && isActive;
                 });
-                const showAnyProfessional = selection.service?.allowAny && !isIndividualPlan;
                 const displayOptions = [...qualifiedProfessionals];
-                if (showAnyProfessional) {
-                    displayOptions.unshift(anyProfessional);
-                }
+                // 'Any Professional' option removed as per user request
+                // if (showAnyProfessional) {
+                //     displayOptions.unshift(anyProfessional);
+                // }
 
                 return (
                     <div>
