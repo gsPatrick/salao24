@@ -493,7 +493,10 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
               const day = new Date(startOfWeek);
               day.setDate(startOfWeek.getDate() + i);
               const dayDateKey = formatDateForLookup(day);
-              const appointmentsForDay = contextAppointments.filter(a => a.date === dayDateKey); // Using contextAppointments
+              const appointmentsForDay = contextAppointments.filter(a => {
+                const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
+                return apptDate === dayDateKey;
+              });
               return (
                 <div key={i} className="bg-light p-3 rounded-lg w-full">
                   <p className="font-bold text-center text-secondary">{day.toLocaleDateString('pt-BR', { weekday: 'short' })}</p>
@@ -533,7 +536,10 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
             {Array.from({ length: daysInMonth }).map((_, day) => {
               const date = new Date(year, month, day + 1);
               const dayDateKey = formatDateForLookup(date);
-              const appointmentsForDay = contextAppointments.filter(a => a.date === dayDateKey); // Using contextAppointments
+              const appointmentsForDay = contextAppointments.filter(a => {
+                const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
+                return apptDate === dayDateKey;
+              });
               return (
                 <div key={day} className="bg-white p-2 rounded h-28 overflow-y-auto">
                   <p className="font-bold text-gray-700">{day + 1}</p>
@@ -593,7 +599,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                   className="mt-1 block w-full max-w-xs p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 >
                   <option value="all">Todos os Profissionais</option>
-                  {(propProfessionals || contextProfessionals).filter(p => !p.suspended && !p.archived && p.openSchedule === true).map(prof => <option key={prof.id} value={prof.id}>{prof.name}</option>)}
+                  {(propProfessionals || contextProfessionals).filter(p => !p.suspended && !p.archived && p.openSchedule !== false).map(prof => <option key={prof.id} value={prof.id}>{prof.name}</option>)}
                 </select>
               </div>
             )}
