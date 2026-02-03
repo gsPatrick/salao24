@@ -120,7 +120,7 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
 
   return (
     <div className="mt-4 bg-white rounded-2xl shadow-md overflow-hidden flex flex-col">
-      <div className="relative h-44 overflow-hidden bg-gray-50 flex items-center justify-center">
+      <div className="relative h-44 overflow-hidden bg-gray-50">
         <div
           className={`absolute inset-0 bg-gradient-to-br ${activeCard.accentColor}`}
         ></div>
@@ -132,14 +132,14 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="relative h-full flex flex-col justify-between p-4">
-          <div>
+        <div className="absolute inset-0 flex flex-col justify-between p-5">
+          <div className="flex justify-start">
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-md shadow-sm">
               {activeCard.tag}
             </span>
           </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-white leading-tight shadow-black/20">
+          <div className="text-left">
+            <h2 className="text-xl font-extrabold text-white leading-tight shadow-black/20">
               {activeCard.title}
             </h2>
             <p className="mt-1 text-xs text-white/80 font-medium">

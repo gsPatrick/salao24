@@ -4442,7 +4442,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         { name: t('reports'), icon: <ReportsIcon />, key: 'Relatórios', internalKey: 'relatorio' },
         { name: t('support'), icon: <HeadsetIcon />, key: 'Suporte', internalKey: 'suporte' },
         { name: t('settings'), icon: <SettingsIcon />, key: 'Configurações', internalKey: 'configuracoes' },
-        { name: t('clientArea') || 'Área do Cliente', icon: <QRCodeIcon />, key: 'clientApp', internalKey: 'clientApp' },
     ];
 
     const superAdminItems = [

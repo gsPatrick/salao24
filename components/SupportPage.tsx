@@ -131,19 +131,47 @@ const VideoModal: React.FC<{
 
 // --- Tab Content Components ---
 
-const VideoCard: React.FC<{ video: Video, onPlay: () => void, isPlaying: boolean, isAdmin: boolean, onEdit: () => void }> = ({ video, onPlay, isPlaying, isAdmin, onEdit }) => {
+const VideoCard: React.FC<{
+  video: Video,
+  onPlay: () => void,
+  isPlaying: boolean,
+  isAdmin: boolean,
+  onEdit: () => void,
+  onDelete: () => void,
+  onDragStart: (e: React.DragEvent) => void,
+  onDragOver: (e: React.DragEvent) => void,
+  onDrop: (e: React.DragEvent) => void,
+  isDragging: boolean
+}> = ({ video, onPlay, isPlaying, isAdmin, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragging }) => {
   const thumbnailUrl = `https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col relative">
+    <div
+      className={`bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col relative ${isDragging ? 'opacity-50 scale-95' : ''} ${isAdmin ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      draggable={isAdmin}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       {isAdmin && (
-        <button
-          onClick={onEdit}
-          className="absolute top-2 right-2 bg-blue-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-blue-700 transition-colors z-10"
-          aria-label="Editar/Substituir aula"
-        >
-          <EditIcon />
-        </button>
+        <div className="absolute top-2 right-2 flex gap-1 z-10">
+          <button
+            onClick={onEdit}
+            className="bg-blue-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-blue-700 transition-colors"
+            aria-label="Editar/Substituir aula"
+          >
+            <EditIcon />
+          </button>
+          <button
+            onClick={onDelete}
+            className="bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 transition-colors"
+            aria-label="Excluir aula"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       )}
       <div className="relative mb-4 aspect-video bg-black rounded-md overflow-hidden">
         {isPlaying ? (
@@ -252,6 +280,45 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
       }
     }
   };
+
+  const [draggedVideoId, setDraggedVideoId] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, videoId: number) => {
+    setDraggedVideoId(videoId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetVideoId: number, category: string) => {
+    e.preventDefault();
+    if (draggedVideoId === null || draggedVideoId === targetVideoId) {
+      setDraggedVideoId(null);
+      return;
+    }
+
+    // Reorder videos within the same category
+    const categoryVideos = [...(categorizedVideos[category] || [])];
+    const draggedIndex = categoryVideos.findIndex(v => v.id === draggedVideoId);
+    const targetIndex = categoryVideos.findIndex(v => v.id === targetVideoId);
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      const [draggedVideo] = categoryVideos.splice(draggedIndex, 1);
+      categoryVideos.splice(targetIndex, 0, draggedVideo);
+
+      // Update the full videos array with reordered category videos
+      setVideos(prev => {
+        const otherVideos = prev.filter(v => v.category !== category);
+        return [...otherVideos, ...categoryVideos];
+      });
+    }
+
+    setDraggedVideoId(null);
+  };
+
   const filteredVideos = videos.filter(video =>
     video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     video.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -279,6 +346,12 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
           </button>
         )}
       </div>
+
+      {isSuperAdmin && (
+        <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+          <p className="text-sm text-blue-700"><strong>Dica:</strong> Arraste e solte os cards para reorganizar a ordem das aulas.</p>
+        </div>
+      )}
 
       <div className="mb-8 max-w-lg mx-auto">
         <div className="relative">
@@ -317,6 +390,11 @@ const TrainingContent: React.FC<{ isSuperAdmin: boolean }> = ({ isSuperAdmin }) 
                       onPlay={() => handlePlayVideo(video.youtubeId)}
                       isAdmin={isSuperAdmin}
                       onEdit={() => handleOpenModal(video)}
+                      onDelete={() => handleDeleteVideo(video.id)}
+                      onDragStart={(e) => handleDragStart(e, video.id)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, video.id, category)}
+                      isDragging={draggedVideoId === video.id}
                     />
                   ))}
                 </div>

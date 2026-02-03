@@ -42,7 +42,7 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
         setIsLoading(true);
         setError(null);
 
-        const email = emailRef.current?.value || '';
+        const email = emailRef.current?.value.trim() || '';
         const password = passwordRef.current?.value || '';
 
         const result = await login(email, password, false);
@@ -64,7 +64,7 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
         setError(null);
 
         const name = nameRef.current?.value || '';
-        const email = emailRef.current?.value || '';
+        const email = emailRef.current?.value.trim() || '';
         const phone = phoneRef.current?.value || '';
         const password = passwordRef.current?.value || '';
 

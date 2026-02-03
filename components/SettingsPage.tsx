@@ -184,7 +184,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [tabOrder, setTabOrder] = useState(['conta', 'visual', 'usuario', 'unidade', 'plano', 'historico']);
+    const [tabOrder, setTabOrder] = useState(['plano', 'unidade', 'usuario', 'historico', 'conta']);
 
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
@@ -868,7 +868,16 @@ const SpaceSettings: React.FC<SpaceSettingsProps> = ({ t, onSave, tenant, update
 };
 
 const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => void }> = ({ t, onSave }) => {
-    const { tenant, updateTenant } = useData();
+    const { tenant, updateTenant, uploadTenantLogo } = useData();
+    const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Visual Identity State
+    const [logo, setLogo] = useState<string | null>(tenant?.logo_url || null);
+    const [primaryColor, setPrimaryColor] = useState(tenant?.primary_color || '#000000');
+    const [salonName, setSalonName] = useState(tenant?.name || '');
+    const [isVisualEditing, setIsVisualEditing] = useState(false);
+
+    // Bank Info State
     const [bankInfo, setBankInfo] = useState({
         bankName: tenant?.settings?.bank_info?.bankName || '',
         agency: tenant?.settings?.bank_info?.agency || '',
@@ -884,7 +893,44 @@ const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => 
             setBankInfo(tenant.settings.bank_info);
             setIsEditing(false);
         }
+        if (tenant) {
+            setLogo(tenant.logo_url || null);
+            setPrimaryColor(tenant.primary_color || '#000000');
+            setSalonName(tenant.name || '');
+        }
     }, [tenant]);
+
+    const handleLogoButtonClick = () => {
+        logoFileInputRef.current?.click();
+    };
+
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const url = await uploadTenantLogo(file);
+            if (url) {
+                setLogo(url);
+            } else {
+                alert('Erro ao fazer upload da logo.');
+            }
+        }
+    };
+
+    const handleVisualSave = async () => {
+        setIsLoading(true);
+        try {
+            await updateTenant({
+                name: salonName,
+                primary_color: primaryColor
+            });
+            setIsVisualEditing(false);
+            alert('Identidade visual salva com sucesso!');
+        } catch (error: any) {
+            alert('Erro ao salvar identidade visual: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -915,6 +961,100 @@ const AccountDataSettings: React.FC<{ t: (key: string) => string; onSave: () => 
 
     return (
         <div className="space-y-10 animate-fade-in">
+            {/* Visual Identity Section */}
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 className="text-xl font-bold text-secondary">Identidade Visual</h2>
+                <p className="text-gray-500 text-sm mb-6">Personalize a aparência do seu espaço com logo e cores.</p>
+
+                <div className="space-y-6 max-w-lg">
+                    {/* Logo */}
+                    <div className="flex items-center gap-6">
+                        <div className="relative">
+                            {logo ? (
+                                <img src={logo} alt="Logo" className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200 shadow-md" />
+                            ) : (
+                                <div className="w-24 h-24 rounded-xl bg-light border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                    <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            )}
+                            <input
+                                ref={logoFileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoChange}
+                                className="hidden"
+                            />
+                        </div>
+                        <div>
+                            <button
+                                onClick={handleLogoButtonClick}
+                                className="text-sm font-medium text-primary hover:text-primary-dark underline"
+                            >
+                                {logo ? 'Alterar Logo' : 'Adicionar Logo'}
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1">PNG ou JPG, máximo 2MB</p>
+                        </div>
+                    </div>
+
+                    {/* Salon Name & Primary Color */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Espaço</label>
+                            <input
+                                type="text"
+                                value={salonName}
+                                onChange={(e) => setSalonName(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                disabled={!isVisualEditing}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Cor Principal</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    className="w-12 h-10 rounded-md border border-gray-300 cursor-pointer"
+                                    disabled={!isVisualEditing}
+                                />
+                                <span className="text-sm text-gray-600 font-mono">{primaryColor}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-3">
+                        {!isVisualEditing ? (
+                            <button
+                                onClick={() => setIsVisualEditing(true)}
+                                className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                                Editar
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => setIsVisualEditing(false)}
+                                    className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleVisualSave}
+                                    disabled={isLoading}
+                                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark"
+                                >
+                                    Salvar
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Bank Info Section */}
             <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 className="text-xl font-bold text-secondary">{t('settingsAccountSectionBankInfo')}</h2>
                 <p className="text-gray-500 text-sm mb-6">{t('settingsAccountDescBankInfo')}</p>
