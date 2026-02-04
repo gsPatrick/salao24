@@ -57,6 +57,19 @@ export const authAPI = {
     }
 };
 
+export const uploadAPI = {
+    upload: async (file: File, type: string = 'general') => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/upload?type=${type}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+};
+
 export const clientsAPI = {
     getAll: async () => {
         const response = await api.get('/clients');
@@ -95,6 +108,10 @@ export const professionalsAPI = {
     },
     delete: async (id: number) => {
         const response = await api.delete(`/professionals/${id}`);
+        return response.data;
+    },
+    purge: async (id: number) => {
+        const response = await api.delete(`/professionals/${id}/purge`);
         return response.data;
     },
     toggleSuspend: async (id: number) => {

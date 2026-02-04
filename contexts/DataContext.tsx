@@ -91,7 +91,7 @@ export interface Professional {
     endTime?: string;
     allowOvertime?: boolean;
     openSchedule?: boolean;
-    documents?: { title: string; fileName: string }[];
+    documents?: { title: string; fileName: string; url?: string }[];
     [key: string]: any;
 }
 
@@ -358,6 +358,7 @@ export interface DataContextType {
     suspendProfessional: (id: number) => Promise<Professional | null>;
     archiveProfessional: (id: number) => Promise<Professional | null>;
     deleteProfessional: (id: number) => Promise<boolean>;
+    purgeProfessional: (id: number) => Promise<boolean>;
 
     saveContractTemplate: (template: Partial<ContractTemplate>) => Promise<ContractTemplate | null>;
     deleteContractTemplate: (id: number) => Promise<boolean>;
@@ -1092,6 +1093,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return true;
         } catch (error) {
             console.error('Error deleting professional:', error);
+            return false;
+        }
+    };
+
+    const purgeProfessional = async (id: number): Promise<boolean> => {
+        try {
+            await professionalsAPI.purge(id);
+            await refreshProfessionals();
+            return true;
+        } catch (error) {
+            console.error('Error purging professional:', error);
             return false;
         }
     };
@@ -1838,6 +1850,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 suspendProfessional,
                 archiveProfessional,
                 deleteProfessional,
+                purgeProfessional,
                 saveContractTemplate,
                 deleteContractTemplate,
                 saveService,

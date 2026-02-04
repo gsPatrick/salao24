@@ -13,8 +13,9 @@ const ProfessionalCard: React.FC<{
     onEdit: () => void,
     onSuspend: () => void,
     onArchive: () => void,
+    onPurge: () => void,
     isArchiving: boolean;
-}> = ({ professional, onEdit, onSuspend, onArchive, isArchiving }) => {
+}> = ({ professional, onEdit, onSuspend, onArchive, onPurge, isArchiving }) => {
     const { t } = useLanguage();
     return (
         <div className={`relative bg-white p-4 rounded-lg shadow-md flex flex-col text-center items-center space-y-3 transition-all duration-300 transform hover:-translate-y-1 ${professional.suspended && !professional.archived ? 'opacity-60 bg-gray-50' : ''} ${isArchiving ? 'animate-fade-out' : ''}`}>
@@ -34,6 +35,27 @@ const ProfessionalCard: React.FC<{
                     ))}
                     {professional.specialties.length > 3 && <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">+{professional.specialties.length - 3}</span>}
                 </div>
+                {professional.documents && professional.documents.length > 0 && (
+                    <div className="mt-3 flex flex-col items-center gap-1">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Documentos</p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {professional.documents.map((doc, idx) => (
+                                <a
+                                    key={idx}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
+                                    title={doc.title}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="w-full mt-4 pt-2 border-t">
                 {professional.archived ? (
@@ -56,6 +78,18 @@ const ProfessionalCard: React.FC<{
                     </div>
                 )}
             </div>
+            <div className="mt-4 pt-2">
+                <button
+                    onClick={onPurge}
+                    className="flex items-center justify-center gap-1 mx-auto text-xs text-red-500 hover:text-red-700 font-semibold transition-colors bg-red-50 hover:bg-red-100 py-1 px-3 rounded-full"
+                    title="Excluir Definitivamente"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Excluir Definitivamente
+                </button>
+            </div>
         </div>
     );
 };
@@ -66,6 +100,7 @@ const ProfessionalsPage: React.FC<ProfessionalsPageProps> = ({ onBack, isIndivid
         saveProfessional: onSaveProfessional,
         suspendProfessional: onSuspendProfessional,
         archiveProfessional: onArchiveProfessional,
+        purgeProfessional: onPurgeProfessional,
     } = useData();
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,6 +151,12 @@ const ProfessionalsPage: React.FC<ProfessionalsPageProps> = ({ onBack, isIndivid
                 onArchiveProfessional(professionalId);
                 setShowArchived(false);
             }
+        }
+    };
+
+    const handlePurge = (professionalId: number, professionalName: string) => {
+        if (window.confirm(`ATENÇÃO: Deseja realmente EXCLUIR DEFINITIVAMENTE o profissional "${professionalName}"? Esta ação não pode ser desfeita e removerá todos os dados vinculados (agendamentos, ponto, etc).`)) {
+            onPurgeProfessional(professionalId);
         }
     };
 
@@ -170,6 +211,7 @@ const ProfessionalsPage: React.FC<ProfessionalsPageProps> = ({ onBack, isIndivid
                                 onEdit={() => handleEdit(prof)}
                                 onSuspend={() => handleSuspend(prof.id, prof.name, prof.suspended)}
                                 onArchive={() => handleArchive(prof.id, prof.name, prof.archived)}
+                                onPurge={() => handlePurge(prof.id, prof.name)}
                                 isArchiving={archivingId === prof.id}
                             />
                         ))}
