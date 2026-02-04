@@ -44,7 +44,7 @@ const StatCard: React.FC<{ title: string; value: string; color: string; }> = ({ 
 
 const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack, unitName }) => {
     const { t } = useLanguage();
-    const { transactions, saveTransaction, tenant } = useData();
+    const { transactions, saveTransaction, deleteTransaction, tenant } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'receita' | 'despesa'>('receita');
 
@@ -99,6 +99,7 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack,
         end.setHours(23, 59, 59, 999);
 
         return transactions.filter(t => {
+            if (t.status === 'cancelada') return false;
             const transactionDate = new Date(t.date + 'T00:00:00');
             return transactionDate >= start && transactionDate <= end;
         });
@@ -144,9 +145,10 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack,
 
     const handleDeleteTransaction = async (transactionId: number) => {
         if (window.confirm('Deseja realmente excluir esta transação? Esta ação não pode ser desfeita.')) {
-            // For now, we don't have a delete function in context, so we'll just filter it out or mark as deleted
-            // This would need backend support - for demonstration, show alert
-            alert('Transação excluída com sucesso.');
+            const success = await deleteTransaction(transactionId);
+            if (!success) {
+                alert('Erro ao excluir transação.');
+            }
         }
     };
 
@@ -518,6 +520,25 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack,
                                 <span className={`font-bold text-lg ${viewTransaction.type === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatCurrency(viewTransaction.amount)}
                                 </span>
+                            </div>
+
+                            <div className="flex flex-col gap-2 border-b pb-2 bg-gray-50 p-3 rounded-lg">
+                                <span className="text-gray-700 font-semibold mb-1">Anexos:</span>
+                                <div className="flex flex-col gap-2">
+                                    {viewTransaction.billAttachment ? (
+                                        <a href={viewTransaction.billAttachment} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors p-2 bg-white rounded border border-blue-200">
+                                            <AttachmentIcon />
+                                            <span className="text-sm font-medium underline">Visualizar Conta/Fatura</span>
+                                        </a>
+                                    ) : null}
+                                    {viewTransaction.receiptAttachment ? (
+                                        <a href={viewTransaction.receiptAttachment} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors p-2 bg-white rounded border border-blue-200">
+                                            <AttachmentIcon />
+                                            <span className="text-sm font-medium underline">Visualizar Comprovante</span>
+                                        </a>
+                                    ) : null}
+                                    {!viewTransaction.billAttachment && !viewTransaction.receiptAttachment && <span className="text-gray-400 text-sm italic">Nenhum anexo disponível.</span>}
+                                </div>
                             </div>
                         </div>
                         <button

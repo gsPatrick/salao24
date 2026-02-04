@@ -180,6 +180,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
     const { t } = useLanguage();
     const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals, auditLogs, loading } = useData(); // Use DataContext
+    const { updateUser } = useAuth(); // Get updateUser from AuthContext
     const [activeTab, setActiveTab] = useState('conta');
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -233,7 +234,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
     const handleUserSave = async (userData: any) => {
         try {
-            await saveUser(userData);
+            const savedUser = await saveUser(userData);
+            if (savedUser && currentUser && savedUser.id === currentUser.id) {
+                updateUser({
+                    name: savedUser.name,
+                    email: savedUser.email,
+                    avatarUrl: savedUser.avatarUrl,
+                    role: savedUser.role
+                });
+            }
             showNotification(t('userSavedSuccess'));
             setIsUserModalOpen(false);
         } catch (error: any) {
