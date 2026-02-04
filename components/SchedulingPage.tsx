@@ -280,8 +280,19 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {displayOptions.map(prof => (
                                 <button key={prof.id} onClick={() => select('professional', prof)} className="p-6 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 text-center flex flex-col items-center">
-                                    <img src={prof.photo} alt={prof.name} className="w-20 h-20 rounded-full mb-4" />
-                                    <p className="font-semibold text-secondary">{prof.name}</p>
+                                    <img src={prof.photo} alt={prof.name} className="w-20 h-20 rounded-full mb-4 ring-2 ring-primary/10" />
+                                    <p className="font-bold text-secondary text-lg">{prof.name}</p>
+                                    <p className="text-sm font-semibold text-primary/80 mb-2">{prof.occupation || 'Profissional'}</p>
+                                    {prof.specialties && prof.specialties.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-1 mt-1">
+                                            {prof.specialties.slice(0, 3).map((s: string, idx: number) => (
+                                                <span key={idx} className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full border border-gray-200 uppercase tracking-tighter font-bold">
+                                                    {s}
+                                                </span>
+                                            ))}
+                                            {prof.specialties.length > 3 && <span className="text-[10px] text-gray-400 font-bold">+{prof.specialties.length - 3}</span>}
+                                        </div>
+                                    )}
                                 </button>
                             ))}
                         </div>
@@ -412,8 +423,8 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         <h2 className="text-3xl font-bold text-secondary mb-4">Agendamento Confirmado!</h2>
                         <p className="text-gray-600 mb-2">Enviamos um lembrete para você. Mal podemos esperar para te ver!</p>
                         <p className="font-bold text-secondary text-lg">{selection.date} às {selection.time}</p>
-                        <button onClick={isClientView ? () => navigate('clientApp') : () => navigate('home')} className="mt-8 py-3 px-8 bg-primary hover:bg-primary-dark text-white font-bold rounded-full transition duration-300">
-                            {isClientView ? 'Voltar para Meus Agendamentos' : 'Voltar para o Início'}
+                        <button onClick={isClientView ? () => navigate('clientApp') : () => navigate('dashboard')} className="mt-8 py-3 px-8 bg-primary hover:bg-primary-dark text-white font-bold rounded-full transition duration-300">
+                            {isClientView ? 'Voltar para Meus Agendamentos' : 'Ir para a Agenda'}
                         </button>
                     </div>
                 );

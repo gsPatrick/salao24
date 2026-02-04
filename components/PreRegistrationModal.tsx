@@ -260,7 +260,11 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700">{t('professional')}</label>
                     <select value={professional} onChange={e => setProfessional(e.target.value)} required disabled={isEditing || professionalsToShow.length === 1} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
                       <option value="">Selecione...</option>
-                      {professionalsToShow.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                      {professionalsToShow.map(p => (
+                        <option key={p.id} value={p.name}>
+                          {p.name} {p.occupation ? `(${p.occupation})` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>

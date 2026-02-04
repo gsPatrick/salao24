@@ -217,14 +217,18 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
         setIsScheduleReturnModalOpen(true);
     };
 
-    const handleScheduleReturn = async (newAppointment: { service: string; date: Date; time: string; }) => {
+    const handleScheduleReturn = async (newAppointment: { service: string; date: Date; time: string; service_id?: number }) => {
         if (!clientToSchedule || !professionalData) return;
+
+        const serviceId = newAppointment.service_id || contextServices.find(s => s.name === newAppointment.service)?.id || 1; // Fallback to 1 if not found
+
         await saveAppointment({
             clientId: clientToSchedule.id,
             professionalId: professionalData.id,
             date: formatDateForLookup(newAppointment.date),
             time: newAppointment.time,
             service: newAppointment.service,
+            service_id: serviceId,
             status: 'Agendado'
         });
         setIsScheduleReturnModalOpen(false);

@@ -1327,8 +1327,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Map frontend fields to API fields
             const apiData = {
                 ...appointment,
+                status: appointment.status ? appointment.status.toLowerCase() : 'agendado',
                 professional_id: appointment.professionalId,
                 client_id: appointment.clientId,
+                service_id: appointment.service_id || (appointment as any).serviceId, // Support both formats
             };
 
             let response;
