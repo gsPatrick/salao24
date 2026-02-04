@@ -866,6 +866,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       servicesOfInterest: servicesOfInterest,
       reminders: reminders,
       blocked: blocked,
+      is_complete_registration: true,
     };
     onSave(finalData);
     if (clientToEdit) {

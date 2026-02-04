@@ -195,6 +195,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
           professionalId: selectedProf.id,
           date,
           time,
+          is_complete_registration: false, // Mark as incomplete for quick bookings
         });
       }
     }

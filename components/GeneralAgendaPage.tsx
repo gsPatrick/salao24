@@ -266,6 +266,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         phone: payload.clientPhone,
         howTheyFoundUs: 'Agendamento Rápido',
         registrationDate: new Date().toISOString(),
+        is_complete_registration: (payload as any).is_complete_registration ?? false,
       }) as any;
     }
 
@@ -448,29 +449,34 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     if (viewMode === 'day') {
       return (
         <div className="flex space-x-6 overflow-x-auto pb-4">
-          {professionalsToDisplay.map(prof => (
-            <ProfessionalColumn
-              key={prof.id}
-              professional={prof}
-              appointments={appointmentsForDay.filter(a => a.professionalId === prof.id)}
-              blocks={blocksForDay.filter(b => b.professionalId === prof.id && (b.unit === 'all' || b.unit === prof.unit))}
-              onStatusChange={handleStatusChange}
-              onCardClick={handleCardClick}
-              onDeleteBlock={handleDeleteBlock}
-              currentUser={currentUser || null}
-              onReassignClick={handleOpenReassignModal}
-              isDropTarget={dragOverProfessionalId === prof.id}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, prof.id)}
-              onDragEnter={(e) => handleDragEnter(e, prof.id)}
-              onDragLeave={handleDragLeave}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              isDraggable={canDragAndDrop}
-              draggedAppointmentId={draggedAppointmentId}
-              onOpenNewAppointment={handleOpenNewAppointment}
-            />
-          ))}
+          {professionalsToDisplay.map(prof => {
+            const unit = contextUnits.find(u => u.name === prof.unit);
+            return (
+              <ProfessionalColumn
+                key={prof.id}
+                professional={prof}
+                appointments={appointmentsForDay.filter(a => a.professionalId === prof.id)}
+                blocks={blocksForDay.filter(b => b.professionalId === prof.id && (b.unit === 'all' || b.unit === prof.unit))}
+                onStatusChange={handleStatusChange}
+                onCardClick={handleCardClick}
+                onDeleteBlock={handleDeleteBlock}
+                currentUser={currentUser || null}
+                onReassignClick={handleOpenReassignModal}
+                isDropTarget={dragOverProfessionalId === prof.id}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, prof.id)}
+                onDragEnter={(e) => handleDragEnter(e, prof.id)}
+                onDragLeave={handleDragLeave}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                isDraggable={canDragAndDrop}
+                draggedAppointmentId={draggedAppointmentId}
+                onOpenNewAppointment={handleOpenNewAppointment}
+                openingTime={unit?.opening_time}
+                closingTime={unit?.closing_time}
+              />
+            );
+          })}
         </div>
       );
     }

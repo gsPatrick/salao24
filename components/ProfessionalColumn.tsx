@@ -69,6 +69,8 @@ const ProfessionalColumn: React.FC<{
     onDragStart: (e: React.DragEvent, appointmentId: number) => void;
     onDragEnd: () => void;
     onOpenNewAppointment: (professional: any, time: string) => void;
+    openingTime?: string;
+    closingTime?: string;
 }> = ({
     professional,
     appointments,
@@ -88,11 +90,14 @@ const ProfessionalColumn: React.FC<{
     onDragStart,
     onDragEnd,
     onOpenNewAppointment,
+    openingTime = '08:00',
+    closingTime = '18:00',
 }) => {
         const { t } = useLanguage();
         const { services: apiServices } = useData();
 
         const timeToMinutes = (time: string) => {
+            if (!time) return 0;
             const [hours, minutes] = time.split(':').map(Number);
             return hours * 60 + minutes;
         };
@@ -123,8 +128,8 @@ const ProfessionalColumn: React.FC<{
         ].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         const renderedItems = [];
-        let currentTime = timeToMinutes('09:00'); // workday start
-        const endTime = timeToMinutes('18:00'); // workday end
+        let currentTime = timeToMinutes(openingTime); // workday start
+        const endTime = timeToMinutes(closingTime); // workday end
         const slotDuration = 30;
 
         itemsForDay.forEach(item => {
