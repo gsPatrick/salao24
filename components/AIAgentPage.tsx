@@ -658,7 +658,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
     const [isAIEnabled, setIsAIEnabled] = useState(activeAIAgent !== null);
 
     // Verificar se o usuário está no plano Essencial
-    const isEssentialPlan = currentUser?.plan === 'Empresa Essencial';
+    const isEssentialPlan = currentUser?.plan === 'Empresa Essencial' && !currentUser?.is_super_admin;
 
     const [basicAgentName, setBasicAgentName] = useState('Júlia');
     const [basicReminderMsg, setBasicReminderMsg] = useState('Olá, [NOME_CLIENTE]! Passando para lembrar do seu horário amanhã às [HORARIO]...');

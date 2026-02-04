@@ -573,7 +573,7 @@ const App: React.FC = () => {
           <SchedulingPage
             navigate={navigate}
             goBack={goBack}
-            isIndividualPlan={currentUser?.plan === 'Individual'}
+            isIndividualPlan={currentUser?.plan === 'Individual' && !isSuperAdmin}
             onPayForService={handleServicePayment}
             services={currentUnitData.services}
             professionals={currentUnitData.professionals}

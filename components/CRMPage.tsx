@@ -249,7 +249,7 @@ const KanbanColumn: React.FC<{
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
-    const isPlanRestricted = currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial';
+    const isPlanRestricted = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !currentUser?.is_super_admin;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -472,7 +472,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     const { t } = useLanguage();
 
     // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
-    const isPlanRestricted = currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial';
+    const isPlanRestricted = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !currentUser?.is_super_admin;
 
     const [activeTab, setActiveTab] = useState('clientes');
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
