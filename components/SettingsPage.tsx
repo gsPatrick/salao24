@@ -179,12 +179,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     navigate
 }) => {
     const { t } = useLanguage();
-    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals } = useData(); // Use DataContext
-    const [activeTab, setActiveTab] = useState('plano');
+    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals, auditLogs, loading } = useData(); // Use DataContext
+    const [activeTab, setActiveTab] = useState('conta');
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [tabOrder, setTabOrder] = useState(['plano', 'unidade', 'usuario', 'historico']);
+    const [tabOrder, setTabOrder] = useState(['conta', 'unidade', 'usuario', 'historico']);
 
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
@@ -454,22 +454,96 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     </div>
                 );
-            case 'plano':
-                return <PlanSettings t={t} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} tenant={tenant} />;
+            case 'conta':
+                return (
+                    <div className="animate-fade-in space-y-8">
+                        <div>
+                            <h2 className="text-xl font-bold text-secondary">Dados da Conta</h2>
+                            <p className="text-gray-500 text-sm">Gerencie sua assinatura, informações de faturamento e dados da empresa.</p>
+                        </div>
+
+                        <div className="space-y-12">
+                            {/* Assinatura Section (formerly 'plano') */}
+                            <section>
+                                <PlanSettings t={t} onPayInstallment={onPayInstallment} currentUser={currentUser} onLogout={onLogout} navigate={navigate} tenant={tenant} />
+                            </section>
+
+                            <hr className="border-gray-100" />
+
+                            {/* Informações da Empresa Section */}
+                            <section>
+                                <h3 className="text-lg font-bold text-secondary mb-4">Informações da Empresa</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Nome do Negócio</label>
+                                            <input
+                                                type="text"
+                                                value={tenant?.name || ''}
+                                                disabled
+                                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">CNPJ / CPF</label>
+                                            <input
+                                                type="text"
+                                                value={formatCPFOrCNPJ(tenant?.cnpj_cpf || '')}
+                                                disabled
+                                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">E-mail de Cobrança</label>
+                                            <input
+                                                type="text"
+                                                value={currentUser?.email || ''}
+                                                disabled
+                                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Segmento</label>
+                                            <input
+                                                type="text"
+                                                value={tenant?.business_segment || ''}
+                                                disabled
+                                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 p-4 bg-blue-50 rounded-lg flex items-start space-x-3">
+                                    <svg className="h-5 w-5 text-blue-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p className="text-xs text-blue-700">Para alterar dados cadastrais da empresa ou o e-mail principal, entre em contato com nosso suporte.</p>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                );
             case 'historico':
                 return (
                     <div className="animate-fade-in">
                         <h2 className="text-xl font-bold text-secondary">{t('settingsTabAccessHistory')}</h2>
                         <p className="text-gray-500 text-sm mb-6">{t('settingsAccessHistoryDesc')}</p>
                         <AccessHistoryPage
-                            logs={users.filter(u => u.last_login_at).map(u => ({
-                                id: `login-${u.id}`,
-                                userId: u.id,
-                                action: 'login',
-                                details: 'acessou o sistema',
-                                timestamp: u.last_login_at
+                            logs={auditLogs.map(log => ({
+                                id: log.id.toString(),
+                                userId: log.user_id,
+                                action: log.action,
+                                details: log.details,
+                                timestamp: log.created_at,
+                                ip: log.ip_address,
+                                userAgent: log.user_agent,
+                                userName: log.user?.name,
+                                userAvatar: log.user?.avatar_url
                             }))}
                             users={users}
+                            loading={loading.auditLogs}
                         />
                     </div>
                 );
@@ -526,7 +600,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
                         {tabOrder.map(tabName => {
                             const tabLabels: Record<string, string> = {
-                                'plano': t('settingsTabPlan'),
+                                'conta': 'Dados da Conta',
                                 'unidade': t('settingsTabUnit'),
                                 'usuario': t('settingsTabUser'),
                                 'historico': t('settingsTabAccessHistory')

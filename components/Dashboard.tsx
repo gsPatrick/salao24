@@ -550,7 +550,9 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
 
     const filteredPromotions = promotionsInView.filter(promotion =>
         promotion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        promotion.description.toLowerCase().includes(searchQuery.toLowerCase())
+        promotion.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (promotion.salonName && promotion.salonName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (promotion.targetArea && promotion.targetArea.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     useEffect(() => {
@@ -736,10 +738,12 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                 const formData = new FormData(e.currentTarget);
 
                                 // Gerar URL temporária para imagem (em produção, usar upload real)
-                                let imageUrl = formData.get('imageUrl') as string;
+                                let imageUrl = editingPromotion?.image || '';
                                 if (imageFile) {
                                     // Criar URL temporária base64 (em produção, integrar com serviço de upload)
                                     imageUrl = `data:image/jpeg;base64,${imagePreviewUrl?.split(',')[1] || ''}`;
+                                } else if (formData.get('imageUrl')) {
+                                    imageUrl = formData.get('imageUrl') as string;
                                 }
 
                                 let mobileImageUrl = editingPromotion?.mobileImage || '';
@@ -1245,14 +1249,18 @@ const ExclusivePromotionsPage: React.FC<{
                                     e.preventDefault();
                                     const formData = new FormData(e.currentTarget);
 
-                                    let bannerImageUrl = formData.get('bannerLink') as string;
+                                    let bannerImageUrl = editingExclusive?.bannerImage || '';
                                     if (bannerFile) {
                                         bannerImageUrl = `data:image/jpeg;base64,${bannerPreviewUrl?.split(',')[1] || ''}`;
+                                    } else if (formData.get('bannerImage')) {
+                                        bannerImageUrl = formData.get('bannerImage') as string;
                                     }
 
-                                    let mobileBannerUrl = formData.get('mobileBannerUrl') as string;
+                                    let mobileBannerUrl = editingExclusive?.mobileImage || '';
                                     if (mobileBannerFile) {
                                         mobileBannerUrl = `data:image/jpeg;base64,${mobileBannerPreviewUrl?.split(',')[1] || ''}`;
+                                    } else if (formData.get('mobileBannerUrl')) {
+                                        mobileBannerUrl = formData.get('mobileBannerUrl') as string;
                                     }
 
                                     const exclusive: ExclusivePromotion = {
@@ -2554,14 +2562,18 @@ const MonthlyPackagesPage: React.FC<{
                                         e.preventDefault();
                                         const formData = new FormData(e.currentTarget);
 
-                                        let imageUrl = formData.get('imageUrl') as string;
+                                        let imageUrl = editingPromotion?.image || '';
                                         if (imageFile) {
                                             imageUrl = `data:image/jpeg;base64,${imagePreviewUrl?.split(',')[1] || ''}`;
+                                        } else if (formData.get('imageUrl')) {
+                                            imageUrl = formData.get('imageUrl') as string;
                                         }
 
-                                        let mobileImageUrl = formData.get('mobileImageUrl') as string;
+                                        let mobileImageUrl = editingPromotion?.mobileImage || '';
                                         if (mobileImageFile) {
                                             mobileImageUrl = `data:image/jpeg;base64,${mobileImagePreviewUrl?.split(',')[1] || ''}`;
+                                        } else if (formData.get('mobileImageUrl')) {
+                                            mobileImageUrl = formData.get('mobileImageUrl') as string;
                                         }
 
 
@@ -3194,12 +3206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const handleSaveExclusive = async (exclusive: Promotion) => {
         try {
             const dataToSave = { ...exclusive, type: 'exclusive' as const };
-            if (editingExclusive) {
-                await promotionsAPI.update(exclusive.id, dataToSave);
-            } else {
-                await promotionsAPI.create(dataToSave);
-            }
-            await refreshPromotions();
+            await savePromotion(dataToSave);
             setIsExclusiveModalOpen(false);
             setEditingExclusive(null);
         } catch (error) {
@@ -3207,12 +3214,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             alert("Erro ao salvar promoção exclusiva.");
         }
     };
-
     const handleDeleteExclusive = async (id: number) => {
         if (window.confirm(t('confirmAction'))) {
             try {
-                await promotionsAPI.delete(id);
-                await refreshPromotions();
+                await deletePromotion(id);
             } catch (error) {
                 console.error("Error deleting exclusive promotion:", error);
                 alert("Erro ao excluir promoção exclusiva.");
@@ -3222,10 +3227,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     const handleToggleExclusive = async (id: number) => {
         try {
-            await promotionsAPI.toggle(id);
-            await refreshPromotions();
+            await togglePromotion(id);
         } catch (error) {
             console.error("Error toggling exclusive promotion:", error);
+            alert("Erro ao atualizar promoção exclusiva.");
         }
     };
 

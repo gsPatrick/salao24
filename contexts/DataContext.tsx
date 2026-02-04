@@ -17,7 +17,8 @@ import {
     promotionsAPI,
     packagesAPI,
     salonPlansAPI,
-    contractsAPI
+    contractsAPI,
+    auditLogsAPI
 } from '../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -250,6 +251,25 @@ export interface Unit {
     [key: string]: any;
 }
 
+export interface AuditLog {
+    id: number;
+    tenant_id: number;
+    user_id: number;
+    action: string;
+    entity?: string;
+    entity_id?: number;
+    details: string;
+    ip_address?: string;
+    user_agent?: string;
+    created_at: string;
+    user?: {
+        id: number;
+        name: string;
+        avatar_url?: string;
+        email: string;
+    };
+}
+
 export interface DataContextType {
     // Data
     clients: Client[];
@@ -261,6 +281,7 @@ export interface DataContextType {
     tenant: Tenant | null;
     units: Unit[];
     products: Product[];
+    auditLogs: AuditLog[];
     blocks: TimeBlock[];
     crmSettings: CrmSettings | null;
     promotions: any[];
@@ -287,6 +308,7 @@ export interface DataContextType {
         contractTemplates: boolean;
         salonPlans: boolean;
         blocks: boolean;
+        auditLogs: boolean;
     };
 
     // Error states
@@ -306,6 +328,7 @@ export interface DataContextType {
         contractTemplates: string | null;
         salonPlans: string | null;
         blocks: string | null;
+        auditLogs: string | null;
     };
 
     // Refresh functions
@@ -324,6 +347,7 @@ export interface DataContextType {
     refreshPackages: () => Promise<void>;
     refreshSalonPlans: () => Promise<void>;
     refreshBlocks: () => Promise<void>;
+    refreshAuditLogs: (params?: { limit?: number; offset?: number }) => Promise<void>;
     refreshAll: () => Promise<void>;
 
     // CRUD handlers
@@ -585,6 +609,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [salonPlans, setSalonPlans] = useState<SalonPlan[]>([]);
     const [serviceCategories, setServiceCategories] = useState<string[]>([]);
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
+    const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [occupations, setOccupations] = useState<string[]>([]);
 
     // Automatically update categories and occupations
@@ -636,6 +661,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         promotions: false,
         packages: false,
         salonPlans: false,
+        auditLogs: false,
     });
 
     // Error state
@@ -654,6 +680,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         packages: null as string | null,
         contractTemplates: null as string | null,
         salonPlans: null as string | null,
+        blocks: null as string | null,
+        auditLogs: null as string | null,
     });
 
     // Refresh functions
@@ -895,6 +923,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [isAuthenticated]);
 
+    const refreshAuditLogs = useCallback(async (params?: { limit?: number; offset?: number }) => {
+        if (!isAuthenticated) return;
+        setLoading(prev => ({ ...prev, auditLogs: true }));
+        setErrors(prev => ({ ...prev, auditLogs: null }));
+        try {
+            const response = await auditLogsAPI.getLogs(params);
+            setAuditLogs(response.data || []);
+        } catch (error: any) {
+            console.error('Error fetching audit logs:', error);
+            setErrors(prev => ({ ...prev, auditLogs: error.message }));
+        } finally {
+            setLoading(prev => ({ ...prev, auditLogs: false }));
+        }
+    }, [isAuthenticated]);
+
     const refreshAll = useCallback(async () => {
         await Promise.all([
             refreshClients(),
@@ -913,6 +956,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             refreshSalonPlans(),
             refreshContractTemplates(),
             refreshBlocks(),
+            refreshAuditLogs(),
         ]);
     }, [
         refreshClients,
@@ -1714,13 +1758,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const togglePromotion = async (id: number): Promise<any | null> => {
+        const previousPromotions = [...promotions];
+        setPromotions(prev => prev.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p));
+
         try {
             const response = await promotionsAPI.toggle(id);
+            // We still refresh to ensure we have the latest state from server
             await refreshPromotions();
             return response;
         } catch (error) {
             console.error('Error toggling promotion:', error);
-            return null;
+            setPromotions(previousPromotions);
+            throw error;
         }
     };
 
@@ -1752,6 +1801,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 tenant,
                 units,
                 products,
+                auditLogs,
                 contractTemplates,
                 crmSettings,
                 promotions,
@@ -1777,6 +1827,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 refreshPromotions,
                 refreshPackages,
                 refreshSalonPlans,
+                refreshBlocks,
+                refreshAuditLogs,
                 refreshAll,
                 saveClient,
                 deleteClient,

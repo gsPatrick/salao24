@@ -12,9 +12,10 @@ const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-
 interface AccessHistoryPageProps {
   logs: any[];
   users: any[];
+  loading?: boolean;
 }
 
-const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) => {
+const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, loading }) => {
   const { t } = useLanguage();
   const [userFilter, setUserFilter] = useState('todos');
   const [actionFilter, setActionFilter] = useState('todas');
@@ -26,11 +27,11 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) =>
     agendamento: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: t('historyActionScheduling') },
     exclusao: { icon: <DeleteIcon />, color: 'bg-red-100 text-red-600', label: t('historyActionDelete') },
     download: { icon: <DownloadIcon />, color: 'bg-purple-100 text-purple-600', label: t('historyActionDownload') },
-    cadastro: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: t('historyActionRegister') },
-    contrato: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: t('historyActionContract') },
-    servico: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: t('historyActionService') },
-    pacote: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: t('historyActionPackage') },
+    cadastro: { icon: <AddIcon />, color: 'bg-green-100 text-green-600', label: 'Cadastro' },
+    edicao: { icon: <AddIcon />, color: 'bg-blue-100 text-blue-600', label: 'Edição' },
+    ajuste_estoque: { icon: <AddIcon />, color: 'bg-yellow-100 text-yellow-600', label: 'Ajuste de Estoque' },
     registroPonto: { icon: <LoginIcon />, color: 'bg-cyan-100 text-cyan-600', label: 'Registro de Ponto' },
+    logout: { icon: <LoginIcon />, color: 'bg-orange-100 text-orange-600', label: 'Logout' },
     default: { icon: '?', color: 'bg-gray-100 text-gray-600', label: t('historyActionOther') },
   };
 
@@ -48,26 +49,26 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) =>
           return false;
         }
         if (actionFilter !== 'todas' && getActionInfo(log.action).label !== actionFilter) {
-            return false;
+          return false;
         }
         const logDate = new Date(log.timestamp);
         if (startDate) {
-            const start = new Date(startDate + 'T00:00:00');
-            if (logDate < start) return false;
+          const start = new Date(startDate + 'T00:00:00');
+          if (logDate < start) return false;
         }
         if (endDate) {
-            const end = new Date(endDate + 'T23:59:59');
-            if (logDate > end) return false;
+          const end = new Date(endDate + 'T23:59:59');
+          if (logDate > end) return false;
         }
         return true;
       })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [logs, userFilter, actionFilter, startDate, endDate, t]);
-  
+
   const handleDownload = () => {
     if (filteredLogs.length === 0) {
-        alert(t('noLogsToDownload'));
-        return;
+      alert(t('noLogsToDownload'));
+      return;
     }
 
     const { jsPDF } = jspdf;
@@ -77,22 +78,22 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) =>
     const tableRows: string[][] = [];
 
     filteredLogs.forEach(log => {
-        const actionInfo = getActionInfo(log.action);
-        const formattedDate = new Date(log.timestamp).toLocaleString('pt-BR');
-        const userName = getUserName(log.userId);
+      const actionInfo = getActionInfo(log.action);
+      const formattedDate = new Date(log.timestamp).toLocaleString('pt-BR');
+      const userName = getUserName(log.userId);
 
-        const logData = [
-            formattedDate,
-            userName,
-            actionInfo.label,
-            log.details.replace(/\n/g, ' '),
-        ];
-        tableRows.push(logData);
+      const logData = [
+        formattedDate,
+        userName,
+        actionInfo.label,
+        log.details.replace(/\n/g, ' '),
+      ];
+      tableRows.push(logData);
     });
 
     doc.setFontSize(18);
     doc.text('Histórico de Acesso', 14, 22);
-    
+
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 30);
@@ -104,7 +105,7 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) =>
       theme: 'striped',
       headStyles: { fillColor: [16, 185, 129] }, // Cor primária do Salão24h
     });
-    
+
     const dateStr = new Date().toISOString().split('T')[0];
     doc.save(`historico_acesso_${dateStr}.pdf`);
   };
@@ -134,42 +135,56 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users }) =>
             </div>
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">{t('historyLabelStartDate')}</label>
-              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
             </div>
-             <div>
+            <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">{t('historyLabelEndDate')}</label>
-              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
             </div>
           </div>
           <div className="flex-shrink-0 mt-4 sm:mt-0">
             <button
-                onClick={handleDownload}
-                className="p-2 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark flex items-center justify-center transition-colors"
-                title={t('downloadHistory')}
-                aria-label={t('downloadHistory')}
+              onClick={handleDownload}
+              className="p-2 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark flex items-center justify-center transition-colors"
+              title={t('downloadHistory')}
+              aria-label={t('downloadHistory')}
             >
-                <DownloadIcon />
+              <DownloadIcon />
             </button>
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        {filteredLogs.length > 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredLogs.length > 0 ? (
           filteredLogs.map(log => {
             const actionInfo = getActionInfo(log.action);
             return (
-              <div key={log.id} className="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm">
+              <div key={log.id} className="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-primary/30 transition-colors">
                 <span className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${actionInfo.color}`}>
                   {actionInfo.icon}
                 </span>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-800">
-                    <span className="font-bold text-secondary">{getUserName(log.userId)}</span> {log.details}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(log.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  <div className="flex justify-between items-start">
+                    <p className="text-sm text-gray-800">
+                      <span className="font-bold text-secondary">{log.userName || getUserName(log.userId)}</span> {log.details}
+                    </p>
+                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 uppercase font-medium">
+                      {actionInfo.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-xs text-gray-500">
+                      {new Date(log.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {log.ip && (
+                      <span className="text-[10px] text-gray-400">IP: {log.ip}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             );

@@ -735,4 +735,11 @@ export const trainingAPI = {
     }
 };
 
+export const auditLogsAPI = {
+    getLogs: async (params?: { limit?: number; offset?: number }) => {
+        const response = await api.get('/audit-logs', { params });
+        return response.data;
+    }
+};
+
 export default api;
