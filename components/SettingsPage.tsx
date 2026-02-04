@@ -184,7 +184,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [tabOrder, setTabOrder] = useState(['conta', 'unidade', 'usuario', 'historico']);
+    const [tabOrder, setTabOrder] = useState(['conta', 'unidade', 'usuario', 'email-server', 'historico']);
 
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
@@ -218,6 +218,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             return () => clearTimeout(timer);
         }
     }, [notification]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab && tabOrder.includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [tabOrder]);
 
     const showNotification = (message: string) => {
         setNotification(message);
@@ -525,6 +533,96 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     </div>
                 );
+            case 'email-server':
+                const activeUnit = units.find(u => u.name === selectedUnit) || units[0];
+                return (
+                    <div className="animate-fade-in space-y-6">
+                        <div>
+                            <h2 className="text-xl font-bold text-secondary">Configuração de E-mail (SMTP)</h2>
+                            <p className="text-gray-500 text-sm">Configure seu próprio servidor de e-mail para envios de Mala Direta e notificações.</p>
+                        </div>
+
+                        {activeUnit ? (
+                            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Servidor SMTP (Host)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="smtp.exemplo.com"
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                defaultValue={activeUnit.smtp_settings?.host || ''}
+                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, host: e.target.value } })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Porta</label>
+                                            <input
+                                                type="number"
+                                                placeholder="587"
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                defaultValue={activeUnit.smtp_settings?.port || 587}
+                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, port: parseInt(e.target.value) } })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Usuário / E-mail</label>
+                                            <input
+                                                type="text"
+                                                placeholder="contato@seudominio.com"
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                defaultValue={activeUnit.smtp_settings?.user || ''}
+                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, user: e.target.value } })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Senha</label>
+                                            <input
+                                                type="password"
+                                                placeholder="********"
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                defaultValue={activeUnit.smtp_settings?.pass || ''}
+                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, pass: e.target.value } })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const { marketingAPI } = require('../lib/api');
+                                                const result = await marketingAPI.testSMTP(activeUnit.smtp_settings);
+                                                if (result.success) {
+                                                    alert('Teste realizado com sucesso! ' + result.message);
+                                                }
+                                            } catch (error: any) {
+                                                alert('Falha no teste: ' + (error.response?.data?.error || error.message));
+                                            }
+                                        }}
+                                        className="bg-secondary hover:bg-secondary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
+                                    >
+                                        Testar Conexão
+                                    </button>
+                                    <button
+                                        onClick={() => handleUnitSave(activeUnit)}
+                                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
+                                    >
+                                        Salvar SMTP
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                <p className="text-gray-500">Selecione ou cadastre uma unidade para configurar o servidor de e-mail.</p>
+                            </div>
+                        )}
+                    </div>
+                );
             case 'historico':
                 return (
                     <div className="animate-fade-in">
@@ -603,6 +701,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 'conta': 'Dados da Conta',
                                 'unidade': t('settingsTabUnit'),
                                 'usuario': t('settingsTabUser'),
+                                'email-server': 'Servidor de E-mail',
                                 'historico': t('settingsTabAccessHistory')
                             };
                             return <TabButton key={tabName} tabName={tabName} label={tabLabels[tabName] || tabName} />;

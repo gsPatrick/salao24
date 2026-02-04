@@ -7,7 +7,7 @@ import DirectMailDetailsModal from './DirectMailDetailsModal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Client, DirectMailCampaignData } from '../types';
 import ScheduleSettingsModal, { Schedule } from './ScheduleSettingsModal';
-import { aiAPI } from '../lib/api';
+import { aiAPI, marketingAPI } from '../lib/api';
 // FIX: Add missing imports for DirectMailCampaign and EmailServerSettings.
 import { DirectMailCampaign } from './DirectMailCampaign';
 import { EmailServerSettings } from './EmailServerSettings';
@@ -82,6 +82,7 @@ interface MarketingCampaignsProps {
     appointments: any[];
     isIndividualPlan: boolean;
     unitName: string;
+    unitPhone?: string;
 
     // Acquisition Channel Props
     acquisitionChannels: AcquisitionChannel[];
@@ -206,7 +207,8 @@ const NewCampaignModal: React.FC<{
     clients: Client[];
     appointments: Appointment[];
     isIndividualPlan: boolean;
-}> = ({ isOpen, onClose, onSave, campaignToEdit, clients, appointments, isIndividualPlan }) => {
+    unitPhone?: string;
+}> = ({ isOpen, onClose, onSave, campaignToEdit, clients, appointments, isIndividualPlan, unitPhone }) => {
     const { t } = useLanguage();
     const [name, setName] = useState('');
     const [publicoAlvo, setPublicoAlvo] = useState<string[]>([]);
@@ -220,6 +222,7 @@ const NewCampaignModal: React.FC<{
     const [scheduleDate, setScheduleDate] = useState('');
     const [sendLimit, setSendLimit] = useState(200);
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [estimatedAudience, setEstimatedAudience] = useState<number | null>(null);
 
     const [isExiting, setIsExiting] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -242,15 +245,23 @@ const NewCampaignModal: React.FC<{
         return Array.from(tags).sort();
     }, [clients]);
 
-    const handleAudienceChange = (groupName: string, isTag: boolean = false) => {
+    const handleAudienceChange = async (groupName: string, isTag: boolean = false) => {
         const identifier = isTag ? `tag:${groupName}` : groupName;
-        // Acquisition Channel tracking is for the future, show coming soon if trying to add a group that looks like a channel?
-        // Actually, let's just keep the UI as is for now, but the analytics part will be coming soon.
-        setPublicoAlvo(prev =>
-            prev.includes(identifier)
-                ? prev.filter(g => g !== identifier)
-                : [...prev, identifier]
-        );
+        const newAudience = publicoAlvo.includes(identifier)
+            ? publicoAlvo.filter(g => g !== identifier)
+            : [...publicoAlvo, identifier];
+
+        setPublicoAlvo(newAudience);
+
+        // Fetch dynamic count from backend
+        try {
+            const data = await marketingAPI.getAudienceCount(groupName);
+            if (data.success) {
+                setEstimatedAudience(data.count);
+            }
+        } catch (error) {
+            console.error('Error fetching audience count:', error);
+        }
     };
 
     const { audienceSum, uniqueClientCount } = useMemo(() => {
@@ -472,6 +483,11 @@ const NewCampaignModal: React.FC<{
                                                 ))}
                                             </div>
                                         )}
+                                        {estimatedAudience !== null && publicoAlvo.length > 0 && (
+                                            <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700 font-medium">
+                                                Estimativa de alcance: {estimatedAudience} contatos
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="text-center md:text-left">
                                         <label className="block text-sm font-medium text-gray-700">
@@ -491,11 +507,18 @@ const NewCampaignModal: React.FC<{
                                 </div>
 
                                 <div>
-                                    <label htmlFor="phone-number" className="block text-sm font-medium text-gray-700">Selecionar número de envio</label>
+                                    <label htmlFor="phone-number" className="block text-sm font-medium text-gray-700">Selecionar número de envio (WhatsApp)</label>
                                     <select id="phone-number" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                                         <option value="">Selecione um número...</option>
-                                        <option value="WhatsApp para Atendimento">WhatsApp para Atendimento</option>
-                                        <option value="WhatsApp para Leads" disabled={isIndividualPlan}>WhatsApp para Leads {isIndividualPlan && '(Plano Empresa)'}</option>
+                                        {unitPhone && (
+                                            <option value={unitPhone}>Número Principal ({unitPhone})</option>
+                                        )}
+                                        {!unitPhone && (
+                                            <>
+                                                <option value="WhatsApp para Atendimento">WhatsApp para Atendimento</option>
+                                                <option value="WhatsApp para Leads" disabled={isIndividualPlan}>WhatsApp para Leads {isIndividualPlan && '(Plano Empresa)'}</option>
+                                            </>
+                                        )}
                                     </select>
                                     <p className="text-xs text-gray-500 mt-1">O número deve estar conectado na página de Canais.</p>
                                 </div>
@@ -586,20 +609,13 @@ const NewCampaignModal: React.FC<{
 // FIX: Changed to a named export to resolve module resolution errors.
 export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => {
     const { t } = useLanguage();
-    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan } = props;
+    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate } = props;
     const [activeTab, setActiveTab] = useState('campanhas');
 
     const TabButton: React.FC<{ tabId: string; label: string }> = ({ tabId, label }) => (
         <button
             onClick={() => {
-                if (['servidor'].includes(tabId)) {
-                    const messages: { [key: string]: string } = {
-                        'servidor': 'A configuração de servidor SMTP próprio para e-mail marketing estará disponível na versão 2.0.'
-                    };
-                    onComingSoon?.(messages[tabId]);
-                } else {
-                    setActiveTab(tabId);
-                }
+                setActiveTab(tabId);
             }}
             className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === tabId ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
@@ -634,10 +650,10 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                             Configure suas credenciais SMTP para ter controle total sobre o envio de e-mails transacionais e marketing.
                         </p>
                         <button
-                            onClick={() => onComingSoon?.('Servidor SMTP')}
+                            onClick={() => navigate?.('settings?tab=email-server')}
                             className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
                         >
-                            Configurar Servidor
+                            Configurar Servidor nas Configurações
                         </button>
                     </div>
                 )}
@@ -649,7 +665,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
 
 // --- Tab Components ---
 
-const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate }) => {
+const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, unitPhone }) => {
     const { t } = useLanguage();
     const [isUpsertModalOpen, setIsUpsertModalOpen] = useState(false);
     const [campaignToEdit, setCampaignToEdit] = useState<Campaign | null>(null);
@@ -799,7 +815,8 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
                 campaignToEdit={campaignToEdit}
                 clients={clients || []}
                 appointments={appointments || []}
-                isIndividualPlan={isIndividualPlan || false}
+                isIndividualPlan={!!isIndividualPlan}
+                unitPhone={unitPhone}
             />
             <CampaignDetailsModal
                 isOpen={detailsModalOpen}

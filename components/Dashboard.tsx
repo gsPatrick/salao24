@@ -3320,6 +3320,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }, [clients, professionals, transactions, appointments, services, packages, salonPlans, products, selectedUnit]);
 
     const availableUnits = useMemo(() => units.map(u => u.name), [units]);
+    const unitPhone = useMemo(() => {
+        const unit = units.find(u => u.name === selectedUnit);
+        if (!unit) return undefined;
+        return Array.isArray(unit.phone) ? unit.phone[0] : unit.phone;
+    }, [units, selectedUnit]);
 
     const createDataHandler = (dataType: keyof typeof currentUnitData) => (newItem: any) => {
         setAllData((prevData: any) => {
@@ -4373,6 +4378,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 appointments={appointments || []}
                 isIndividualPlan={isIndividualPlan}
                 unitName={selectedUnit}
+                unitPhone={unitPhone}
                 acquisitionChannels={acquisitionChannels}
                 onSaveAcquisitionChannel={handleSaveAcquisitionChannel}
                 onSuspendAcquisitionChannel={handleSuspendAcquisitionChannel}

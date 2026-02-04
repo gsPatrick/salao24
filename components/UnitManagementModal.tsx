@@ -28,7 +28,7 @@ interface UnitSettings {
 interface Unit {
   id: number;
   name: string;
-  phone: string;
+  phone: string | string[];
   address: {
     street: string;
     number: string;
@@ -148,7 +148,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
         setFormData({
           name: unitToEdit.name,
           shortDescription: (unitToEdit as any).shortDescription || '',
-          phone: unitToEdit.phone,
+          phone: Array.isArray(unitToEdit.phone) ? unitToEdit.phone[0] : (unitToEdit.phone || ''),
           cep: unitToEdit.address.cep,
           street: unitToEdit.address.street,
           number: unitToEdit.address.number,
@@ -159,11 +159,11 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
           adminName: unitToEdit.admin_name || '',
           adminPhone: unitToEdit.admin_phone || '',
         });
-        setAdditionalPhones(unitToEdit.additionalPhones || []);
-        setLogo(unitToEdit.logo || null);
-        setPrimaryColor(unitToEdit.primaryColor || '#10b981');
-        setWorkingHours(unitToEdit.workingHours || defaultWorkingHours);
-        setCheckinMessage(unitToEdit.checkinMessage || 'Olá, [NOME_CLIENTE]! Bem-vindo(a). Avisamos ao [NOME_PROFISSIONAL] que você chegou.');
+        setAdditionalPhones(unitToEdit.additional_phones || (unitToEdit as any).additionalPhones || []);
+        setLogo(unitToEdit.logo_url || (unitToEdit as any).logo || null);
+        setPrimaryColor(unitToEdit.primary_color || (unitToEdit as any).primaryColor || '#10b981');
+        setWorkingHours(unitToEdit.working_hours || (unitToEdit as any).workingHours || defaultWorkingHours);
+        setCheckinMessage(unitToEdit.checkin_message || (unitToEdit as any).checkinMessage || 'Olá, [NOME_CLIENTE]! Bem-vindo(a). Avisamos ao [NOME_PROFISSIONAL] que você chegou.');
         setSettings(unitToEdit.settings || initialSettings);
       } else {
         setFormData(initialFormData);
@@ -273,8 +273,8 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Partial<Record<string, string>> = {};
-    (Object.keys(formData) as Array<keyof typeof formData>).forEach(key => {
-      const error = validateField(key, formData[key]);
+    (Object.keys(formData) as Array<keyof typeof formData>).forEach((key: string) => {
+      const error = validateField(key, formData[key as keyof typeof formData]);
       if (error) newErrors[key] = error;
     });
 
@@ -287,7 +287,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
       id: unitToEdit?.id,
       name: formData.name,
       shortDescription: formData.shortDescription,
-      phone: formData.phone,
+      phone: Array.isArray(unitToEdit?.phone) ? [formData.phone, ...unitToEdit.phone.slice(1)] : [formData.phone],
       address: {
         cep: formData.cep,
         street: formData.street,
@@ -296,11 +296,11 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
         city: formData.city,
         state: formData.state,
       },
-      additionalPhones: additionalPhones,
-      logo,
-      primaryColor,
-      workingHours,
-      checkinMessage,
+      additional_phones: additionalPhones,
+      logo_url: logo,
+      primary_color: primaryColor,
+      working_hours: workingHours,
+      checkin_message: checkinMessage,
       cnpj_cpf: formData.cnpjCpf,
       admin_name: formData.adminName,
       admin_phone: formData.adminPhone,

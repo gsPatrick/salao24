@@ -511,6 +511,16 @@ export const marketingAPI = {
     },
     deleteDirectMail: async (id: number) => {
         await api.delete(`/marketing/direct-mail/${id}`);
+    },
+
+    // SMTP and Audience
+    getAudienceCount: async (audience: string) => {
+        const response = await api.get('/marketing/audience-count', { params: { audience } });
+        return response.data;
+    },
+    testSMTP: async (smtpSettings: any) => {
+        const response = await api.post('/marketing/test-smtp', smtpSettings);
+        return response.data;
     }
 };
 
