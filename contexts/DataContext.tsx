@@ -243,6 +243,10 @@ export interface Unit {
     primaryColor?: string;
     workingHours?: any[];
     checkinMessage?: string;
+    cnpj_cpf?: string;
+    admin_name?: string;
+    admin_phone?: string;
+    settings?: any;
     [key: string]: any;
 }
 
@@ -371,6 +375,7 @@ export interface DataContextType {
     deleteOccupation: (occToDelete: string) => Promise<void>;
 
     saveUnit: (unit: Partial<Unit>) => Promise<Unit | null>;
+    uploadUnitLogo: (unitId: number, file: File) => Promise<string | null>;
     deleteUnit: (id: number) => Promise<boolean>;
 
     saveProduct: (product: Partial<Product>) => Promise<Product | null>;
@@ -521,6 +526,10 @@ const mapUnitFromAPI = (apiUnit: any): Unit => ({
     primaryColor: apiUnit.primary_color || apiUnit.primaryColor,
     workingHours: apiUnit.working_hours || apiUnit.workingHours,
     checkinMessage: apiUnit.checkin_message || apiUnit.checkinMessage,
+    admin_name: apiUnit.admin_name || apiUnit.adminName,
+    admin_phone: apiUnit.admin_phone || apiUnit.adminPhone,
+    cnpj_cpf: apiUnit.cnpj_cpf || apiUnit.cnpjCpf,
+    settings: apiUnit.settings || {},
 });
 
 const mapPackageFromAPI = (apiPackage: any): Package => ({
@@ -1525,6 +1534,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 primary_color: unit.primaryColor,
                 working_hours: unit.workingHours,
                 checkin_message: unit.checkinMessage,
+                cnpj_cpf: unit.cnpj_cpf || unit.cnpjCpf,
+                admin_name: unit.admin_name || unit.adminName,
+                admin_phone: unit.admin_phone || unit.adminPhone,
+                settings: unit.settings || {},
             };
 
             let response;
@@ -1537,6 +1550,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return mapUnitFromAPI(response.data || response);
         } catch (error) {
             console.error('Error saving unit:', error);
+            return null;
+        }
+    }
+
+    const uploadUnitLogo = async (unitId: number, file: File): Promise<string | null> => {
+        try {
+            const response = await unitsAPI.uploadLogo(unitId, file);
+            await refreshUnits();
+            return response.url;
+        } catch (error) {
+            console.error('Error uploading unit logo:', error);
             return null;
         }
     }

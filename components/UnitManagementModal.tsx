@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
+import { useData } from '../contexts/DataContext';
 
 // --- Interfaces ---
 interface AdditionalPhone {
@@ -16,6 +17,14 @@ interface WorkingHour {
   lunchStart: string;
   lunchEnd: string;
 }
+
+interface UnitSettings {
+  appointmentInterval: number;
+  cancelNoticeHours: number;
+  notifyWhatsApp: boolean;
+  notifyEmail: boolean;
+}
+
 interface Unit {
   id: number;
   name: string;
@@ -33,6 +42,10 @@ interface Unit {
   primaryColor?: string;
   workingHours?: WorkingHour[];
   checkinMessage?: string;
+  cnpj_cpf?: string;
+  admin_name?: string;
+  admin_phone?: string;
+  settings?: UnitSettings;
 }
 
 interface UnitManagementModalProps {
@@ -53,6 +66,15 @@ const initialFormData = {
   city: '',
   state: '',
   cnpjCpf: '',
+  adminName: '',
+  adminPhone: '',
+};
+
+const initialSettings: UnitSettings = {
+  appointmentInterval: 30,
+  cancelNoticeHours: 24,
+  notifyWhatsApp: true,
+  notifyEmail: true,
 };
 
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>;
@@ -80,17 +102,20 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 // --- Component ---
 const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClose, onSave, unitToEdit }) => {
   const { t } = useLanguage();
+  const { uploadUnitLogo } = useData();
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [additionalPhones, setAdditionalPhones] = useState<AdditionalPhone[]>([]);
   const [isExiting, setIsExiting] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // New states
   const [logo, setLogo] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState('#10b981');
   const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
   const [checkinMessage, setCheckinMessage] = useState('');
+  const [settings, setSettings] = useState<UnitSettings>(initialSettings);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const defaultWorkingHours = useMemo(() => [
@@ -103,9 +128,10 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
     { day: t('daySunday'), open: false, start: '09:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
   ], [t]);
 
-  const validateField = useCallback((name: keyof typeof formData, value: string) => {
+  const validateField = useCallback((name: string, value: string) => {
     let error = '';
-    if (!value) {
+    const requiredFields = ['name', 'phone', 'cep', 'street', 'number', 'neighborhood', 'city', 'state'];
+    if (!value && requiredFields.includes(name)) {
       error = t('errorRequired');
     } else if (name === 'phone' && value.replace(/\D/g, '').length < 10) {
       error = t('errorInvalidPhone');
@@ -121,7 +147,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
       if (unitToEdit) {
         setFormData({
           name: unitToEdit.name,
-          shortDescription: unitToEdit.shortDescription || '',
+          shortDescription: (unitToEdit as any).shortDescription || '',
           phone: unitToEdit.phone,
           cep: unitToEdit.address.cep,
           street: unitToEdit.address.street,
@@ -129,12 +155,16 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
           neighborhood: unitToEdit.address.neighborhood,
           city: unitToEdit.address.city,
           state: unitToEdit.address.state,
+          cnpjCpf: unitToEdit.cnpj_cpf || '',
+          adminName: unitToEdit.admin_name || '',
+          adminPhone: unitToEdit.admin_phone || '',
         });
         setAdditionalPhones(unitToEdit.additionalPhones || []);
         setLogo(unitToEdit.logo || null);
         setPrimaryColor(unitToEdit.primaryColor || '#10b981');
         setWorkingHours(unitToEdit.workingHours || defaultWorkingHours);
         setCheckinMessage(unitToEdit.checkinMessage || 'Olá, [NOME_CLIENTE]! Bem-vindo(a). Avisamos ao [NOME_PROFISSIONAL] que você chegou.');
+        setSettings(unitToEdit.settings || initialSettings);
       } else {
         setFormData(initialFormData);
         setAdditionalPhones([]);
@@ -142,6 +172,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
         setPrimaryColor('#10b981');
         setWorkingHours(defaultWorkingHours);
         setCheckinMessage('Olá, [NOME_CLIENTE]! Bem-vindo(a). Avisamos ao [NOME_PROFISSIONAL] que você chegou.');
+        setSettings(initialSettings);
       }
       setErrors({});
     }
@@ -155,13 +186,6 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
     }, 300);
   };
 
-  const formatPhone = (value: string) => {
-    return value.replace(/\D/g, '').slice(0, 11).replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\s\d{5})(\d)/, '$1-$2');
-  };
-
-  const formatCEP = (value: string) => {
-    return value.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
-  };
 
   const handleCepSearch = async () => {
     const cep = formData.cep.replace(/\D/g, '');
@@ -185,21 +209,20 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: validateField(name as keyof typeof formData, value) }));
+      setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
     }
 
     let formattedValue = value;
     if (name === 'cep') formattedValue = formatCEP(value);
-    if (name === 'phone') formattedValue = formatPhone(value);
+    if (name === 'phone' || name === 'adminPhone') formattedValue = formatPhone(value);
     if (name === 'cnpjCpf') formattedValue = formatCPFOrCNPJ(value);
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
-
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setErrors(prev => ({ ...prev, [name]: validateField(name as keyof typeof formData, value) }));
+    setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
     if (name === 'cep' && !errors.cep) {
       handleCepSearch();
     }
@@ -223,13 +246,20 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
     setAdditionalPhones(additionalPhones.filter((_, i) => i !== index));
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setLogo(event.target?.result as string);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+
+      if (unitToEdit?.id) {
+        setIsUploading(true);
+        const urlRequest = await uploadUnitLogo(unitToEdit.id, file);
+        if (urlRequest) setLogo(urlRequest);
+        setIsUploading(false);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => setLogo(event.target?.result as string);
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -242,7 +272,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: Partial<Record<keyof typeof formData, string>> = {};
+    const newErrors: Partial<Record<string, string>> = {};
     (Object.keys(formData) as Array<keyof typeof formData>).forEach(key => {
       const error = validateField(key, formData[key]);
       if (error) newErrors[key] = error;
@@ -271,13 +301,18 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
       primaryColor,
       workingHours,
       checkinMessage,
+      cnpj_cpf: formData.cnpjCpf,
+      admin_name: formData.adminName,
+      admin_phone: formData.adminPhone,
+      settings,
     };
     onSave(unitData);
     handleClose();
   };
 
   const isFormValid = useMemo(() => {
-    const hasRequiredValues = Object.values(formData).every(value => !!value);
+    const requiredFields = ['name', 'phone', 'cep', 'street', 'number', 'neighborhood', 'city', 'state'];
+    const hasRequiredValues = requiredFields.every(key => !!formData[key as keyof typeof formData]);
     const hasNoErrors = Object.values(errors).every(error => !error);
     return hasRequiredValues && hasNoErrors;
   }, [formData, errors]);
@@ -293,6 +328,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
           <div className="p-6">
             <h3 className="text-xl font-bold text-secondary">{title}</h3>
             <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+
               <CollapsibleSection title={t('unitModalSectionData')} defaultOpen={true}>
                 <div className="space-y-4">
                   <div>
@@ -300,16 +336,29 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                     <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${errors.name ? 'border-red-500' : 'border-gray-300'}`} />
                     {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
                   </div>
-                  <div>
-                    <label htmlFor="shortDescription" className="block text-sm font-medium text-gray-700">{t('unitModalLabelShortDescription')}</label>
-                    <input type="text" id="shortDescription" name="shortDescription" value={formData.shortDescription} onChange={handleChange} placeholder={t('unitModalPlaceholderShortDescription')} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
-                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{t('unitModalLabelMainPhone')}</label>
                       <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} required maxLength={15} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${errors.phone ? 'border-red-500' : 'border-gray-300'}`} />
                       {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
                     </div>
+                    <div>
+                      <label htmlFor="cnpjCpf" className="block text-sm font-medium text-gray-700">CNPJ / CPF</label>
+                      <input type="text" id="cnpjCpf" name="cnpjCpf" value={formData.cnpjCpf} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection title={t('settingsUnitSectionRegistration')}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="adminName" className="block text-sm font-medium text-gray-700">{t('settingsUnitLabelAdminName')}</label>
+                    <input type="text" id="adminName" name="adminName" value={formData.adminName} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
+                  </div>
+                  <div>
+                    <label htmlFor="adminPhone" className="block text-sm font-medium text-gray-700">{t('settingsUnitLabelAdminPhone')}</label>
+                    <input type="tel" id="adminPhone" name="adminPhone" value={formData.adminPhone} onChange={handleChange} maxLength={15} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
                   </div>
                 </div>
               </CollapsibleSection>
@@ -320,13 +369,15 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                   <div className="flex items-center gap-4">
                     <label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelLogo')}</label>
                     {logo && <img src={logo} alt="logo preview" className="h-12 w-12 object-contain rounded-md bg-gray-100 p-1 border" />}
-                    <button type="button" onClick={() => logoInputRef.current?.click()} className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">{t('settingsSpaceButtonChange')}</button>
+                    <button type="button" onClick={() => logoInputRef.current?.click()} disabled={isUploading} className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                      {isUploading ? '...' : t('settingsSpaceButtonChange')}
+                    </button>
                     <input type="file" accept="image/*" onChange={handleLogoChange} ref={logoInputRef} className="hidden" />
                   </div>
                   <div className="flex items-center gap-4">
                     <label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelPrimaryColor')}</label>
-                    <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 border-none p-0" />
-                    <div className="p-2 rounded-md" style={{ backgroundColor: primaryColor, color: 'white' }}>{t('settingsSpaceExample')}</div>
+                    <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 border-none p-0 cursor-pointer" />
+                    <div className="p-2 rounded-md font-bold text-sm" style={{ backgroundColor: primaryColor, color: '#fff', textShadow: '0px 1px 2px rgba(0,0,0,0.5)' }}>{t('settingsSpaceExample')}</div>
                   </div>
                 </div>
               </CollapsibleSection>
@@ -335,48 +386,51 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label htmlFor="cep" className="block text-sm font-medium text-gray-700">{t('unitModalLabelCEP')}</label>
-                    <input type="text" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} required maxLength={9} placeholder="00000-000" className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
+                    <div className="relative">
+                      <input type="text" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} required maxLength={9} placeholder="00000-000" className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
+                      {isFetchingCep && <div className="absolute right-2 top-2"><div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div></div>}
+                    </div>
                     {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label htmlFor="street" className="block text-sm font-medium text-gray-700">{t('unitModalLabelStreet')}</label>
                     <input type="text" id="street" name="street" value={formData.street} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.street ? 'border-red-500' : 'border-gray-300'}`} />
-                    {errors.street && <p className="text-xs text-red-600 mt-1">{errors.street}</p>}
                   </div>
                   <div>
                     <label htmlFor="number" className="block text-sm font-medium text-gray-700">{t('unitModalLabelNumber')}</label>
-                    <input type="text" id="number" name="number" value={formData.number} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.number ? 'border-red-500' : 'border-gray-300'}`} />
-                    {errors.number && <p className="text-xs text-red-600 mt-1">{errors.number}</p>}
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700">{t('unitModalLabelNeighborhood')}</label>
-                    <input type="text" id="neighborhood" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'}`} />
-                    {errors.neighborhood && <p className="text-xs text-red-600 mt-1">{errors.neighborhood}</p>}
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700">{t('unitModalLabelCity')}</label>
-                    <input type="text" id="city" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.city ? 'border-red-500' : 'border-gray-300'}`} />
-                    {errors.city && <p className="text-xs text-red-600 mt-1">{errors.city}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="state" className="block text-sm font-medium text-gray-700">{t('unitModalLabelState')}</label>
-                    <input type="text" id="state" name="state" value={formData.state} onChange={handleChange} onBlur={handleBlur} required maxLength={2} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.state ? 'border-red-500' : 'border-gray-300'}`} />
-                    {errors.state && <p className="text-xs text-red-600 mt-1">{errors.state}</p>}
+                    <input type="text" id="number" name="number" value={formData.number} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                   </div>
                 </div>
               </CollapsibleSection>
 
-              <CollapsibleSection title={t('unitModalSectionAdditionalPhones')}>
-                <div className="space-y-3 mt-2">
-                  {additionalPhones.map((phone, index) => (
-                    <div key={index} className="flex items-center gap-2 bg-light p-2 rounded-md">
-                      <input type="text" placeholder={t('unitModalPlaceholderSector')} value={phone.sector} onChange={(e) => handleAdditionalPhoneChange(index, 'sector', e.target.value)} className="w-1/3 p-2 border border-gray-300 rounded-md shadow-sm text-sm" />
-                      <input type="tel" placeholder={t('unitModalPlaceholderNumber')} value={phone.number} maxLength={15} onChange={(e) => handleAdditionalPhoneChange(index, 'number', e.target.value)} className="flex-1 p-2 border border-gray-300 rounded-md shadow-sm text-sm" />
-                      <button type="button" onClick={() => handleRemovePhone(index)} className="p-2 text-red-500 hover:bg-red-100 rounded-full" aria-label={t('unitModalLabelRemovePhone')}><TrashIcon /></button>
-                    </div>
-                  ))}
+              <CollapsibleSection title={t('settingsUnitSectionFlow')}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">{t('settingsUnitLabelAppointmentInterval')}</label>
+                    <select value={settings.appointmentInterval} onChange={e => setSettings({ ...settings, appointmentInterval: parseInt(e.target.value) })} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      {[15, 30, 45, 60].map(v => <option key={v} value={v}>{v} min</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">{t('settingsUnitLabelCancelNotice')}</label>
+                    <select value={settings.cancelNoticeHours} onChange={e => setSettings({ ...settings, cancelNoticeHours: parseInt(e.target.value) })} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      {[2, 4, 12, 24, 48].map(v => <option key={v} value={v}>{v} horas</option>)}
+                    </select>
+                  </div>
                 </div>
-                <button type="button" onClick={handleAddPhone} className="mt-3 w-full flex items-center justify-center p-2 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary hover:text-primary transition-colors"><PlusIcon />{t('unitModalButtonAddPhone')}</button>
+                <div className="mt-4">
+                  <h4 className="text-sm font-bold text-gray-700 mb-2">{t('settingsUnitSectionNotifications')}</h4>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={settings.notifyWhatsApp} onChange={e => setSettings({ ...settings, notifyWhatsApp: e.target.checked })} className="h-4 w-4 text-primary rounded" />
+                      <span className="text-sm text-gray-700">{t('settingsUnitLabelNotifyWhatsapp')}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={settings.notifyEmail} onChange={e => setSettings({ ...settings, notifyEmail: e.target.checked })} className="h-4 w-4 text-primary rounded" />
+                      <span className="text-sm text-gray-700">{t('settingsUnitLabelNotifyEmail')}</span>
+                    </label>
+                  </div>
+                </div>
               </CollapsibleSection>
 
               <CollapsibleSection title={t('settingsSpaceSectionWorkingHours')}>
@@ -388,13 +442,13 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                         <input type="checkbox" checked={wh.open} onChange={e => handleWorkingHourChange(index, 'open', e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
                         <label className="ml-3 font-medium text-gray-800">{wh.day}</label>
                       </div>
-                      <div className="sm:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
-                        <input type="time" value={wh.start} onChange={e => handleWorkingHourChange(index, 'start', e.target.value)} disabled={!wh.open} className="p-1 border rounded-md disabled:bg-gray-200" />
-                        <input type="time" value={wh.end} onChange={e => handleWorkingHourChange(index, 'end', e.target.value)} disabled={!wh.open} className="p-1 border rounded-md disabled:bg-gray-200" />
+                      <div className="sm:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-2 items-center">
+                        <input type="time" value={wh.start} onChange={e => handleWorkingHourChange(index, 'start', e.target.value)} disabled={!wh.open} className="p-1 border rounded-md text-sm disabled:bg-gray-200" />
+                        <input type="time" value={wh.end} onChange={e => handleWorkingHourChange(index, 'end', e.target.value)} disabled={!wh.open} className="p-1 border rounded-md text-sm disabled:bg-gray-200" />
                         <div className="col-span-2 flex items-center gap-2">
-                          <label className="text-xs text-gray-500">{t('settingsSpaceLabelLunch')}</label>
-                          <input type="time" value={wh.lunchStart} onChange={e => handleWorkingHourChange(index, 'lunchStart', e.target.value)} disabled={!wh.open} className="w-full p-1 border rounded-md disabled:bg-gray-200" />
-                          <input type="time" value={wh.lunchEnd} onChange={e => handleWorkingHourChange(index, 'lunchEnd', e.target.value)} disabled={!wh.open} className="w-full p-1 border rounded-md disabled:bg-gray-200" />
+                          <label className="text-[10px] text-gray-500 uppercase font-bold">{t('settingsSpaceLabelLunch')}</label>
+                          <input type="time" value={wh.lunchStart} onChange={e => handleWorkingHourChange(index, 'lunchStart', e.target.value)} disabled={!wh.open} className="w-full p-1 border rounded-md text-sm disabled:bg-gray-200" />
+                          <input type="time" value={wh.lunchEnd} onChange={e => handleWorkingHourChange(index, 'lunchEnd', e.target.value)} disabled={!wh.open} className="w-full p-1 border rounded-md text-sm disabled:bg-gray-200" />
                         </div>
                       </div>
                     </div>
@@ -411,7 +465,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                     value={checkinMessage}
                     onChange={e => setCheckinMessage(e.target.value)}
                     rows={3}
-                    className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                    className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                   />
                   <p className="text-xs text-gray-500 mt-1">{t('settingsSpaceDescWelcomeMessage')}</p>
                 </div>
@@ -420,7 +474,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
             </div>
           </div>
           <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-            <button type="submit" disabled={!isFormValid} className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+            <button type="submit" disabled={!isFormValid || isUploading} className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
               {t('save')}
             </button>
             <button type="button" onClick={handleClose} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">

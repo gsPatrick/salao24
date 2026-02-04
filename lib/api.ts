@@ -362,6 +362,14 @@ export const unitsAPI = {
         const response = await api.delete(`/units/${id}`);
         return response.data;
     },
+    uploadLogo: async (id: number, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file); // Generic upload expects 'file'
+        const response = await api.post(`/upload?type=unit`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
 };
 
 export const plansAPI = {
