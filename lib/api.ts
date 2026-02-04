@@ -9,11 +9,15 @@ const api = axios.create({
     },
 });
 
-// Request interceptor to add token
+// Request interceptor to add token and unit context
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+    }
+    const unitId = localStorage.getItem('salao_unit_id');
+    if (unitId) {
+        config.headers['x-unit-id'] = unitId;
     }
     return config;
 }, (error) => {

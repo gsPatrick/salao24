@@ -605,7 +605,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [crmSettings, setCrmSettings] = useState<CrmSettings | null>(null);
     const [promotions, setPromotions] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
-    const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+    const [selectedUnitId, setSelectedUnitId] = useState<number | null>(() => {
+        const saved = localStorage.getItem('salao_unit_id');
+        return saved ? parseInt(saved) : null;
+    });
     const [packages, setPackages] = useState<Package[]>([]);
     const [salonPlans, setSalonPlans] = useState<SalonPlan[]>([]);
     const [serviceCategories, setServiceCategories] = useState<string[]>([]);
@@ -613,7 +616,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [occupations, setOccupations] = useState<string[]>([]);
 
-    // Automatically update categories and occupations
+    // Sync selectedUnitId to localStorage and refresh data
+    useEffect(() => {
+        if (selectedUnitId) {
+            localStorage.setItem('salao_unit_id', selectedUnitId.toString());
+        } else {
+            localStorage.removeItem('salao_unit_id');
+        }
+
+        // Trigger generic refresh if authenticated
+        if (isAuthenticated) {
+            refreshAll();
+        }
+    }, [selectedUnitId, isAuthenticated]); // Removed refreshAll from dependency to avoid loop if refreshAll is not stable, but strictly refreshAll should be stable.
+
+    // Automatically update category and occupations
     useEffect(() => {
         const categories = new Set<string>();
         services.forEach(s => s.category && categories.add(s.category));
@@ -979,11 +996,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ]);
 
     // Initial data fetch when authenticated
+    // Initial data fetch when authenticated - logic moved to selectedUnitId effect
+    // But we keep this for initial mount if selectedUnitId is null (though logic above handles it).
+    // actually, the above effect handles both initial load (if unit exists) and updates.
+    // If unit is null, we might still want to fetch global data (tenants, units).
+
     useEffect(() => {
-        if (isAuthenticated) {
-            refreshAll();
+        if (isAuthenticated && !selectedUnitId) {
+            // If no unit selected, we still want to load basic data like units list so user can select one
+            refreshUnits();
+            refreshTenant();
+            refreshUsers(); // Maybe needed for user context
         }
-    }, [isAuthenticated, refreshAll]);
+    }, [isAuthenticated, selectedUnitId, refreshUnits, refreshTenant, refreshUsers]);
 
     // CRUD handlers
     const saveClient = async (client: Partial<Client>): Promise<Client | null> => {

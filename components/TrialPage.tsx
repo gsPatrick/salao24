@@ -365,11 +365,12 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
 
         const contractText = `
 CONTRATO DE PRESTAÇÃO DE SERVIÇOS - SALÃO24H
-
-CONTRATANTE: ${formData.fullName}, CPF: ${formData.cpf}.
-CONTRATADA: Salão24h, CNPJ: XX.XXX.XXX/0001-XX.
-
-Data de Início: ${new Date().toLocaleDateString('pt-BR')}
+ 
+ CONTRATANTE: ${formData.fullName}, CPF: ${formData.cpf}.
+ SALÃO: ${formData.salonName}
+ CONTRATADA: Salão24h, CNPJ: XX.XXX.XXX/0001-XX.
+ 
+ Data de Início: ${new Date().toLocaleDateString('pt-BR')}
 
 OBJETO: O presente contrato tem por objeto a concessão de licença de uso do software Salão24h, conforme o plano selecionado.
 
@@ -479,8 +480,8 @@ Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com to
                                         type="button"
                                         onClick={() => setSelectedSegment(key)}
                                         className={`w-full flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.98] ${isActive
-                                                ? 'border-primary bg-primary/5 shadow-md'
-                                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? 'border-primary bg-primary/5 shadow-md'
+                                            : 'border-gray-200 bg-white hover:border-gray-300'
                                             }`}
                                     >
                                         <div className="flex-1">
@@ -490,8 +491,8 @@ Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com to
                                         <div className="mt-1 flex-shrink-0">
                                             <span
                                                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-semibold ${isActive
-                                                        ? 'border-primary bg-primary text-white'
-                                                        : 'border-gray-300 bg-white text-gray-400'
+                                                    ? 'border-primary bg-primary text-white'
+                                                    : 'border-gray-300 bg-white text-gray-400'
                                                     }`}
                                             >
                                                 {isActive ? '✓' : ''}
