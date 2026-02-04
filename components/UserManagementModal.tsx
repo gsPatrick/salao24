@@ -90,6 +90,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       items: [
         { id: 'dashboard', label: t('permItemDashboard') },
         { id: 'minhaAgenda', label: t('permItemMyAgenda') },
+        { id: 'chat', label: t('permItemChat') },
       ]
     },
     {
@@ -97,6 +98,24 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       items: [
         { id: 'clientes', label: t('permItemClients') },
         { id: 'crm', label: t('permItemCRM') },
+        { id: 'avaliacoes', label: t('permItemReviews') },
+      ]
+    },
+    {
+      category: t('permCategoryMarketing'),
+      items: [
+        { id: 'marketing', label: t('permItemMarketing') },
+        { id: 'canais', label: t('permItemChannels') },
+        { id: 'malaDireta', label: t('permItemDirectMail') },
+        { id: 'automacoes', label: t('permItemAutomations') },
+      ]
+    },
+    {
+      category: t('permCategoryAI'),
+      items: [
+        { id: 'dashboardIA', label: t('permItemAIDashboard') },
+        { id: 'chatIA', label: t('permItemAIChat') },
+        { id: 'configIA', label: t('permItemAIConfig') },
       ]
     },
     {
@@ -115,8 +134,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
         { id: 'financeiro', label: t('permItemFinancial') },
         { id: 'relatorio', label: t('permItemReports') },
         { id: 'profissionais', label: t('permItemProfessionals') },
-        { id: 'configuracoes', label: t('permItemSettings') },
         { id: 'usuarios', label: t('permItemUsers') },
+        { id: 'unidades', label: t('permItemUnits') },
+        { id: 'auditoria', label: t('permItemAudits') },
+        { id: 'assinatura', label: t('permItemSubscription') },
+        { id: 'configuracoes', label: t('permItemSettings') },
+        { id: 'suporte', label: t('permItemSupport') },
+        { id: 'traducoes', label: t('permItemTranslations') },
       ]
     }
   ], [t]);
@@ -129,16 +153,49 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
     export: t('permActionExport'),
   };
 
+  const fullAccess = { create: true, view: true, delete: true, export: true };
+  const readOnly = { create: false, view: true, delete: false, export: false };
+  const noAccess = { create: false, view: false, delete: false, export: false };
+
   const rolePermissions: { [key in User['role']]: { [key: string]: PermissionDetails } } = {
-    Administrador: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true } },
-    Gerente: { dashboard: { create: true, view: true, delete: false, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: false, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: false, view: true, delete: false, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: false, export: true } },
-    Profissional: { dashboard: { create: false, view: false, delete: false, export: false }, agenda: { create: false, view: false, delete: false, export: false }, minhaAgenda: { create: true, view: true, delete: false, export: true }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } },
-    Concierge: { dashboard: { create: false, view: true, delete: false, export: false }, agenda: { create: true, view: true, delete: false, export: true }, minhaAgenda: { create: false, view: false, delete: false, export: false }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } },
-    admin: { dashboard: { create: true, view: true, delete: true, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: true, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: true, view: true, delete: true, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: true, view: true, delete: true, export: true }, usuarios: { create: true, view: true, delete: true, export: true }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: true, export: true } },
-    gerente: { dashboard: { create: true, view: true, delete: false, export: true }, agenda: { create: true, view: true, delete: true, export: true }, minhaAgenda: { create: true, view: true, delete: true, export: true }, clientes: { create: true, view: true, delete: true, export: true }, crm: { create: true, view: true, delete: false, export: true }, contratos: { create: true, view: true, delete: true, export: true }, financeiro: { create: false, view: true, delete: false, export: true }, estoque: { create: true, view: true, delete: true, export: true }, servicos: { create: true, view: true, delete: true, export: true }, profissionais: { create: true, view: true, delete: true, export: true }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: true, export: true }, relatorio: { create: true, view: true, delete: false, export: true } },
-    recepcao: { dashboard: { create: false, view: true, delete: false, export: false }, agenda: { create: true, view: true, delete: false, export: true }, minhaAgenda: { create: false, view: false, delete: false, export: false }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } },
-    profissional: { dashboard: { create: false, view: false, delete: false, export: false }, agenda: { create: false, view: false, delete: false, export: false }, minhaAgenda: { create: true, view: true, delete: false, export: true }, clientes: { create: true, view: true, delete: false, export: true }, crm: { create: false, view: true, delete: false, export: false }, contratos: { create: false, view: false, delete: false, export: false }, financeiro: { create: false, view: false, delete: false, export: false }, estoque: { create: false, view: false, delete: false, export: false }, servicos: { create: false, view: false, delete: false, export: false }, profissionais: { create: false, view: false, delete: false, export: false }, configuracoes: { create: false, view: false, delete: false, export: false }, usuarios: { create: false, view: false, delete: false, export: false }, registroPonto: { create: true, view: true, delete: false, export: false }, relatorio: { create: false, view: false, delete: false, export: false } }
+    Administrador: {
+      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess,
+      contratos: fullAccess, financeiro: fullAccess, estoque: fullAccess, servicos: fullAccess, profissionais: fullAccess,
+      configuracoes: fullAccess, usuarios: fullAccess, registroPonto: fullAccess, relatorio: fullAccess,
+      chat: fullAccess, avaliacoes: fullAccess, marketing: fullAccess, canais: fullAccess, malaDireta: fullAccess, automacoes: fullAccess,
+      dashboardIA: fullAccess, chatIA: fullAccess, configIA: fullAccess,
+      unidades: fullAccess, auditoria: fullAccess, assinatura: fullAccess, suporte: fullAccess, traducoes: fullAccess
+    },
+    Gerente: {
+      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess,
+      contratos: fullAccess, financeiro: readOnly, estoque: fullAccess, servicos: fullAccess, profissionais: fullAccess,
+      configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: fullAccess,
+      chat: fullAccess, avaliacoes: fullAccess, marketing: fullAccess, canais: fullAccess, malaDireta: fullAccess, automacoes: fullAccess,
+      dashboardIA: fullAccess, chatIA: fullAccess, configIA: noAccess,
+      unidades: noAccess, auditoria: readOnly, assinatura: noAccess, suporte: fullAccess, traducoes: noAccess
+    },
+    Profissional: {
+      dashboard: noAccess, agenda: noAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: noAccess,
+      contratos: noAccess, financeiro: noAccess, estoque: noAccess, servicos: noAccess, profissionais: noAccess,
+      configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: noAccess,
+      chat: fullAccess, avaliacoes: readOnly, marketing: noAccess, canais: noAccess, malaDireta: noAccess, automacoes: noAccess,
+      dashboardIA: noAccess, chatIA: noAccess, configIA: noAccess,
+      unidades: noAccess, auditoria: noAccess, assinatura: noAccess, suporte: noAccess, traducoes: noAccess
+    },
+    Concierge: {
+      dashboard: readOnly, agenda: fullAccess, minhaAgenda: noAccess, clientes: fullAccess, crm: readOnly,
+      contratos: noAccess, financeiro: noAccess, estoque: noAccess, servicos: noAccess, profissionais: noAccess,
+      configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: noAccess,
+      chat: fullAccess, avaliacoes: readOnly, marketing: noAccess, canais: noAccess, malaDireta: noAccess, automacoes: noAccess,
+      dashboardIA: noAccess, chatIA: noAccess, configIA: noAccess,
+      unidades: noAccess, auditoria: noAccess, assinatura: noAccess, suporte: fullAccess, traducoes: noAccess
+    }
   };
+  // Compatibility aliases for legacy roles
+  rolePermissions['admin' as any] = rolePermissions.Administrador;
+  rolePermissions['gerente' as any] = rolePermissions.Gerente;
+  rolePermissions['recepcao' as any] = rolePermissions.Concierge;
+  rolePermissions['profissional' as any] = rolePermissions.Profissional;
 
 
   useEffect(() => {
