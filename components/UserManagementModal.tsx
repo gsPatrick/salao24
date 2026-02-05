@@ -11,6 +11,7 @@ interface PermissionDetails {
 }
 
 import { SystemUser as User } from '../contexts/DataContext';
+import { uploadAPI } from '../lib/api';
 
 // --- Interfaces ---
 interface PermissionDetails {
@@ -69,11 +70,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
   const [linkedProfessionalId, setLinkedProfessionalId] = useState<string>('');
 
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableProfessionals = useMemo(() => {
@@ -157,7 +160,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
   const readOnly = { create: false, view: true, delete: false, export: false };
   const noAccess = { create: false, view: false, delete: false, export: false };
 
-  const rolePermissions: { [key in User['role']]: { [key: string]: PermissionDetails } } = {
+  const rolePermissions: any = {
     Administrador: {
       dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess,
       contratos: fullAccess, financeiro: fullAccess, estoque: fullAccess, servicos: fullAccess, profissionais: fullAccess,
@@ -218,9 +221,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
         setPermissions(rolePermissions.Profissional);
         setLinkedProfessionalId('');
       }
+      setPhotoFile(null);
       setPassword('');
       setConfirmPassword('');
       setPasswordError('');
+      setIsUploading(false);
     }
   }, [isOpen, userToEdit, professionals]);
 
@@ -262,10 +267,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
         }));
         setPermissions(rolePermissions.Profissional);
         setPhoto(selectedProf.photo);
+        setPhotoFile(null); // Reset manual upload if linked
       }
     } else {
       setFormData(prev => ({ ...prev, name: '', email: '' }));
       setPhoto(null);
+      setPhotoFile(null);
     }
   };
 
@@ -281,15 +288,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+
       const reader = new FileReader();
       reader.onload = (event) => {
         setPhoto(event.target?.result as string);
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
 
@@ -309,20 +319,47 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       }
     }
 
+    setIsUploading(true);
+
+    let avatarUrl = photo;
+
+    // Upload photo if a new file was selected
+    if (photoFile) {
+      try {
+        const uploadResponse = await uploadAPI.upload(photoFile, 'user');
+        if (uploadResponse && uploadResponse.url) {
+          avatarUrl = uploadResponse.url;
+        }
+      } catch (error) {
+        console.error("Error uploading avatar:", error);
+        // Optionally show an error, but for now we might proceed or stop
+        alert(t('errorUploadingAvatar') || "Erro ao fazer upload da avatar");
+        setIsUploading(false);
+        return;
+      }
+    } else if (!photo && userToEdit?.avatarUrl) {
+      // If photo was cleared (not implemented UI wise but good logical check)
+      // or we keep existing logic: if photo is null, send null? 
+      // Logic above says: avatarUrl: photo || userToEdit?.avatarUrl
+      // So if photo is null, we keep old.
+      avatarUrl = userToEdit.avatarUrl;
+    }
+
     const userData: any = {
       id: userToEdit?.id,
       name: formData.name,
       email: formData.email,
       role: formData.role,
       permissions,
-      avatarUrl: photo || userToEdit?.avatarUrl,
+      avatarUrl: avatarUrl || userToEdit?.avatarUrl,
     };
 
     if (password) {
       userData.password = password;
     }
 
-    onSave(userData);
+    await onSave(userData); // onSave might be async now or we just wait for it to return if it returns promise
+    setIsUploading(false);
     handleClose();
   };
 
@@ -552,8 +589,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
             </div>
           </div>
           <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-            <button type="submit" className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm">
-              {t('save')}
+            <button type="submit" disabled={isUploading} className={`inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              {isUploading ? 'Salvando...' : t('save')}
             </button>
             <button type="button" onClick={handleClose} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
               {t('cancel')}
