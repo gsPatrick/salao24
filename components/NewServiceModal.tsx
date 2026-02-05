@@ -14,7 +14,7 @@ interface NewServiceModalProps {
     onDeleteCategory: (category: string) => void;
 }
 
-const initialFormData = { name: '', description: '', duration: '', price: '', category: '', unit: '' };
+const initialFormData = { name: '', description: '', duration: '', price: '', category: '', unit: '', unit_id: '' };
 
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
@@ -229,10 +229,25 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                 </div>
                             </div>
                             <div>
-                                <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
+                                <select
+                                    name="unit"
+                                    value={formData.unit_id || formData.unit}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === 'Ambas') {
+                                            setFormData(prev => ({ ...prev, unit: 'Ambas', unit_id: '' }));
+                                        } else {
+                                            const u = units.find(unit => String(unit.id) === val || unit.name === val);
+                                            setFormData(prev => ({ ...prev, unit: u ? u.name : val, unit_id: u ? String(u.id) : '' }));
+                                        }
+                                    }}
+                                    onBlur={handleBlur}
+                                    required
+                                    className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
+                                >
                                     <option value="">Selecione a Unidade</option>
                                     {units.map(u => (
-                                        <option key={u.id} value={u.name}>{u.name}</option>
+                                        <option key={u.id} value={String(u.id)}>{u.name}</option>
                                     ))}
                                     <option value="Ambas">Ambas</option>
                                 </select>

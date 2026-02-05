@@ -12,7 +12,7 @@ interface NewPackageModalProps {
     usageType?: string;
 }
 
-const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '' };
+const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '', unit_id: '' };
 
 const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
     const { t } = useLanguage();
@@ -197,10 +197,27 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                 </div>
                             )}
                             <div>
-                                <select name="unit" value={formData.unit} onChange={handleChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}>
+                                <select
+                                    name="unit"
+                                    value={formData.unit_id || formData.unit}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === 'Ambas') {
+                                            setFormData(prev => ({ ...prev, unit: 'Ambas', unit_id: '' }));
+                                        } else {
+                                            const u = units.find(unit => String(unit.id) === val || unit.name === val);
+                                            setFormData(prev => ({ ...prev, unit: u ? u.name : val, unit_id: u ? String(u.id) : '' }));
+                                        }
+                                    }}
+                                    onBlur={handleBlur}
+                                    required
+                                    className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
+                                >
                                     <option value="">Selecione a Unidade</option>
                                     <option value="Ambas">Ambas as unidades</option>
-                                    {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+                                    {units.map(u => (
+                                        <option key={u.id} value={String(u.id)}>{u.name}</option>
+                                    ))}
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
                             </div>
