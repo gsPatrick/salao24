@@ -78,12 +78,14 @@ const App: React.FC = () => {
   const { t } = useLanguage();
   const { user: authUser, logout: authLogout, isSuperAdmin, planFeatures, isLoading: authLoading } = useAuth();
   // DataContext Hook
+  // Sync selectedUnitId
   const {
     clients, professionals, services, appointments, transactions, units, products, promotions,
     notifications: contextNotifications,
-    refreshAll
+    refreshAll,
+    setSelectedUnitId
   } = useData() || {
-    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], promotions: [], notifications: [], refreshAll: async () => { }
+    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], promotions: [], notifications: [], refreshAll: async () => { }, setSelectedUnitId: () => { }
   };
 
   const [page, setPage] = useState('home');
@@ -121,6 +123,16 @@ const App: React.FC = () => {
   const [systemUsers, setSystemUsers] = useState<User[]>([]);
   const [allData, setAllData] = useState<any>({});
 
+  // Wrapper to handle unit change and sync ID
+  const handleUnitChange = (unitName: string) => {
+    setSelectedUnit(unitName);
+    const unitObj = units.find(u => u.name === unitName);
+    if (unitObj) {
+      console.log('[App] Switching unit to:', unitName, 'ID:', unitObj.id);
+      setSelectedUnitId(unitObj.id);
+    }
+  };
+
   // Sync selectedUnit and allData with real units from DataContext
   useEffect(() => {
     if (Array.isArray(units) && units.length > 0) {
@@ -128,7 +140,9 @@ const App: React.FC = () => {
 
       // Update selectedUnit if needed
       if (selectedUnit === 'Carregando...' || !unitNames.includes(selectedUnit)) {
-        setSelectedUnit(units[0].name);
+        const firstUnit = units[0];
+        setSelectedUnit(firstUnit.name);
+        setSelectedUnitId(firstUnit.id);
       }
 
       // Initialize allData structure for all units (rebuild to remove stale keys)
@@ -488,7 +502,7 @@ const App: React.FC = () => {
             planFeatures={planFeatures}
             // Unit specific data and handlers
             selectedUnit={selectedUnit}
-            onUnitChange={setSelectedUnit}
+            onUnitChange={handleUnitChange}
             allData={allData}
             setAllData={setAllData}
             users={systemUsers}
