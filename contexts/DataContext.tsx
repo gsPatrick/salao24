@@ -1598,7 +1598,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const response = await tenantsAPI.uploadLogo(tenant.id, file);
             // Verify if response.url is correct
             await refreshTenant();
-            return response.url;
+            return response.data?.url || response.url;
         } catch (error) {
             console.error('Error uploading logo:', error);
             return null;
@@ -1641,7 +1641,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await unitsAPI.uploadLogo(unitId, file);
             await refreshUnits();
-            return response.url;
+            return response.data?.url || response.url;
         } catch (error) {
             console.error('Error uploading unit logo:', error);
             return null;

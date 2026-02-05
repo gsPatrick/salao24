@@ -254,7 +254,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                         </div>
                     </div>
                     <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-                        <button type="submit" disabled={!isFormValid} className="px-4 py-2 bg-primary text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed">Salvar</button>
+                        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed">Salvar</button>
                         <button type="button" onClick={handleClose} className="px-4 py-2 bg-white text-gray-700 border rounded-md mr-2">Cancelar</button>
                     </div>
                 </form>

@@ -235,7 +235,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const handleUserSave = async (userData: any) => {
         try {
             const savedUser = await saveUser(userData);
-            if (savedUser && currentUser && savedUser.id === currentUser.id) {
+            if (savedUser && currentUser && String(savedUser.id) === String(currentUser.id)) {
                 updateUser({
                     name: savedUser.name,
                     email: savedUser.email,

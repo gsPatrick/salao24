@@ -7,9 +7,10 @@ interface NewTransactionModalProps {
   onSave: (transaction: any) => void;
   transactionType: 'receita' | 'despesa';
   currentUnit: string;
+  transactionToEdit?: any | null;
 }
 
-const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClose, onSave, transactionType, currentUnit }) => {
+const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClose, onSave, transactionType, currentUnit, transactionToEdit }) => {
   const { t } = useLanguage();
   const [description, setDescription] = useState('');
   const [value, setValue] = useState('');
@@ -39,15 +40,26 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
 
   useEffect(() => {
     if (isOpen) {
-      setDescription('');
-      setValue('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setStatus('Pago');
-      setBillAttachment(null);
-      setReceiptAttachment(null);
+      if (transactionToEdit) {
+        setDescription(transactionToEdit.description || '');
+        setValue(transactionToEdit.amount ? transactionToEdit.amount.toString().replace('.', ',') : '');
+        setDate(transactionToEdit.date ? new Date(transactionToEdit.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+        setStatus(transactionToEdit.status || 'Pago');
+        // Attachments cannot be pre-filled as File objects from URL easily, so we leave them null or handle differently if needed.
+        // For now, user re-uploads if they want to change.
+        setBillAttachment(null);
+        setReceiptAttachment(null);
+      } else {
+        setDescription('');
+        setValue('');
+        setDate(new Date().toISOString().split('T')[0]);
+        setStatus('Pago');
+        setBillAttachment(null);
+        setReceiptAttachment(null);
+      }
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, transactionToEdit]);
 
   const handleClose = () => {
     setIsExiting(true);
@@ -84,7 +96,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
       return;
     }
     const saveData: any = {
-      // id: undefined, // Let the backend assign ID
+      id: transactionToEdit?.id,
       description,
       amount: parseFloat(value.replace(',', '.')) || 0,
       date,

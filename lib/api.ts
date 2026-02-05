@@ -343,8 +343,8 @@ export const tenantsAPI = {
     },
     uploadLogo: async (id: number, file: File) => {
         const formData = new FormData();
-        formData.append('logo', file);
-        const response = await api.post(`/tenants/${id}/logo`, formData, {
+        formData.append('file', file);
+        const response = await api.post(`/upload?type=tenant`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
