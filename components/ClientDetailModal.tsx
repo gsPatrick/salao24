@@ -464,9 +464,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const getClientStatus = (birthdate: string, lastVisit: string, totalVisits: number) => {
         const today = new Date();
-        const birthDate = new Date(birthdate);
-        const lastVisitDate = new Date(lastVisit);
-        const isBirthdayMonth = today.getMonth() === birthDate.getMonth();
+        // Parse birthdate using string splitting to avoid timezone issues
+        let isBirthdayMonth = false;
+        if (birthdate) {
+            const datePart = birthdate.split('T')[0];
+            const [, month] = datePart.split('-').map(Number);
+            isBirthdayMonth = today.getMonth() === (month - 1); // JS months are 0-indexed
+        }
+        const lastVisitDate = lastVisit ? new Date(lastVisit + 'T00:00:00') : new Date(0);
 
         const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
 

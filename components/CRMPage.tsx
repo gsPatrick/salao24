@@ -8,11 +8,19 @@ import { Client, Professional, Service, Appointment } from '../types';
 // --- Helper Functions ---
 const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
     const today = new Date();
-    const birthDate = birthdate ? new Date(birthdate) : null;
-    const lastVisitDate = lastVisit ? new Date(lastVisit) : null;
+    // Parse birthdate using string splitting to avoid timezone issues
+    let birthMonth: number | null = null;
+    let birthDay: number | null = null;
+    if (birthdate) {
+        const datePart = birthdate.split('T')[0];
+        const [, month, day] = datePart.split('-').map(Number);
+        birthMonth = month - 1; // JS months are 0-indexed
+        birthDay = day;
+    }
+    const lastVisitDate = lastVisit ? new Date(lastVisit + 'T00:00:00') : null;
 
-    const isBirthdayToday = birthDate ? (today.getDate() === birthDate.getDate() && today.getMonth() === birthDate.getMonth()) : false;
-    const isBirthdayMonth = birthDate ? (today.getMonth() === birthDate.getMonth()) : false;
+    const isBirthdayToday = birthMonth !== null && birthDay !== null ? (today.getDate() === birthDay && today.getMonth() === birthMonth) : false;
+    const isBirthdayMonth = birthMonth !== null ? (today.getMonth() === birthMonth) : false;
 
     const daysSinceLastVisit = lastVisitDate ? Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
 
@@ -635,8 +643,12 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             // console.log(`CRM Debug - Client ${client.name} (${client.id}) logic check`);
             // Priority 1: Birthday
             if (client.birthdate) {
-                const birthDate = new Date(client.birthdate);
-                if (birthDate.getDate() === today.getDate() && birthDate.getMonth() === today.getMonth()) {
+                // Parse birthdate using string splitting to avoid timezone issues
+                const datePart = client.birthdate.split('T')[0];
+                const [, month, day] = datePart.split('-').map(Number);
+                const birthMonth = month - 1; // JS months are 0-indexed
+                const birthDay = day;
+                if (birthDay === today.getDate() && birthMonth === today.getMonth()) {
                     groups.birthday.push(client);
                     return; // Client is classified, move to next
                 }

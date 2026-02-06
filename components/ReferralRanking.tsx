@@ -50,28 +50,42 @@ export const ReferralRanking: React.FC<ReferralRankingProps> = ({ clients, profe
     const clientsBirthdays = clients.filter(client => {
       const bdate = client.birthdate || client.birth_date || client.birthDate;
       if (!bdate) return false;
-      const birthDate = new Date(bdate);
-      return birthDate.getMonth() === currentMonth;
-    }).map(client => ({
-      id: `client-${client.id}`,
-      name: client.name,
-      photo: client.photo || client.photo_url || 'https://via.placeholder.com/150',
-      role: 'Cliente',
-      birthday: new Date(client.birthdate || client.birth_date || client.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
-    }));
+      // Parse month directly from string to avoid timezone issues
+      const datePart = bdate.split('T')[0];
+      const [, month] = datePart.split('-').map(Number);
+      return (month - 1) === currentMonth; // JS months are 0-indexed
+    }).map(client => {
+      const bdate = client.birthdate || client.birth_date || client.birthDate;
+      const datePart = bdate.split('T')[0];
+      const [, month, day] = datePart.split('-');
+      return {
+        id: `client-${client.id}`,
+        name: client.name,
+        photo: client.photo || client.photo_url || 'https://via.placeholder.com/150',
+        role: 'Cliente',
+        birthday: `${day}/${month}`
+      };
+    });
 
     const professionalsBirthdays = professionals.filter(pro => {
       const bdate = pro.birthdate || pro.birth_date || pro.birthDate;
       if (!bdate) return false;
-      const birthDate = new Date(bdate);
-      return birthDate.getMonth() === currentMonth;
-    }).map(pro => ({
-      id: `pro-${pro.id}`,
-      name: pro.name,
-      photo: pro.photo || pro.photo_url || 'https://via.placeholder.com/150',
-      role: pro.occupation || 'Profissional',
-      birthday: new Date(pro.birthdate || pro.birth_date || pro.birthDate).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
-    }));
+      // Parse month directly from string to avoid timezone issues
+      const datePart = bdate.split('T')[0];
+      const [, month] = datePart.split('-').map(Number);
+      return (month - 1) === currentMonth; // JS months are 0-indexed
+    }).map(pro => {
+      const bdate = pro.birthdate || pro.birth_date || pro.birthDate;
+      const datePart = bdate.split('T')[0];
+      const [, month, day] = datePart.split('-');
+      return {
+        id: `pro-${pro.id}`,
+        name: pro.name,
+        photo: pro.photo || pro.photo_url || 'https://via.placeholder.com/150',
+        role: pro.occupation || 'Profissional',
+        birthday: `${day}/${month}`
+      };
+    });
 
     return [...clientsBirthdays, ...professionalsBirthdays].sort((a, b) => {
       const dayA = parseInt(a.birthday.split('/')[0]);
