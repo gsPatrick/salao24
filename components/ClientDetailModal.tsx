@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { clientsAPI } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useData, Client as DataContextClient } from '../contexts/DataContext';
+import { useData, Client as DataContextClient, mapClientFromAPI } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
 
@@ -127,6 +128,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [activeSubTab, setActiveSubTab] = useState('servicos');
     const [localClient, setLocalClient] = useState<Client | null>(client);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
     // State for confirmation modal
     const [isConfirmingAction, setIsConfirmingAction] = useState<'block' | 'unblock' | 'delete' | null>(null);
@@ -142,6 +144,30 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [documentToSign, setDocumentToSign] = useState<ClientDocument | null>(null);
     const [viewingSignedDoc, setViewingSignedDoc] = useState<ClientDocument | null>(null);
+
+    // Fetch full client details when modal opens
+    useEffect(() => {
+        if (isOpen && client) {
+            setLocalClient(client); // Set initial data immediately
+
+            const fetchDetails = async () => {
+                setIsLoadingDetails(true);
+                try {
+                    const response = await clientsAPI.getById(client.id);
+                    if (response.success && response.data) {
+                        const fullClient = mapClientFromAPI(response.data);
+                        setLocalClient(fullClient);
+                    }
+                } catch (error) {
+                    console.error("Error fetching client details:", error);
+                } finally {
+                    setIsLoadingDetails(false);
+                }
+            };
+
+            fetchDetails();
+        }
+    }, [client, isOpen]);
 
     // Controla lembretes enquanto o modal está aberto
     useEffect(() => {
@@ -159,6 +185,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         if (!isOpen) {
             setActiveReminder(null);
             setDismissedReminders([]);
+            setIsLoadingDetails(false);
         }
     }, [isOpen]);
 
@@ -724,9 +751,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const animationClass = isOpen && !isExiting ? 'animate-bounce-in' : 'opacity-0 scale-95';
 
     const howTheyFoundUsValue = localClient.howTheyFoundUs + (localClient.howTheyFoundUs === 'Indicação' && localClient.indicatedBy ? ` (${localClient.indicatedBy})` : '');
-    const registrationDate = localClient.registrationDate ? new Date(localClient.registrationDate) : null;
-    const registrationDateFormatted = registrationDate && !isNaN(registrationDate.getTime())
-        ? registrationDate.toLocaleDateString('pt-BR')
+    const registrationDateFormatted = localClient.registrationDate
+        ? (() => {
+            const datePart = localClient.registrationDate.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            return `${day}/${month}/${year}`;
+        })()
         : 'Pendente';
     const lastVisitDateFormatted = localClient.lastVisit && !isNaN(new Date(localClient.lastVisit).getTime())
         ? new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
@@ -770,7 +800,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                         <InfoItem icon={<IdCardIcon />} label="CPF" value={localClient.cpf} />
                         {localClient.rg && <InfoItem icon={<IdCardIcon />} label="RG" value={localClient.rg} />}
-                        <InfoItem icon={<CakeIcon />} label={t('birthDate')} value={new Date(localClient.birthdate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} />
+                        <InfoItem icon={<CakeIcon />} label={t('birthDate')} value={(() => {
+                            if (!localClient.birthdate) return 'Não informado';
+                            const datePart = localClient.birthdate.split('T')[0];
+                            const [year, month, day] = datePart.split('-');
+                            return `${day}/${month}/${year}`;
+                        })()} />
                         {localClient.maritalStatus && <InfoItem icon={<UsersIcon />} label={t('maritalStatus')} value={localClient.maritalStatus} />}
                         {localClient.preferredUnit && <InfoItem icon={<BuildingStorefrontIcon />} label="Unidade de Preferência" value={localClient.preferredUnit} />}
                     </div>

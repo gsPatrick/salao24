@@ -79,6 +79,10 @@ export const clientsAPI = {
         const response = await api.get('/clients');
         return response.data;
     },
+    getById: async (id: number) => {
+        const response = await api.get(`/clients/${id}`);
+        return response.data;
+    },
     create: async (data: any) => {
         const response = await api.post('/clients', data);
         return response.data;

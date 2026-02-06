@@ -109,15 +109,16 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
 
     const steps = ['Unidade', 'Serviço', 'Profissional', 'Data e Hora', 'Confirmação'];
 
-    useEffect(() => {
-        if (isClientView) {
-            setStep(2);
-        }
-    }, [isClientView]);
+    // FIX: Removed auto-skip to Step 2 for clients to ensure they select a unit first.
+    // useEffect(() => {
+    //     if (isClientView) {
+    //         setStep(2);
+    //     }
+    // }, [isClientView]);
 
     const handleNextStep = () => setStep(prev => prev + 1);
     const handlePrevStep = () => {
-        if (isClientView && step === 2) {
+        if (step === 1) {
             goBack();
         } else {
             setStep(prev => prev - 1)
@@ -456,8 +457,8 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
         }
     };
 
-    const currentStep = isClientView ? step - 1 : step;
-    const totalSteps = isClientView ? steps.length - 1 : steps.length;
+    const currentStep = step;
+    const totalSteps = steps.length;
 
 
     return (

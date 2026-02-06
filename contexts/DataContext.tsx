@@ -436,7 +436,7 @@ export interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Map API response to frontend format
-const mapClientFromAPI = (apiClient: any): Client => ({
+export const mapClientFromAPI = (apiClient: any): Client => ({
     ...apiClient,
     socialName: apiClient.social_name,
     photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://i.pravatar.cc/150?u=default',

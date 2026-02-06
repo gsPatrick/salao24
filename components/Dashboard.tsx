@@ -367,7 +367,7 @@ const PerformanceChart: React.FC<{ data: any, labels: string[], period: 'hoje' |
 
     const formatValue = (metricKey: string, value: number) => {
         if (metricKey === 'faturamento' || metricKey === 'ticketMedio') {
-            return `R$ ${value.toFixed(2)}`;
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
         return value.toString();
     };
