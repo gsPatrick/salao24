@@ -472,8 +472,8 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                 isDraggable={canDragAndDrop}
                 draggedAppointmentId={draggedAppointmentId}
                 onOpenNewAppointment={handleOpenNewAppointment}
-                openingTime={unit?.opening_time}
-                closingTime={unit?.closing_time}
+                openingTime={prof.start_time || prof.startTime || '08:00'}
+                closingTime={prof.end_time || prof.endTime || '18:00'}
               />
             );
           })}
