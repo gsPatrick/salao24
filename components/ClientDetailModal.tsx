@@ -308,7 +308,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     ['E-mail', localClient.email],
                     ['Telefone', localClient.phone],
                     ['CPF', localClient.cpf],
-                    ['Data de Nascimento', new Date(localClient.birthdate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })],
+                    ['Data de Nascimento', localClient.birthdate ? localClient.birthdate.split('T')[0].split('-').reverse().join('/') : 'N/A'],
                 ],
                 styles: { fontSize: 10 },
             });
