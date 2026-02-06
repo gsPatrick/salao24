@@ -375,7 +375,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         setFormData({
           fullName: clientToEdit.name || '',
           socialName: clientToEdit.socialName || '',
-          birthdate: clientToEdit.birthdate || '',
+          birthdate: clientToEdit.birthdate ? clientToEdit.birthdate.split('T')[0] : '',
           cpf: clientToEdit.cpf || '',
           rg: clientToEdit.rg || '',
           phone: clientToEdit.phone || '',
