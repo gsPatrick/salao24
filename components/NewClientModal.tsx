@@ -666,9 +666,18 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     setDocumentSearch(query);
     setSelectedDocument(null);
     if (query.length > 1) {
+      // Find selected unit ID
+      const selectedUnitObj = units.find(u => u.name === formData.preferredUnit);
+      const selectedUnitId = selectedUnitObj ? selectedUnitObj.id : null;
+
       setDocumentSearchResults(
         contractTemplates.filter(
-          doc => doc.name.toLowerCase().includes(query)
+          doc => {
+            const matchesName = doc.name.toLowerCase().includes(query);
+            // Filter by unit if selected. Allow if doc has no unit_id (global) or matches selected unit
+            const matchesUnit = !doc.unit_id || (selectedUnitId && doc.unit_id === selectedUnitId);
+            return matchesName && matchesUnit;
+          }
         )
       );
     } else {
@@ -763,13 +772,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     setServiceSearch(query);
     setSelectedService(null); // Clear selection when user types
     if (query.length > 1) {
+      // Find selected unit ID
+      const selectedUnitObj = units.find(u => u.name === formData.preferredUnit);
+      const selectedUnitId = selectedUnitObj ? selectedUnitObj.id : null;
+
       const combined = [
         ...contextServices.map(s => ({ ...s, type: 'service' as const })),
         ...packages.map(p => ({ ...p, type: 'package' as const })),
         ...salonPlans.map(p => ({ ...p, type: 'plan' as const }))
       ];
       setServiceSearchResults(
-        combined.filter(item => item.name.toLowerCase().includes(query))
+        combined.filter(item => {
+          const matchesName = item.name.toLowerCase().includes(query);
+          // Filter by unit if selected. Allow if item has no unit_id (global) or matches selected unit
+          // Some items might not have unit_id property typed yet, assume flexible check
+          const itemUnitId = (item as any).unit_id || (item as any).unitId;
+          const matchesUnit = !itemUnitId || (selectedUnitId && itemUnitId === selectedUnitId);
+          return matchesName && matchesUnit;
+        })
       );
     } else {
       setServiceSearchResults([]);

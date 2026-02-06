@@ -231,26 +231,46 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                 );
 
             case 2:
-                const availableServices = services.map(s => ({
-                    ...s,
-                    duration: parseInt(String(s.duration)),
-                    professional_ids: s.professional_ids || [],
-                    allowAny: s.allowAny ?? true,
-                }));
+                // Find the ID of the selected unit
+                const selectedUnitObj = units.find(u => u.name === selection.unit);
+                const selectedUnitId = selectedUnitObj ? selectedUnitObj.id : null;
+
+                const availableServices = services
+                    .filter(s => {
+                        // Filter by unit_id. If global services exist without ID, decide whether to show them.
+                        // Assuming strict isolation is requested:
+                        // Cast to any because unit_id might be missing from type definition but present in data
+                        const serviceUnitId = (s as any).unit_id || (s as any).unitId;
+                        return !serviceUnitId || (selectedUnitId && serviceUnitId === selectedUnitId);
+                    })
+                    .map(s => ({
+                        ...s,
+                        duration: parseInt(String(s.duration)),
+                        // Fix price parsing: ensure it handles potential string formats or defaults to 0
+                        price: parseFloat(String(s.price || 0)),
+                        professional_ids: s.professional_ids || [],
+                        allowAny: s.allowAny ?? true,
+                    }));
 
                 return (
                     <div>
                         <h2 className="text-2xl font-bold text-center text-secondary mb-6">Qual serviço você deseja?</h2>
                         <div className="space-y-4">
-                            {availableServices.map(service => (
-                                <button key={service.id} onClick={() => select('service', service)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
-                                    <div>
-                                        <p className="font-bold text-secondary">{service.name}</p>
-                                        <p className="text-sm text-gray-500">{service.duration} min</p>
-                                    </div>
-                                    <p className="text-lg font-semibold text-primary">R$ {service.price}</p>
-                                </button>
-                            ))}
+                            {availableServices.length > 0 ? (
+                                availableServices.map(service => (
+                                    <button key={service.id} onClick={() => select('service', service)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
+                                        <div>
+                                            <p className="font-bold text-secondary">{service.name}</p>
+                                            <p className="text-sm text-gray-500">{service.duration} min</p>
+                                        </div>
+                                        <p className="text-lg font-semibold text-primary">R$ {service.price.toFixed(2)}</p>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>Nenhum serviço disponível nesta unidade.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
