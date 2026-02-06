@@ -4022,10 +4022,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const kpisForPeriod = useMemo(() => {
             if (summary) {
                 return {
-                    faturamento: `R$ ${(summary.receitas || 0).toFixed(2)}`,
+                    faturamento: (summary.receitas || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                     atendimentos: (summary.atendimentos || 0).toString(),
                     agendamentos: (summary.agendamentos || 0).toString(),
-                    ticketMedio: `R$ ${(summary.ticket_medio || 0).toFixed(2)}`,
+                    ticketMedio: (summary.ticket_medio || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                     clientesHoje: (summary.clients_new || 0).toString()
                 };
             }
@@ -4076,10 +4076,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 const ticketMedio = atendimentos > 0 ? faturamento / atendimentos : 0;
 
                 return {
-                    faturamento: `R$ ${faturamento.toFixed(2)}`,
+                    faturamento: faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                     atendimentos: atendimentos.toString(),
                     agendamentos: agendamentos.toString(),
-                    ticketMedio: `R$ ${ticketMedio.toFixed(2)}`,
+                    ticketMedio: ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                     clientesHoje: newClients.length.toString()
                 };
             };
