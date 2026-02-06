@@ -283,10 +283,15 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         ? selection.service?.professional_ids?.includes(prof.id)
                         : true;
 
+                    // STRICT FIX: Filter by Unit ID to prevent data leakage (e.g. Agua Fria profs in Piedade)
+                    // Cast to any because unit_id might be missing from type definition but present in data
+                    const profUnitId = (prof as any).unit_id || (prof as any).unitId;
+                    const matchesUnit = !profUnitId || (selectedUnitId && profUnitId === selectedUnitId);
+
                     // Ignore openSchedule flag to ensure professionals appear
                     const isActive = !prof.suspended && !prof.archived;
 
-                    return matchesService && isActive;
+                    return matchesService && matchesUnit && isActive;
                 });
                 const displayOptions = [...qualifiedProfessionals];
                 // 'Any Professional' option removed as per user request

@@ -18,7 +18,8 @@ const ContractPage: React.FC<ContractPageProps> = ({ onBack }) => {
     const {
         contractTemplates: customDocuments,
         saveContractTemplate,
-        deleteContractTemplate
+        deleteContractTemplate,
+        selectedUnitId
     } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'Contrato' | 'Termo'>('Contrato');
@@ -37,7 +38,8 @@ const ContractPage: React.FC<ContractPageProps> = ({ onBack }) => {
             name: data.title,
             type: modalType,
             content: data.content,
-            logo: data.logo
+            logo: data.logo,
+            unit_id: selectedUnitId // Ensure new templates are bound to current unit
         });
 
         if (success) {
@@ -72,13 +74,20 @@ const ContractPage: React.FC<ContractPageProps> = ({ onBack }) => {
     };
 
     const filteredDocuments = useMemo(() => {
-        if (!searchTerm.trim()) return customDocuments;
+        let docs = customDocuments;
+
+        // Strict Unit Filtering
+        if (selectedUnitId) {
+            docs = docs.filter(doc => !doc.unit_id || doc.unit_id === selectedUnitId);
+        }
+
+        if (!searchTerm.trim()) return docs;
         const lowerSearch = searchTerm.toLowerCase();
-        return customDocuments.filter(doc =>
+        return docs.filter(doc =>
             doc.name.toLowerCase().includes(lowerSearch) ||
             doc.type.toLowerCase().includes(lowerSearch)
         );
-    }, [customDocuments, searchTerm]);
+    }, [customDocuments, searchTerm, selectedUnitId]);
 
     return (
         <>

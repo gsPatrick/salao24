@@ -161,6 +161,7 @@ export interface ContractTemplate {
     type: 'Contrato' | 'Termo';
     content: string;
     logo?: string | null;
+    unit_id?: number | null;
 }
 
 export interface SystemUser {
@@ -1139,7 +1140,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 title: template.name,
                 type: template.type,
                 content: template.content,
-                logo: template.logo
+                logo: template.logo,
+                unit_id: template.unit_id
             };
             let response;
             if (template.id) {
