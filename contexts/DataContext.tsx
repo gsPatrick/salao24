@@ -442,10 +442,12 @@ export const mapClientFromAPI = (apiClient: any): Client => ({
     photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://i.pravatar.cc/150?u=default',
     birthdate: apiClient.birth_date || apiClient.birthdate,
     howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
+    indicatedBy: apiClient.indicated_by,
+    observations: apiClient.observation,
     // Map snake_case to camelCase
     lastVisit: apiClient.last_visit || apiClient.last_visit_at,
     totalVisits: apiClient.total_visits || 0,
-    registrationDate: apiClient.created_at,
+    registrationDate: apiClient.created_at || apiClient.registration_at,
     maritalStatus: apiClient.marital_status,
     history: apiClient.history || [],
     packages: apiClient.packages || [],

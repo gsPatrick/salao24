@@ -20,30 +20,51 @@ export const ClientsContainer: React.FC<ClientsContainerProps> = ({
 }) => {
   const { clients, setClients, loading, error } = useClients(selectedUnitId);
 
-  const handleAddNewClient = async (clientData: any) => {
+  const handleSaveClient = async (clientData: any) => {
     if (!selectedUnitId) return;
 
-    const { data, error } = await supabase
-      .from('clients')
-      .insert({
-        unit_id: selectedUnitId,
-        name: clientData.name,
-        email: clientData.email,
-        phone: clientData.phone,
-        photo_url: clientData.photo,
-        cpf: clientData.cpf,
-        birthdate: clientData.birthdate || null,
-        marital_status: clientData.maritalStatus || null,
-        last_visit: clientData.lastVisit || null,
-        total_visits: clientData.totalVisits || 0,
-        how_they_found: clientData.howTheyFoundUs || null,
-        registration_at: clientData.registrationDate || new Date().toISOString(),
-      })
-      .select()
-      .single();
+    const payload = {
+      unit_id: selectedUnitId,
+      name: clientData.name,
+      social_name: clientData.socialName || null,
+      email: clientData.email,
+      phone: clientData.phone,
+      photo_url: clientData.photo,
+      cpf: clientData.cpf,
+      birthdate: clientData.birthdate || null,
+      marital_status: clientData.maritalStatus || null,
+      last_visit: clientData.lastVisit || null,
+      total_visits: clientData.totalVisits || 0,
+      how_found_us: clientData.howTheyFoundUs || null,
+      indicated_by: clientData.indicatedBy || null,
+      observation: clientData.observations || null,
+      registration_at: clientData.registrationDate || new Date().toISOString(),
+    };
+
+    let result;
+    if (clientData.id) {
+      result = await supabase
+        .from('clients')
+        .update(payload)
+        .eq('id', clientData.id)
+        .select()
+        .single();
+    } else {
+      result = await supabase
+        .from('clients')
+        .insert(payload)
+        .select()
+        .single();
+    }
+
+    const { data, error } = result;
 
     if (!error && data) {
-      setClients(prev => [data as any, ...prev]);
+      if (clientData.id) {
+        setClients(prev => prev.map(c => c.id === clientData.id ? (data as any) : c));
+      } else {
+        setClients(prev => [data as any, ...prev]);
+      }
     } else if (error) {
       console.error('Erro ao salvar cliente no Supabase:', error.message);
       alert('Erro ao salvar cliente, verifique o console.');
@@ -101,7 +122,7 @@ export const ClientsContainer: React.FC<ClientsContainerProps> = ({
       onBack={onBack}
       navigate={navigate}
       clients={clients as any}
-      onAddNewClient={handleAddNewClient}
+      onAddNewClient={handleSaveClient}
       acquisitionChannels={acquisitionChannels}
       onOpenChat={undefined}
       onDeleteClient={handleDeleteClient}

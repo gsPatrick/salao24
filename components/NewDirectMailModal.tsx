@@ -411,33 +411,33 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                       </div>
                     </>
                   )}
-                </div>
-                {showEmojiPicker && (
-                  <div className="absolute z-10 bottom-20 right-4 bg-white shadow-lg rounded-md border p-2 grid grid-cols-8 gap-1 max-w-xs">
-                    {emojis.map(emoji => <button type="button" key={emoji} onClick={() => handleInsertEmoji(emoji)} className="p-1 rounded-md hover:bg-gray-200 text-xl">{emoji}</button>)}
-                  </div>
-                )}
+                  {showEmojiPicker && (
+                    <div className="absolute z-10 bottom-20 right-4 bg-white shadow-lg rounded-md border p-2 grid grid-cols-8 gap-1 max-w-xs">
+                      {emojis.map(emoji => <button type="button" key={emoji} onClick={() => handleInsertEmoji(emoji)} className="p-1 rounded-md hover:bg-gray-200 text-xl">{emoji}</button>)}
+                    </div>
+                  )}
 
-                <div className="pt-4 border-t space-y-4">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setIsScheduleModalOpen(true)}
-                      className="text-sm font-semibold text-primary hover:underline"
-                    >
-                      Configurar horários permitidos para disparo
-                    </button>
-                  </div>
-                  <div>
-                    <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700">Data de Agendamento</label>
-                    <input
-                      id="schedule-date"
-                      type="date"
-                      value={scheduleDate}
-                      onChange={e => setScheduleDate(e.target.value)}
-                      className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                      placeholder="dd/mm/aaaa"
-                    />
+                  <div className="pt-4 border-t space-y-4">
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setIsScheduleModalOpen(true)}
+                        className="text-sm font-semibold text-primary hover:underline"
+                      >
+                        Configurar horários permitidos para disparo
+                      </button>
+                    </div>
+                    <div>
+                      <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700">Data de Agendamento</label>
+                      <input
+                        id="schedule-date"
+                        type="date"
+                        value={scheduleDate}
+                        onChange={e => setScheduleDate(e.target.value)}
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                        placeholder="dd/mm/aaaa"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

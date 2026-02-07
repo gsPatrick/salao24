@@ -834,7 +834,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       return;
     }
 
-    const { cep, street, number, complement, neighborhood, city, state, fullName, planId, packageId, reminders, blocked, ...restOfData } = formData;
+    const { cep, street, number, complement, neighborhood, city, state, fullName, socialName, planId, packageId, reminders, blocked, ...restOfData } = formData;
 
     const attachedDocsToSave = attachedDocuments.map(doc => ({
       name: doc.title,
@@ -866,6 +866,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     const finalData = {
       id: clientToEdit?.id,
       name: fullName,
+      socialName,
       ...restOfData,
       photo,
       procedurePhotos,
@@ -886,6 +887,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       servicesOfInterest: servicesOfInterest,
       reminders: reminders,
       blocked: blocked,
+      planId,
+      packageId,
       is_complete_registration: true,
     };
     onSave(finalData);

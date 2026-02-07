@@ -596,6 +596,7 @@ const NewCampaignModal: React.FC<{
                                         <div className="flex justify-between text-xs text-gray-500"><span>200</span><span>300</span></div>
                                     </div>
                                 </div>
+
                                 <p className="text-xs text-gray-500 mt-1">Recomendado 200 envios por dia, campanha só é enviada uma vez por número.</p>
 
                                 <div className="pt-4 border-t">
@@ -608,20 +609,23 @@ const NewCampaignModal: React.FC<{
                                 </div>
                             </div>
                         </div>
+                        <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
+                            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md">
+                                {campaignToEdit ? t('updateCampaign') : 'Criar Campanha'}
+                            </button>
+                            <button type="button" onClick={handleClose} className="px-4 py-2 bg-white text-gray-700 border rounded-md mr-2">
+                                {t('cancel')}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-                    <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md">{campaignToEdit ? t('updateCampaign') : 'Criar Campanha'}</button>
-                    <button type="button" onClick={handleClose} className="px-4 py-2 bg-white text-gray-700 border rounded-md mr-2">{t('cancel')}</button>
-                </div>
-            </form>
-        </div >
-    </div >
-    <ScheduleSettingsModal
-        isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        onSave={handleSaveSchedule}
-        initialSchedule={scheduleSettings}
-    />
+            </div>
+            <ScheduleSettingsModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                onSave={handleSaveSchedule}
+                initialSchedule={scheduleSettings}
+            />
         </>
     );
 };
