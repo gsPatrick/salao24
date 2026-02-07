@@ -78,6 +78,19 @@ const AppointmentCard: React.FC<{
             </svg>
         );
 
+        const normalizeStatus = (status: string): AppointmentStatus => {
+            if (!status) return 'Agendado';
+            const lower = status.toLowerCase();
+            if (lower === 'atendido' || lower === 'completed' || lower === 'concluído' || lower === 'realizado') return 'Atendido';
+            if (lower === 'em espera' || lower === 'waiting') return 'Em Espera';
+            if (lower === 'confirmado' || lower === 'confirmed') return 'Confirmado';
+            if (lower === 'falta' || lower === 'missed' || lower === 'absent' || lower === 'faltou') return 'Falta';
+            if (lower === 'agendado' || lower === 'scheduled' || lower === 'booked') return 'Agendado';
+            return 'Agendado';
+        };
+
+        const currentStatus = normalizeStatus(appointment.status);
+
         const statusStyles: { [key in AppointmentStatus]: string } = {
             'Atendido': 'bg-green-100 text-green-800 border-green-200',
             'Em Espera': 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -140,10 +153,10 @@ const AppointmentCard: React.FC<{
                 {/* Bottom Section: Actions */}
                 <div className="flex justify-between items-center w-full pt-2 border-t border-gray-200/80">
                     <select
-                        value={appointment.status}
+                        value={currentStatus}
                         onClick={handleActionClick}
                         onChange={(e) => onStatusChange(e.target.value as AppointmentStatus)}
-                        className={`px-2 py-0.5 text-xs font-semibold rounded-full appearance-none text-center border ${statusStyles[appointment.status]} focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer`}
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-full appearance-none text-center border ${statusStyles[currentStatus]} focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer`}
                     >
                         <option value="Agendado">{t('statusScheduled')}</option>
                         <option value="Confirmado">Confirmado</option>

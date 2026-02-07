@@ -3387,7 +3387,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     const handleSaveClientDashboard = async (clientData: any) => {
-        await saveClient(clientData);
+        return await saveClient(clientData);
     };
 
     const handleDeleteClientDashboard = async (clientId: number) => {

@@ -168,8 +168,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
   // Effect to calculate end time based on service and start time
   useEffect(() => {
     if (!isOpen) return;
-    if (isEditing && appointment?.endTime) {
-      setEndTime(appointment.endTime);
+    if (isEditing && (appointment?.endTime || appointment?.end_time || (appointment as any)?.end_time)) {
+      setEndTime(appointment?.endTime || (appointment as any)?.end_time);
       return;
     }
 

@@ -189,7 +189,7 @@ export const appointmentsAPI = {
         return response.data;
     },
     cancel: async (id: number) => {
-        const response = await api.delete(`/appointments/${id}`);
+        const response = await api.patch(`/appointments/${id}/cancel`);
         return response.data;
     },
     delete: async (id: number) => {

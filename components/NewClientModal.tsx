@@ -819,7 +819,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     setServicesOfInterest(servicesOfInterest.filter(serviceName => serviceName !== serviceNameToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Partial<Record<keyof typeof initialFormData, string>> = {};
     const requiredFields: (keyof typeof initialFormData)[] = ['fullName', 'phone'];
@@ -891,13 +891,25 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       packageId,
       is_complete_registration: true,
     };
-    onSave(finalData);
-    if (clientToEdit) {
-      // If we are editing, we just close and the parent (ClientDetailModal) should still be open
-      // or at least we don't force a list refresh that closes everything.
-      onClose();
-    } else {
-      handleClose();
+
+    try {
+      const result = await onSave(finalData);
+      // Check if onSave returns a promise that resolves to null/false indicating failure
+      // or if it throws.
+      // If result is strictly null (and not undefined/void), it might indicate failure from DataContext
+      if (result === null || result === false) {
+        alert(t('errorSavingClient') || 'Erro ao salvar cliente. Verifique os dados e tente novamente.');
+        return;
+      }
+
+      if (clientToEdit) {
+        onClose();
+      } else {
+        handleClose();
+      }
+    } catch (error) {
+      console.error("Error saving client:", error);
+      alert(t('errorSavingClient') || 'Erro ao salvar cliente.');
     }
   };
 

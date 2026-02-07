@@ -116,7 +116,7 @@ const ProfessionalColumn: React.FC<{
                 const service = apiServices.find(s => (a.service_id && s.id === a.service_id) || s.name === a.service);
                 const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
 
-                let itemEndTime = a.endTime || (a as any).end_time;
+                let itemEndTime = (a as any).end_time || a.endTime;
                 if (!itemEndTime) {
                     itemEndTime = minutesToTime(timeToMinutes(a.time) + defaultDuration);
                 }
@@ -187,7 +187,7 @@ const ProfessionalColumn: React.FC<{
                                 return (
                                     <AppointmentCard
                                         key={`appt-${item.data.id}`}
-                                        appointment={item.data}
+                                        appointment={{ ...item.data, endTime: item.endTime }}
                                         duration={timeToMinutes(item.endTime) - timeToMinutes(item.startTime)}
                                         onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
                                         onClick={() => onCardClick(item.data)}
