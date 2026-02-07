@@ -19,19 +19,9 @@ const ChartIcon = () => (
 const AcquisitionChannelsChart: React.FC<AcquisitionChannelsChartProps> = ({ clients, startDate, endDate }) => {
   const { t } = useLanguage();
 
-  const filteredClients = clients.filter(client => {
-    // Use registrationDate with fallback to createdAt or created_at
-    const regDate = client.registrationDate || client.createdAt || client.created_at;
-    if (!regDate) return false;
-    const registrationDate = new Date(regDate);
-
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    return registrationDate >= start && registrationDate <= end;
-  });
+  // Show ALL clients, not just those in the date range
+  // This gives a complete picture of acquisition channels
+  const filteredClients = clients;
 
   const channelData: { [key: string]: number } = {};
   filteredClients.forEach(client => {
