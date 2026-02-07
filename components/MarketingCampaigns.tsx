@@ -543,69 +543,69 @@ const NewCampaignModal: React.FC<{
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     O número deve estar conectado na página de Canais para envios via WhatsApp.
                                 </p>
-                            </div>
 
-                            <MessageTypeSelector selected={messageType} onChange={(type) => setMessageType(type as any)} />
+                                <MessageTypeSelector selected={messageType} onChange={(type) => setMessageType(type as any)} />
 
-                            {messageType !== 'texto' && (
-                                <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-gray-300'}`}>
-                                    {filePreviewUrl && messageType === 'imagem' ? (
-                                        <div className="text-center relative"><img src={filePreviewUrl} alt="Preview" className="mx-auto max-h-40 rounded-md shadow-md" /><button type="button" onClick={(e) => { e.stopPropagation(); handleFileSelect(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold">&times;</button><p className="text-xs text-gray-600 mt-2 truncate">{file?.name}</p></div>
-                                    ) : (<div className="space-y-1 text-center"><svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg><div className="flex text-sm text-gray-600"><p className="pl-1">Arraste e solte ou clique para selecionar</p></div>{file ? (<p className="text-xs text-green-600 font-semibold mt-2">Arquivo: {file.name}</p>) : (<p className="text-xs text-gray-500">Imagem, áudio ou PDF, até 5MB</p>)}</div>)}
-                                    <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files ? e.target.files[0] : null)} />
-                                </div>
-                            )}
-
-                            <div>
-                                <label htmlFor="campaign-message" className="block text-sm font-medium text-gray-700">Escreva sua mensagem aqui...</label>
-                                <textarea id="campaign-message" value={messageText} onChange={e => setMessageText(e.target.value)} rows={4} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
-                                <button type="button" onClick={handleImproveText} disabled={isImprovingText} className="mt-2 flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-gray-700 disabled:bg-gray-400">
-                                    {isImprovingText ? (<><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Melhorando...</span></>) : (<><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg><span>Melhorar texto com IA</span></>)}
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700">Intervalo de delay entre contatos: <span className="font-bold text-primary">{formatDelay(minDelay)} - {formatDelay(maxDelay)}</span></label>
-                                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="min-delay" className="block text-xs font-medium text-gray-500">Mínimo: {formatDelay(minDelay)}</label>
-                                            <input id="min-delay" type="range" min="10" max="300" step="5" value={minDelay} onChange={e => {
-                                                const newMin = Number(e.target.value);
-                                                setMinDelay(newMin);
-                                                if (newMin > maxDelay) {
-                                                    setMaxDelay(newMin);
-                                                }
-                                            }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="max-delay" className="block text-xs font-medium text-gray-500">Máximo: {formatDelay(maxDelay)}</label>
-                                            <input id="max-delay" type="range" min="10" max="300" step="5" value={maxDelay} onChange={e => {
-                                                const newMax = Number(e.target.value);
-                                                setMaxDelay(newMax);
-                                                if (newMax < minDelay) {
-                                                    setMinDelay(newMax);
-                                                }
-                                            }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" />
-                                        </div>
+                                {messageType !== 'texto' && (
+                                    <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-gray-300'}`}>
+                                        {filePreviewUrl && messageType === 'imagem' ? (
+                                            <div className="text-center relative"><img src={filePreviewUrl} alt="Preview" className="mx-auto max-h-40 rounded-md shadow-md" /><button type="button" onClick={(e) => { e.stopPropagation(); handleFileSelect(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold">&times;</button><p className="text-xs text-gray-600 mt-2 truncate">{file?.name}</p></div>
+                                        ) : (<div className="space-y-1 text-center"><svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg><div className="flex text-sm text-gray-600"><p className="pl-1">Arraste e solte ou clique para selecionar</p></div>{file ? (<p className="text-xs text-green-600 font-semibold mt-2">Arquivo: {file.name}</p>) : (<p className="text-xs text-gray-500">Imagem, áudio ou PDF, até 5MB</p>)}</div>)}
+                                        <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files ? e.target.files[0] : null)} />
                                     </div>
-                                    <div className="flex justify-between text-xs text-gray-500 mt-1"><span>10s</span><span>5m</span></div>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label htmlFor="send-limit" className="block text-sm font-medium text-gray-700">Limite de envio por dia: <span className="font-bold text-primary">{sendLimit}</span></label>
-                                    <input id="send-limit" type="range" min="200" max="300" step="10" value={sendLimit} onChange={e => setSendLimit(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-2" />
-                                    <div className="flex justify-between text-xs text-gray-500"><span>200</span><span>300</span></div>
-                                </div>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">Recomendado 200 envios por dia, campanha só é enviada uma vez por número.</p>
+                                )}
 
-                            <div className="pt-4 border-t">
-                                <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="text-sm font-semibold text-primary hover:underline">Configurar horários permitidos para disparo</button>
-                            </div>
+                                <div>
+                                    <label htmlFor="campaign-message" className="block text-sm font-medium text-gray-700">Escreva sua mensagem aqui...</label>
+                                    <textarea id="campaign-message" value={messageText} onChange={e => setMessageText(e.target.value)} rows={4} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                    <button type="button" onClick={handleImproveText} disabled={isImprovingText} className="mt-2 flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-gray-700 disabled:bg-gray-400">
+                                        {isImprovingText ? (<><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Melhorando...</span></>) : (<><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg><span>Melhorar texto com IA</span></>)}
+                                    </button>
+                                </div>
 
-                            <div>
-                                <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700">Data de Agendamento</label>
-                                <input id="schedule-date" type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Intervalo de delay entre contatos: <span className="font-bold text-primary">{formatDelay(minDelay)} - {formatDelay(maxDelay)}</span></label>
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label htmlFor="min-delay" className="block text-xs font-medium text-gray-500">Mínimo: {formatDelay(minDelay)}</label>
+                                                <input id="min-delay" type="range" min="10" max="300" step="5" value={minDelay} onChange={e => {
+                                                    const newMin = Number(e.target.value);
+                                                    setMinDelay(newMin);
+                                                    if (newMin > maxDelay) {
+                                                        setMaxDelay(newMin);
+                                                    }
+                                                }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="max-delay" className="block text-xs font-medium text-gray-500">Máximo: {formatDelay(maxDelay)}</label>
+                                                <input id="max-delay" type="range" min="10" max="300" step="5" value={maxDelay} onChange={e => {
+                                                    const newMax = Number(e.target.value);
+                                                    setMaxDelay(newMax);
+                                                    if (newMax < minDelay) {
+                                                        setMinDelay(newMax);
+                                                    }
+                                                }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1"><span>10s</span><span>5m</span></div>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label htmlFor="send-limit" className="block text-sm font-medium text-gray-700">Limite de envio por dia: <span className="font-bold text-primary">{sendLimit}</span></label>
+                                        <input id="send-limit" type="range" min="200" max="300" step="10" value={sendLimit} onChange={e => setSendLimit(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary mt-2" />
+                                        <div className="flex justify-between text-xs text-gray-500"><span>200</span><span>300</span></div>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Recomendado 200 envios por dia, campanha só é enviada uma vez por número.</p>
+
+                                <div className="pt-4 border-t">
+                                    <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="text-sm font-semibold text-primary hover:underline">Configurar horários permitidos para disparo</button>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700">Data de Agendamento</label>
+                                    <input id="schedule-date" type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                </div>
                             </div>
                         </div>
                 </div>
@@ -615,7 +615,7 @@ const NewCampaignModal: React.FC<{
                 </div>
             </form>
         </div >
-            </div >
+    </div >
     <ScheduleSettingsModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
