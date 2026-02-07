@@ -92,7 +92,7 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
           setWhatsappStatus(data);
           // Se estiver criando e WhatsApp estiver conectado, define como padrão
           if (!campaignToEdit && data.status === 'connected' && data.phone && !phoneNumber) {
-            setPhoneNumber(`WhatsApp: ${data.phone}`);
+            setPhoneNumber(data.phone);
           }
         } catch (error) {
           console.error('Error fetching whatsapp status:', error);
@@ -357,31 +357,24 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                   )}
                   {sendType === 'WhatsApp' && (
                     <>
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label htmlFor="whatsapp-phone" className="block text-sm font-medium text-gray-700">Selecionar número de envio</label>
-                          {whatsappLoading ? (
-                            <span className="text-xs text-gray-400 animate-pulse">Verificando...</span>
-                          ) : (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${whatsappStatus?.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                              {whatsappStatus?.status === 'connected' ? `ON: ${whatsappStatus.phone}` : 'OFF'}
-                            </span>
-                          )}
-                        </div>
-                        <select id="whatsapp-phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                          <option value="">Selecione...</option>
-                          {whatsappStatus?.status === 'connected' && whatsappStatus.phone && (
-                            <option value={`WhatsApp: ${whatsappStatus.phone}`}>WhatsApp Conectado ({whatsappStatus.phone})</option>
-                          )}
-                          {unitPhone && (
-                            <option value={unitPhone}>Telefone Fixo da Unidade: {unitPhone}</option>
-                          )}
-                        </select>
-                        <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          O número deve estar conectado na página de Canais para envios via WhatsApp.
-                        </p>
+                      <div className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-between">
+                        {whatsappStatus?.status === 'connected' && whatsappStatus.phone ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-sm font-medium text-gray-800">WhatsApp Conectado: {whatsappStatus.phone}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-red-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                            <span className="text-sm font-bold uppercase tracking-tight">WhatsApp Desconectado</span>
+                          </div>
+                        )}
                       </div>
+                      <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        O número deve estar conectado na página de Canais para envios via WhatsApp.
+                      </p>
+
                       <div>
                         <label htmlFor="whatsapp-body" className="block text-sm font-medium text-gray-700">Texto da Mensagem</label>
                         <textarea
