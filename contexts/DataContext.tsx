@@ -1403,14 +1403,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const statusMap: { [key: string]: string } = {
                 'Agendado': 'agendado',
                 'Confirmado': 'confirmado',
-                'Em Espera': 'confirmado', // Map 'Em Espera' to 'confirmado' as backend doesn't support it yet
+                'Em Espera': 'em_atendimento', // Map to em_atendimento (waiting/in service)
                 'Atendido': 'concluido',
                 'Falta': 'faltou',
                 'Cancelado': 'cancelado',
                 // Handle lowercase inputs just in case
                 'agendado': 'agendado',
                 'confirmado': 'confirmado',
-                'em espera': 'confirmado',
+                'em espera': 'em_atendimento',
                 'atendido': 'concluido',
                 'falta': 'faltou',
                 'cancelado': 'cancelado',

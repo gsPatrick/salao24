@@ -193,7 +193,7 @@ const ProfessionalColumn: React.FC<{
                     <img src={professional.photo} alt={professional.name} className="w-10 h-10 rounded-full" />
                     <div>
                         <h3 className="font-bold text-secondary">{professional.name}</h3>
-                        <p className="text-sm text-primary font-semibold">{professional.specialties?.[0] || professional.occupation}</p>
+                        <p className="text-sm text-primary font-semibold">{professional.occupation || professional.role || professional.specialties?.[0]}</p>
                     </div>
                 </div>
                 <div className="space-y-3 h-[calc(100vh-380px)] overflow-y-auto pr-2 relative">
