@@ -10,6 +10,7 @@ import ReassignAppointmentModal from './ReassignAppointmentModal';
 import ProfessionalColumn from './ProfessionalColumn';
 import { useData } from '../contexts/DataContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { QRCodeSVG } from 'qrcode.react';
 
 
 // --- Mock Data ---
@@ -55,20 +56,17 @@ interface Notification {
 }
 
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
-const QRCodeIcon = () => (
-  <svg className="w-full h-full text-secondary" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-    <path d="M48 48h64v64H48zM64 64v32h32V64z" />
-    <path d="M144 48h64v64h-64zM160 64v32h32V64z" />
-    <path d="M48 144h64v64H48zM64 160v32h32v-32z" />
-    <path d="M144 144h16v16h-16zM176 144h16v16h-16zM208 144h16v16h-16zM144 176h16v16h-16zM176 176h16v16h-16zM208 176h16v16h-16zM144 208h16v16h-16zM176 208h16v16h-16zM208 208h16v16h-16z" opacity="0.8" />
-  </svg>
+const QRCodeIcon = ({ value }: { value: string }) => (
+  <div className="bg-white p-2 rounded-lg">
+    <QRCodeSVG value={value} size={200} />
+  </div>
 );
 const UserPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>;
 
 
 const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUser, isIndividualPlan, professionals: propProfessionals, onComingSoon }) => {
   const { t } = useLanguage();
-  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, units: contextUnits, blocks: contextBlocks, saveAppointment, updateAppointmentStatus, saveClient, saveBlock, deleteBlock, refreshAppointments } = useData();
+  const { appointments: contextAppointments, professionals: contextProfessionals, services: contextServices, clients: contextClients, units: contextUnits, blocks: contextBlocks, saveAppointment, updateAppointmentStatus, saveClient, saveBlock, deleteBlock, cancelAppointment, refreshAppointments, selectedUnitId } = useData();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
@@ -267,6 +265,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         howTheyFoundUs: 'Agendamento Rápido',
         registrationDate: new Date().toISOString(),
         is_complete_registration: (payload as any).is_complete_registration ?? false,
+        unit_id: selectedUnitId, // Essential for isolation
       }) as any;
     }
 
@@ -279,6 +278,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         date: payload.date,
         time: payload.time,
         status: 'Agendado',
+        unit_id: selectedUnitId, // Essential for isolation
       });
     }
   };
@@ -689,12 +689,14 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         onClose={() => { setIsPreRegModalOpen(false); setSelectedAppointment(null); setPreRegInitialData(null); }}
         onCompleteRegistration={handleOpenFullRegistration}
         client={selectedClient}
-        appointment={selectedAppointment ? { service: selectedAppointment.service, time: selectedAppointment.time } : undefined}
+        appointment={selectedAppointment ? { id: selectedAppointment.id, service: selectedAppointment.service, time: selectedAppointment.time } : undefined}
         initialData={preRegInitialData}
         isIndividualPlan={isIndividualPlan}
         currentUser={currentUser}
         onQuickSchedule={handleQuickSchedule}
         availableProfessionals={propProfessionals || contextProfessionals}
+        onCancelAppointment={cancelAppointment}
+        selectedUnitId={selectedUnitId}
       />
       <NewClientModal
         isOpen={isNewClientModalOpen}
@@ -740,8 +742,8 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
             <div className="min-h-[256px] flex items-center justify-center">
               {isQrGenerated ? (
-                <div ref={qrCodeRef} className="w-64 h-64 mx-auto bg-white p-4 rounded-lg shadow-inner border animate-fade-in">
-                  <QRCodeIcon />
+                <div ref={qrCodeRef} className="mx-auto bg-white p-4 rounded-lg shadow-inner border animate-fade-in">
+                  <QRCodeIcon value={`https://salao24h.com.br/checkin?unitId=${selectedUnitId || 'none'}`} />
                 </div>
               ) : (
                 <button

@@ -20,6 +20,7 @@ interface User {
 }
 
 interface AppointmentDetails {
+  id?: number;
   service: string;
   time: string;
 }
@@ -47,6 +48,8 @@ interface PreRegistrationModalProps {
     date: string; // YYYY-MM-DD
     time: string; // HH:MM
   }) => void;
+  onCancelAppointment?: (id: number) => Promise<boolean>;
+  selectedUnitId?: number | null;
 }
 
 const formatPhone = (value: string) => {
@@ -68,6 +71,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
   currentUser,
   availableProfessionals, // Destructure new prop
   onQuickSchedule,
+  onCancelAppointment,
+  selectedUnitId,
 }) => {
   const { t } = useLanguage();
   const { professionals: contextProfessionals, services: contextServices } = useData();
@@ -253,7 +258,9 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700">{t('procedure')}</label>
                     <select value={service} onChange={e => setService(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
                       <option value="">Selecione...</option>
-                      {contextServices.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      {contextServices
+                        .filter(s => !selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId))
+                        .map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
@@ -301,6 +308,26 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                 className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:w-auto sm:text-sm"
               >
                 {t('newClientRegistration')}
+              </button>
+            )}
+            {isEditing && appointment?.id && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm('Tem certeza que deseja cancelar este agendamento?')) {
+                    if (onCancelAppointment) {
+                      const success = await onCancelAppointment(appointment.id!);
+                      if (success) {
+                        handleClose();
+                      } else {
+                        alert('Erro ao cancelar agendamento.');
+                      }
+                    }
+                  }
+                }}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm"
+              >
+                Cancelar Agendamento
               </button>
             )}
             <button
