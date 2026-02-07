@@ -207,3 +207,33 @@ export interface Unit {
     is_active?: boolean;
     address?: any;
 }
+export interface Package {
+    id: number;
+    name: string;
+    description: string;
+    price: number | string;
+    duration: number;
+    sessions: number | null;
+    isActive: boolean;
+    suspended: boolean;
+    isFavorite: boolean;
+    usageType: 'Serviços' | 'Promoção' | string;
+    category: string | null;
+    unit: string | null;
+    unit_id?: number | string | null;
+}
+
+export interface SalonPlan {
+    id: number;
+    name: string;
+    description: string;
+    price: number | string;
+    duration: string | number;
+    isActive: boolean;
+    suspended: boolean;
+    isFavorite: boolean;
+    usageType: 'Serviços' | 'Promoção' | string;
+    category: string | null;
+    unit: string | null;
+    unit_id?: number | string | null;
+}

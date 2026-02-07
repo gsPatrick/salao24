@@ -3,12 +3,7 @@ import { NewServiceModal } from './NewServiceModal';
 import NewPackageModal from './NewPackageModal';
 import NewPlanModal from './NewPlanModal';
 import { useData } from '../contexts/DataContext';
-import { Service as ContextService } from '../types';
-
-// Interfaces for data types
-interface Service { id: number; name: string; duration: string; price: string; category: string; suspended?: boolean; isFavorite?: boolean; }
-interface Package { id: number; name: string; sessions: number | string; price: string; category: string; suspended?: boolean; isFavorite?: boolean; }
-interface Plan { id: number; name: string; duration: string; price: string; category: string; suspended?: boolean; isFavorite?: boolean; }
+import { Service as ContextService, Package, SalonPlan as Plan } from '../types';
 
 // Props for the main page
 interface ServicesPageProps {

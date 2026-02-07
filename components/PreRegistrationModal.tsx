@@ -358,7 +358,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                         {contextPackages
                           .filter(p =>
                             (!selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId)) &&
-                            !p.suspended && p.active !== false && p.isActive !== false
+                            !p.suspended && p.active !== false && p.isActive !== false &&
+                            (!p.usageType || p.usageType === 'Serviços')
                           )
                           .map(p => (
                             <option key={`package-${p.id}`} value={`package-${p.id}`}>{p.name}</option>))}
@@ -368,7 +369,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                         {contextSalonPlans
                           .filter(pl =>
                             (!selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId)) &&
-                            !pl.suspended
+                            !pl.suspended &&
+                            (!pl.usageType || pl.usageType === 'Serviços')
                           )
                           .map(pl => (
                             <option key={`plan-${pl.id}`} value={`plan-${pl.id}`}>

@@ -7,7 +7,9 @@ import {
     Client,
     Professional,
     User,
-    PermissionDetails
+    PermissionDetails,
+    Package,
+    SalonPlan
 } from '../types';
 
 import { AIAgentPage } from './AIAgentPage';
@@ -2955,13 +2957,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
         appointments,
         clients,
         professionals,
+        services,
+        products,
+        units,
         saveService,
         deleteService,
         toggleSuspendService,
         toggleFavoriteService,
         saveClient,
         deleteClient,
-        selectedUnitId
+        selectedUnitId,
+        packages,
+        salonPlans,
+        savePackage,
+        deletePackage,
+        toggleSuspendPackage,
+        toggleFavoritePackage,
+        saveSalonPlan,
+        deleteSalonPlan,
+        toggleSuspendSalonPlan,
+        toggleFavoriteSalonPlan,
+        refreshPackages,
+        refreshSalonPlans,
     } = useData();
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -2994,11 +3011,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
 
-    const [monthlyPackages, setMonthlyPackages] = useState<MonthlyPackage[]>([]);
     const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscription[]>([]);
     const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
     const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
-    const [editingPackage, setEditingPackage] = useState<MonthlyPackage | null>(null);
+    const [editingPackage, setEditingPackage] = useState<Package | null>(null);
     const [editingSubscription, setEditingSubscription] = useState<PackageSubscription | null>(null);
 
     // --- Marketing State ---
@@ -3008,21 +3024,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     // Initial Data Load - reloads when unit changes
     useEffect(() => {
         // Immediately clear data when unit changes to prevent showing stale data
-        setMonthlyPackages([]);
-        setPackageSubscriptions([]);
-        setMarketingCampaigns([]);
-        setAcquisitionChannels([]);
-
         const loadDashboardData = async () => {
             try {
-                const [pkgs, subs, campaigns, channels, directMail] = await Promise.all([
-                    packagesAPI.list(),
+                const [subs, campaigns, channels, directMail] = await Promise.all([
                     packagesAPI.listSubscriptions(),
                     marketingAPI.listCampaigns(),
                     marketingAPI.listChannels(),
                     marketingAPI.listDirectMail()
                 ]);
-                setMonthlyPackages(pkgs);
+                refreshPackages();
+                refreshSalonPlans();
                 setPackageSubscriptions(subs);
                 setMarketingCampaigns(campaigns);
                 setAcquisitionChannels(channels);
@@ -3092,50 +3103,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
 
     // --- Package Handlers ---
-    const handleSaveMonthlyPackage = async (pkg: MonthlyPackage) => {
-        try {
-            let savedPkg;
-            if (editingPackage) {
-                if (!pkg.id) {
-                    console.error("Missing package ID for update");
-                    return;
-                }
-                savedPkg = await packagesAPI.update(pkg.id, pkg);
-                setMonthlyPackages(prev => prev.map(p => p.id == savedPkg.id ? savedPkg : p));
-            } else {
-                savedPkg = await packagesAPI.create(pkg);
-                setMonthlyPackages(prev => [savedPkg, ...prev]);
-            }
+    const handleSaveMonthlyPackage = async (pkg: Package) => {
+        const success = await savePackage(pkg);
+        if (success) {
             setIsPackageModalOpen(false);
             setEditingPackage(null);
-        } catch (error) {
-            console.error("Error saving package:", error);
+        } else {
             alert("Erro ao salvar pacote.");
         }
     };
 
     const handleDeleteMonthlyPackage = async (id: number) => {
         if (window.confirm(t('confirmAction'))) {
-            try {
-                await packagesAPI.delete(id);
-                setMonthlyPackages(prev => prev.filter(p => p.id !== id));
-            } catch (error) {
-                console.error("Error deleting package:", error);
+            const success = await deletePackage(id);
+            if (!success) {
                 alert("Erro ao excluir pacote.");
             }
         }
     };
 
     const handleToggleMonthlyPackage = async (id: number) => {
-        try {
-            const res = await packagesAPI.toggle(id);
-            setMonthlyPackages(prev => prev.map(p => p.id === id ? { ...p, isActive: res.active } : p));
-        } catch (error) {
-            console.error("Error toggling package:", error);
+        const success = await toggleSuspendPackage(id);
+        if (!success) {
+            alert("Erro ao alternar status do pacote.");
         }
     };
 
-    const handleOpenPackageModal = (pkg?: MonthlyPackage) => {
+    const handleOpenPackageModal = (pkg?: Package) => {
         setEditingPackage(pkg || null);
         setIsPackageModalOpen(true);
     };
@@ -3284,14 +3278,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const dashboardData = {
     };
 
-    // Destructure all needed data from context
-    const {
-        products,
-        services,
-        packages,
-        salonPlans,
-        units
-    } = useData();
+    // Destructure already done above
 
     // --- UNIT DATA ---
     const currentUnitData = useMemo(() => {
@@ -4322,7 +4309,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Canais': return <ChannelsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} navigate={navigate} onComingSoon={onComingSoon} />;
             case 'Chat': return <ChatPage onBack={handleBackToDashboard} targetClientId={chatClientTarget} onClearTarget={() => setChatClientTarget(null)} onComingSoon={onComingSoon} />;
             case 'Promoção': return <MonthlyPackagesPage
-                monthlyPackages={monthlyPackages.filter(p => p.usageType === 'Promoção')}
+                monthlyPackages={packages.filter(p => p.usageType === 'Promoção')}
                 packageSubscriptions={packageSubscriptions}
                 onSavePackage={handleSaveMonthlyPackage}
                 onDeletePackage={handleDeleteMonthlyPackage}
