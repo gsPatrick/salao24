@@ -1399,11 +1399,39 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateAppointmentStatus = async (id: number, status: string): Promise<Appointment | null> => {
         try {
-            const response = await appointmentsAPI.updateStatus(id, status.toLowerCase());
+            // Map frontend status to backend enum
+            const statusMap: { [key: string]: string } = {
+                'Agendado': 'agendado',
+                'Confirmado': 'confirmado',
+                'Em Espera': 'confirmado', // Map 'Em Espera' to 'confirmado' as backend doesn't support it yet
+                'Atendido': 'concluido',
+                'Falta': 'faltou',
+                'Cancelado': 'cancelado',
+                // Handle lowercase inputs just in case
+                'agendado': 'agendado',
+                'confirmado': 'confirmado',
+                'em espera': 'confirmado',
+                'atendido': 'concluido',
+                'falta': 'faltou',
+                'cancelado': 'cancelado',
+                'concluido': 'concluido',
+                'reagendado': 'reagendado'
+            };
+
+            const backendStatus = statusMap[status] || status.toLowerCase();
+
+            // Final fallback for safety
+            const validStatuses = ['agendado', 'confirmado', 'em_atendimento', 'concluido', 'faltou', 'cancelado', 'reagendado'];
+            const finalStatus = validStatuses.includes(backendStatus) ? backendStatus : 'agendado';
+
+            const response = await appointmentsAPI.updateStatus(id, finalStatus);
             await refreshAppointments();
-            if (['Atendido', 'realizado', 'concluído', 'Completed'].includes(status)) {
+
+            // Refresh transactions if completed
+            if (['concluido', 'Atendido', 'realizado', 'Completed'].includes(status) || finalStatus === 'concluido') {
                 await refreshTransactions();
             }
+
             return mapAppointmentFromAPI(response.data);
         } catch (error) {
             console.error('Error updating appointment status:', error);
