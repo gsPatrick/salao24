@@ -113,10 +113,10 @@ const ProfessionalColumn: React.FC<{
 
         const itemsForDay = [
             ...appointments.map(a => {
-                const service = apiServices.find(s => s.name === a.service);
+                const service = apiServices.find(s => (a.service_id && s.id === a.service_id) || s.name === a.service);
                 const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
 
-                let itemEndTime = a.endTime || a.end_time;
+                let itemEndTime = a.endTime || (a as any).end_time;
                 if (!itemEndTime) {
                     itemEndTime = minutesToTime(timeToMinutes(a.time) + defaultDuration);
                 }

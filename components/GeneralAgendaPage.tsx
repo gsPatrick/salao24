@@ -282,8 +282,9 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         salon_plan_id: payload.salonPlanId,
         date: payload.date,
         time: payload.time,
+        endTime: (payload as any).endTime,
         status: 'Agendado',
-        unit_id: selectedUnitId, // Essential for isolation
+        unit_id: selectedUnitId,
       });
     }
   };

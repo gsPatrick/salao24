@@ -1375,7 +1375,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 status: appointment.status ? appointment.status.toLowerCase() : 'agendado',
                 professional_id: appointment.professionalId,
                 client_id: appointment.clientId,
-                service_id: appointment.service_id || (appointment as any).serviceId, // Support both formats
+                service_id: appointment.service_id || (appointment as any).serviceId,
+                end_time: appointment.endTime || appointment.end_time,
             };
 
             let response;
