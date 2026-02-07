@@ -228,18 +228,16 @@ const ProfessionalColumn: React.FC<{
                                 return (
                                     <div key={`reserved-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative bg-gray-50 rounded-lg flex items-center justify-center">
                                         <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
-                                        <span className="text-xs text-gray-400 italic">{t('reserved') || 'Reservado'}</span>
+                                        <span className="text-xs text-gray-400 italic">Reservado</span>
                                     </div>
                                 );
                             }
                             if (item.type === 'slot') {
                                 return (
-                                    <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group">
-                                        <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
-                                        <div className="absolute inset-0 top-2" onClick={() => onOpenNewAppointment(professional, item.time)}>
-                                            <button className="w-full h-full hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                <PlusIcon />
-                                            </button>
+                                    <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group" onClick={() => onOpenNewAppointment(professional, item.time)}>
+                                        <div className="flex items-center justify-center h-full cursor-pointer hover:bg-primary/5 transition-colors">
+                                            <PlusIcon />
+                                            <span className="ml-1 text-sm text-gray-500">{item.time}</span>
                                         </div>
                                     </div>
                                 );
