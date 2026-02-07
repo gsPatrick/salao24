@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ScheduleSettingsModal, { Schedule } from './ScheduleSettingsModal';
 import { DirectMailCampaignData } from '../types';
-import { aiAPI } from '../lib/api';
+import { aiAPI, marketingAPI } from '../lib/api';
 
 interface NewDirectMailModalProps {
   isOpen: boolean;
@@ -11,6 +11,8 @@ interface NewDirectMailModalProps {
   onSave: (data: Omit<DirectMailCampaignData, 'id' | 'status' | 'history' | 'roi'>) => void;
   isIndividualPlan: boolean;
   campaignToEdit?: DirectMailCampaignData | null;
+  unitName?: string;
+  unitPhone?: string;
 }
 
 const mockPhoneNumbers = ['(81) 91234-5678 (Principal)', '(81) 98765-4321 (Marketing)'];
@@ -54,10 +56,12 @@ const Toolbar: React.FC<{
   </div>
 );
 
-export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, onClose, onSave, isIndividualPlan, campaignToEdit }) => {
+export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, onClose, onSave, isIndividualPlan, campaignToEdit, unitName, unitPhone }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sendType, setSendType] = useState<'Email' | 'SMS' | 'WhatsApp'>('Email');
+  const [whatsappStatus, setWhatsappStatus] = useState<{ status: 'connected' | 'disconnected', phone: string | null } | null>(null);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -81,6 +85,23 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
 
   useEffect(() => {
     if (isOpen) {
+      const fetchWhatsappStatus = async () => {
+        setWhatsappLoading(true);
+        try {
+          const data = await marketingAPI.getWhatsAppStatus();
+          setWhatsappStatus(data);
+          // Se estiver criando e WhatsApp estiver conectado, define como padrão
+          if (!campaignToEdit && data.status === 'connected' && data.phone && !phoneNumber) {
+            setPhoneNumber(`WhatsApp: ${data.phone}`);
+          }
+        } catch (error) {
+          console.error('Error fetching whatsapp status:', error);
+        } finally {
+          setWhatsappLoading(false);
+        }
+      };
+      fetchWhatsappStatus();
+
       if (campaignToEdit) {
         setName(campaignToEdit.name);
         setDescription(campaignToEdit.description);
@@ -267,7 +288,7 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                   <select id="send-type" value={sendType} onChange={e => setSendType(e.target.value as any)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                     <option value="Email">Email</option>
                     <option value="SMS" disabled={isIndividualPlan}>SMS {isIndividualPlan && '(Plano Empresa)'}</option>
-                    <option value="WhatsApp" disabled>WhatsApp (Serviço Adicional)</option>
+                    <option value="WhatsApp">WhatsApp</option>
                   </select>
                 </div>
 
@@ -316,6 +337,7 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                         <label htmlFor="sms-phone" className="block text-sm font-medium text-gray-700">Selecionar qual telefone vai enviar</label>
                         <select id="sms-phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                           <option value="">Selecione...</option>
+                          {unitPhone && <option value={unitPhone}>Telefone Fixo: {unitPhone}</option>}
                           {mockPhoneNumbers.map(phone => <option key={phone} value={phone}>{phone}</option>)}
                         </select>
                       </div>
@@ -330,6 +352,69 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                         >
                           {isImprovingText ? (<><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Melhorando...</span></>) : (<><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg><span>Melhorar com IA</span></>)}
                         </button>
+                      </div>
+                    </>
+                  )}
+                  {sendType === 'WhatsApp' && (
+                    <>
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label htmlFor="whatsapp-phone" className="block text-sm font-medium text-gray-700">Selecionar número de envio</label>
+                          {whatsappLoading ? (
+                            <span className="text-xs text-gray-400 animate-pulse">Verificando...</span>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${whatsappStatus?.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                              {whatsappStatus?.status === 'connected' ? `ON: ${whatsappStatus.phone}` : 'OFF'}
+                            </span>
+                          )}
+                        </div>
+                        <select id="whatsapp-phone" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                          <option value="">Selecione...</option>
+                          {whatsappStatus?.status === 'connected' && whatsappStatus.phone && (
+                            <option value={`WhatsApp: ${whatsappStatus.phone}`}>WhatsApp Conectado ({whatsappStatus.phone})</option>
+                          )}
+                          {unitPhone && (
+                            <option value={unitPhone}>Telefone Fixo da Unidade: {unitPhone}</option>
+                          )}
+                        </select>
+                        <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          O número deve estar conectado na página de Canais para envios via WhatsApp.
+                        </p>
+                      </div>
+                      <div>
+                        <label htmlFor="whatsapp-body" className="block text-sm font-medium text-gray-700">Texto da Mensagem</label>
+                        <textarea
+                          id="whatsapp-body"
+                          value={whatsappBody}
+                          onChange={e => setWhatsappBody(e.target.value)}
+                          rows={4}
+                          required
+                          className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                        />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => handleImproveText('whatsapp')}
+                            disabled={isImprovingText}
+                            className="flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-gray-700 disabled:bg-gray-400"
+                          >
+                            {isImprovingText ? (
+                              <><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Melhorando...</span></>
+                            ) : (
+                              <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg><span>Melhorar com IA</span></>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => whatsappMediaInputRef.current?.click()}
+                            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {whatsappMedia ? whatsappMedia.name : 'Anexar Mídia'}
+                          </button>
+                          <input ref={whatsappMediaInputRef} type="file" onChange={(e) => handleMediaChange(e, 'whatsapp')} className="hidden" />
+                        </div>
                       </div>
                     </>
                   )}

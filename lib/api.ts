@@ -546,6 +546,10 @@ export const marketingAPI = {
     testSMTP: async (smtpSettings: any) => {
         const response = await api.post('/marketing/test-smtp', smtpSettings);
         return response.data;
+    },
+    getWhatsAppStatus: async () => {
+        const response = await api.get('/marketing/whatsapp/status');
+        return response.data;
     }
 };
 

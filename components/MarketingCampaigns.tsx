@@ -224,6 +224,9 @@ const NewCampaignModal: React.FC<{
     const [phoneNumber, setPhoneNumber] = useState('');
     const [estimatedAudience, setEstimatedAudience] = useState<number | null>(null);
 
+    const [whatsappStatus, setWhatsappStatus] = useState<{ status: 'connected' | 'disconnected', phone: string | null } | null>(null);
+    const [whatsappLoading, setWhatsappLoading] = useState(false);
+
     const [isExiting, setIsExiting] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -305,6 +308,23 @@ const NewCampaignModal: React.FC<{
 
     useEffect(() => {
         if (isOpen) {
+            const fetchWhatsappStatus = async () => {
+                setWhatsappLoading(true);
+                try {
+                    const data = await marketingAPI.getWhatsAppStatus();
+                    setWhatsappStatus(data);
+                    // Se estiver conectando e não for edição, define como padrão
+                    if (!campaignToEdit && data.status === 'connected' && data.phone && !phoneNumber) {
+                        setPhoneNumber(`WhatsApp: ${data.phone}`);
+                    }
+                } catch (error) {
+                    console.error('Error fetching whatsapp status:', error);
+                } finally {
+                    setWhatsappLoading(false);
+                }
+            };
+            fetchWhatsappStatus();
+
             if (campaignToEdit) {
                 setName(campaignToEdit.name);
                 // FIX: Ensure targetAudience is an array and filter out any null/undefined values
@@ -507,20 +527,29 @@ const NewCampaignModal: React.FC<{
                                 </div>
 
                                 <div>
-                                    <label htmlFor="phone-number" className="block text-sm font-medium text-gray-700">Selecionar número de envio (WhatsApp)</label>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label htmlFor="phone-number" className="block text-sm font-medium text-gray-700">Selecionar número de envio (WhatsApp)</label>
+                                        {whatsappLoading ? (
+                                            <span className="text-xs text-gray-400 animate-pulse">Verificando...</span>
+                                        ) : (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${whatsappStatus?.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                                {whatsappStatus?.status === 'connected' ? `ON: ${whatsappStatus.phone}` : 'OFF'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <select id="phone-number" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                                         <option value="">Selecione um número...</option>
-                                        {unitPhone && (
-                                            <option value={unitPhone}>Número Principal ({unitPhone})</option>
+                                        {whatsappStatus?.status === 'connected' && whatsappStatus.phone && (
+                                            <option value={`WhatsApp: ${whatsappStatus.phone}`}>WhatsApp Conectado ({whatsappStatus.phone})</option>
                                         )}
-                                        {!unitPhone && (
-                                            <>
-                                                <option value="WhatsApp para Atendimento">WhatsApp para Atendimento</option>
-                                                <option value="WhatsApp para Leads" disabled={isIndividualPlan}>WhatsApp para Leads {isIndividualPlan && '(Plano Empresa)'}</option>
-                                            </>
+                                        {unitPhone && (
+                                            <option value={unitPhone}>Telefone Fixo da Unidade: {unitPhone}</option>
                                         )}
                                     </select>
-                                    <p className="text-xs text-gray-500 mt-1">O número deve estar conectado na página de Canais.</p>
+                                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        O número deve estar conectado na página de Canais para envios via WhatsApp.
+                                    </p>
                                 </div>
 
                                 <MessageTypeSelector selected={messageType} onChange={(type) => setMessageType(type as any)} />
@@ -829,7 +858,7 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
     );
 };
 
-const DirectMailTab: React.FC<Partial<MarketingCampaignsProps>> = ({ directMailCampaigns, onAddDirectMailCampaign, onUpdateDirectMailCampaign, onDeleteDirectMailCampaign, onArchiveDirectMailCampaign, onUnarchiveDirectMailCampaign, onSendDirectMailCampaign, isIndividualPlan }) => {
+const DirectMailTab: React.FC<Partial<MarketingCampaignsProps>> = ({ directMailCampaigns, onAddDirectMailCampaign, onUpdateDirectMailCampaign, onDeleteDirectMailCampaign, onArchiveDirectMailCampaign, onUnarchiveDirectMailCampaign, onSendDirectMailCampaign, isIndividualPlan, unitName, unitPhone }) => {
     // Content from DirectMailCampaign.tsx
     const props = {
         campaigns: directMailCampaigns || [],
@@ -840,6 +869,8 @@ const DirectMailTab: React.FC<Partial<MarketingCampaignsProps>> = ({ directMailC
         onUnarchiveCampaign: onUnarchiveDirectMailCampaign!,
         onSendCampaign: onSendDirectMailCampaign!,
         isIndividualPlan: isIndividualPlan || false,
+        unitName,
+        unitPhone,
     };
     return <DirectMailCampaign {...props} />;
 };

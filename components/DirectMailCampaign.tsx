@@ -15,6 +15,8 @@ interface DirectMailCampaignProps {
     onUnarchiveCampaign: (campaignId: number) => void;
     onSendCampaign: (campaignId: number) => void;
     isIndividualPlan: boolean;
+    unitName?: string;
+    unitPhone?: string;
 }
 
 const SendTypeIcon: React.FC<{ type: 'Email' | 'SMS' | 'WhatsApp' }> = ({ type }) => {
@@ -38,7 +40,7 @@ const StatCard: React.FC<{ title: string; value: string; }> = ({ title, value })
 
 
 // FIX: Changed to a named export to resolve module resolution errors.
-export const DirectMailCampaign: React.FC<DirectMailCampaignProps> = ({ campaigns, onAddCampaign, onUpdateCampaign, onDeleteCampaign, onArchiveCampaign, onUnarchiveCampaign, onSendCampaign, isIndividualPlan }) => {
+export const DirectMailCampaign: React.FC<DirectMailCampaignProps> = ({ campaigns, onAddCampaign, onUpdateCampaign, onDeleteCampaign, onArchiveCampaign, onUnarchiveCampaign, onSendCampaign, isIndividualPlan, unitName, unitPhone }) => {
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -263,6 +265,8 @@ export const DirectMailCampaign: React.FC<DirectMailCampaignProps> = ({ campaign
                 onSave={handleSave}
                 isIndividualPlan={isIndividualPlan}
                 campaignToEdit={campaignToEdit}
+                unitName={unitName}
+                unitPhone={unitPhone}
             />
             <DirectMailDetailsModal
                 isOpen={isDetailsModalOpen}
