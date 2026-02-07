@@ -7,10 +7,11 @@ import api, { professionalsAPI } from '../lib/api';
 interface Appointment {
   id: number;
   clientId: number;
+  professionalId?: number;
   date: string;
   time: string;
   service: string;
-  status: 'Agendado' | 'Em Espera' | 'Atendido';
+  status: 'Agendado' | 'Em Espera' | 'Atendido' | 'concluido' | 'atendido';
 }
 
 interface ClientAppPageProps {
@@ -386,8 +387,14 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
     .filter(a => a.clientId === clientData.id && new Date(a.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const pastAppointments = (clientData?.history || [])
-    .filter(h => new Date(h.date) < today)
+  // Derive past appointments from actual appointments data (completed ones)
+  const pastAppointments = (appointments || [])
+    .filter(a => {
+      const isThisClient = a.clientId === clientData.id;
+      const isPast = new Date(a.date) < today;
+      const isCompleted = ['concluido', 'Atendido', 'atendido', 'Concluído'].includes(a.status);
+      return isThisClient && (isPast || isCompleted);
+    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const allAppointments = (appointments || [])
@@ -510,25 +517,25 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                 <h2 className="text-xl font-bold text-secondary mb-4">Histórico de Serviços</h2>
                 {pastAppointments.length > 0 ? (
                   <div className="space-y-3">
-                    {pastAppointments.map(item => (
-                      <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-bold text-secondary">{item.name}</p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} com {item.professional}
-                            </p>
+                    {pastAppointments.map(item => {
+                      const prof = professionals.find(p => p.id === item.professionalId);
+                      return (
+                        <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-secondary">{item.service}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
+                                {prof && <span> com {prof.name}</span>}
+                              </p>
+                            </div>
+                            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
+                              Concluído
+                            </span>
                           </div>
-                          {item.reviewed ? (
-                            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-800">{t('rated')}</span>
-                          ) : (
-                            <button onClick={() => setServiceToReview(item)} className="text-xs font-semibold px-3 py-1 rounded-full bg-primary text-white hover:bg-primary-dark transition-colors">
-                              {t('rate')}
-                            </button>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-8 bg-gray-100 rounded-lg">Seu histórico de serviços está vazio.</p>
