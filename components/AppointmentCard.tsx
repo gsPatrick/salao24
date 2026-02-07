@@ -109,10 +109,9 @@ const AppointmentCard: React.FC<{
         return (
             <div
                 onClick={onClick}
-                className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group h-full ${isBirthday ? 'bg-yellow-300' : 'bg-white'
+                className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group ${isBirthday ? 'bg-yellow-300' : 'bg-white'
                     } ${isDraggable ? 'cursor-grab' : 'cursor-pointer'} ${isDragging ? 'opacity-30' : 'transform hover:scale-105'
                     }`}
-                style={{ height: '100%' }}
                 draggable={isDraggable}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}

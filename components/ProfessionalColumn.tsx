@@ -137,32 +137,45 @@ const ProfessionalColumn: React.FC<{
             }))
         ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-        const renderedItems = [];
+        const renderedItems: any[] = [];
         let currentTime = timeToMinutes(openingTime);
         const endTime = timeToMinutes(closingTime);
         const slotDuration = 30;
 
-        let itemIndex = 0;
-
         while (currentTime < endTime) {
             const currentSlotTime = minutesToTime(currentTime);
 
-            // Check if there is an item starting at this time using comparison of minutes to be robust
-            const item = itemsForDay.find(i => Math.abs(timeToMinutes(i.startTime) - currentTime) < 1);
+            // Check if any item COVERS this time slot (starts at or before, ends after)
+            const coveringItem = itemsForDay.find(i => {
+                const itemStart = timeToMinutes(i.startTime);
+                const itemEnd = timeToMinutes(i.endTime);
+                return currentTime >= itemStart && currentTime < itemEnd;
+            });
 
-            if (item) {
-                // Render the item
-                if (item.type === 'appointment') {
-                    const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
-                    renderedItems.push({ ...item, duration: Math.max(duration, 30) }); // Ensure min duration for rendering
-                    currentTime += Math.max(duration, 30); // Advance by at least 30 mins to avoid infinite loop
-                } else if (item.type === 'block') {
-                    const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
-                    renderedItems.push({ ...item, duration: Math.max(duration, 30) });
-                    currentTime += Math.max(duration, 30);
+            if (coveringItem) {
+                const itemStart = timeToMinutes(coveringItem.startTime);
+
+                if (Math.abs(currentTime - itemStart) < 1) {
+                    // This is the START of the item - render the appointment/block card
+                    renderedItems.push({
+                        type: coveringItem.type,
+                        data: coveringItem.data,
+                        startTime: coveringItem.startTime,
+                        endTime: coveringItem.endTime,
+                        slotTime: currentSlotTime
+                    });
+                } else {
+                    // This slot is COVERED by the item but not the start - render as "reserved"
+                    renderedItems.push({
+                        type: 'reserved' as const,
+                        time: currentSlotTime,
+                        parentType: coveringItem.type,
+                        parentData: coveringItem.data
+                    });
                 }
+                currentTime += slotDuration;
             } else {
-                // Render a slot
+                // Normal empty slot
                 renderedItems.push({ type: 'slot' as const, time: currentSlotTime });
                 currentTime += slotDuration;
             }
@@ -187,37 +200,35 @@ const ProfessionalColumn: React.FC<{
                     {renderedItems.length > 0 ? (
                         renderedItems.map((item, index) => {
                             if (item.type === 'appointment') {
-                                // Calculate height including gaps (space-y-3 = 0.75rem)
-                                // 8rem per 30 mins
-                                const slots = item.duration / 30;
-                                const height = `calc(${slots} * 8rem + ${Math.max(0, slots - 1)} * 0.75rem)`;
-
                                 return (
-                                    <div key={`appt-${item.data.id}`} style={{ height }}>
-                                        <AppointmentCard
-                                            appointment={{ ...item.data, endTime: item.endTime }}
-                                            duration={item.duration}
-                                            onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
-                                            onClick={() => onCardClick(item.data)}
-                                            currentUser={currentUser}
-                                            onReassignClick={() => onReassignClick(item.data)}
-                                            onDragStart={(e) => onDragStart(e, item.data.id)}
-                                            onDragEnd={onDragEnd}
-                                            isDraggable={isDraggable}
-                                            isDragging={draggedAppointmentId === item.data.id}
-                                        />
-                                    </div>
+                                    <AppointmentCard
+                                        key={`appt-${item.data.id}`}
+                                        appointment={{ ...item.data, endTime: item.endTime }}
+                                        onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
+                                        onClick={() => onCardClick(item.data)}
+                                        currentUser={currentUser}
+                                        onReassignClick={() => onReassignClick(item.data)}
+                                        onDragStart={(e) => onDragStart(e, item.data.id)}
+                                        onDragEnd={onDragEnd}
+                                        isDraggable={isDraggable}
+                                        isDragging={draggedAppointmentId === item.data.id}
+                                    />
                                 );
                             }
                             if (item.type === 'block') {
-                                const slots = item.duration / 30;
-                                const height = `calc(${slots} * 8rem + ${Math.max(0, slots - 1)} * 0.75rem)`;
                                 return (
-                                    <div key={`block-${item.data.id}`} style={{ height }}>
-                                        <BlockCard
-                                            block={item.data}
-                                            onDelete={onDeleteBlock}
-                                        />
+                                    <BlockCard
+                                        key={`block-${item.data.id}`}
+                                        block={item.data}
+                                        onDelete={onDeleteBlock}
+                                    />
+                                );
+                            }
+                            if (item.type === 'reserved') {
+                                return (
+                                    <div key={`reserved-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative bg-gray-50 rounded-lg flex items-center justify-center">
+                                        <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
+                                        <span className="text-xs text-gray-400 italic">{t('reserved') || 'Reservado'}</span>
                                     </div>
                                 );
                             }
