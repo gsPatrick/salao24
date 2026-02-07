@@ -259,8 +259,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                         setName(val);
                         if (val.length >= 2) {
                           const matches = contextClients.filter(c =>
-                            c.name.toLowerCase().includes(val.toLowerCase())
-                          ).slice(0, 5);
+                            (c.name || '').toLowerCase().includes(val.toLowerCase())
+                          ).slice(0, 10); // More results
                           setSuggestions(matches);
                           setShowSuggestions('name');
                         } else {
@@ -274,7 +274,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                       autoComplete="off"
                     />
                     {showSuggestions === 'name' && suggestions.length > 0 && (
-                      <ul className="absolute z-[60] w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-48 overflow-auto">
+                      <ul className="absolute z-[100] w-full bg-white border border-gray-200 rounded-md shadow-2xl mt-1 max-h-60 overflow-auto border-t-0 ring-1 ring-black ring-opacity-5">
                         {suggestions.map(c => (
                           <li
                             key={c.id}
@@ -320,7 +320,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                       autoComplete="off"
                     />
                     {showSuggestions === 'phone' && suggestions.length > 0 && (
-                      <ul className="absolute z-[60] w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-48 overflow-auto">
+                      <ul className="absolute z-[100] w-full bg-white border border-gray-200 rounded-md shadow-2xl mt-1 max-h-60 overflow-auto border-t-0 ring-1 ring-black ring-opacity-5">
                         {suggestions.map(c => (
                           <li
                             key={c.id}
