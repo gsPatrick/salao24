@@ -1441,11 +1441,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const cancelAppointment = async (id: number): Promise<boolean> => {
         try {
-            await appointmentsAPI.cancel(id);
+            await appointmentsAPI.delete(id); // Delete completely instead of just updating status
             await refreshAppointments();
             return true;
         } catch (error) {
-            console.error('Error canceling appointment:', error);
+            console.error('Error deleting appointment:', error);
             return false;
         }
     };
