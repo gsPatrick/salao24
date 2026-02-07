@@ -37,7 +37,7 @@ const AppointmentCard: React.FC<{
     onDragEnd: () => void;
     isDraggable: boolean;
     isDragging: boolean;
-    // Optional: pass client directly if already fetched
+    duration?: number;
     clientData?: any;
 }> = ({
     appointment,
@@ -49,6 +49,7 @@ const AppointmentCard: React.FC<{
     onDragEnd,
     isDraggable,
     isDragging,
+    duration,
     clientData,
 }) => {
         const { t } = useLanguage();
@@ -98,6 +99,7 @@ const AppointmentCard: React.FC<{
                 className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group ${isBirthday ? 'bg-yellow-300' : 'bg-white'
                     } ${isDraggable ? 'cursor-grab' : 'cursor-pointer'} ${isDragging ? 'opacity-30' : 'transform hover:scale-105'
                     }`}
+                style={{ minHeight: duration && duration > 30 ? `${(duration / 30) * 110}px` : 'auto' }}
                 draggable={isDraggable}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}

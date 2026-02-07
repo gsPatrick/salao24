@@ -188,6 +188,7 @@ const ProfessionalColumn: React.FC<{
                                     <AppointmentCard
                                         key={`appt-${item.data.id}`}
                                         appointment={item.data}
+                                        duration={timeToMinutes(item.endTime) - timeToMinutes(item.startTime)}
                                         onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
                                         onClick={() => onCardClick(item.data)}
                                         currentUser={currentUser}
