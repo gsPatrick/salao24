@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client, Professional } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import api, { professionalsAPI } from '../lib/api';
+import api, { professionalsAPI, appointmentsAPI } from '../lib/api';
 
 // --- Interfaces ---
 interface Appointment {
@@ -315,6 +315,30 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
   const [serviceToReview, setServiceToReview] = useState<any | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
+
+  // Fetch client's own appointments directly (DataContext doesn't load for client users)
+  useEffect(() => {
+    const fetchClientAppointments = async () => {
+      try {
+        const response = await appointmentsAPI.getAll({ client_id: currentClient.id });
+        if (response.data) {
+          setClientAppointments(response.data.map((a: any) => ({
+            id: a.id,
+            clientId: a.client_id || a.clientId,
+            professionalId: a.professional_id || a.professionalId,
+            date: a.date,
+            time: a.time || a.start_time,
+            service: a.service_name || a.service,
+            status: a.status
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching client appointments:', error);
+      }
+    };
+    fetchClientAppointments();
+  }, [currentClient.id]);
 
   useEffect(() => {
     const fetchProfessionals = async () => {
@@ -383,22 +407,23 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
 
   const today = new Date();
 
-  const upcomingAppointments = (appointments || [])
-    .filter(a => a.clientId === clientData.id && new Date(a.date) >= today)
+  // Use clientAppointments fetched directly, fallback to prop appointments
+  const effectiveAppointments = clientAppointments.length > 0 ? clientAppointments : (appointments || []).filter(a => a.clientId === clientData.id);
+
+  const upcomingAppointments = effectiveAppointments
+    .filter(a => new Date(a.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Derive past appointments from actual appointments data (completed ones)
-  const pastAppointments = (appointments || [])
+  const pastAppointments = effectiveAppointments
     .filter(a => {
-      const isThisClient = a.clientId === clientData.id;
       const isPast = new Date(a.date) < today;
       const isCompleted = ['concluido', 'Atendido', 'atendido', 'Concluído'].includes(a.status);
-      return isThisClient && (isPast || isCompleted);
+      return isPast || isCompleted;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const allAppointments = (appointments || [])
-    .filter(a => a.clientId === clientData.id)
+  const allAppointments = effectiveAppointments
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleReviewSubmit = (feedback: any) => {
