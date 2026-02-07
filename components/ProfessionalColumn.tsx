@@ -111,20 +111,8 @@ const ProfessionalColumn: React.FC<{
             return `${h}:${m}`;
         };
 
-        // Create a full grid of slots
-        const renderedItems = [];
-        let currentTime = timeToMinutes(openingTime);
-        const endTime = timeToMinutes(closingTime);
-        const slotDuration = 30;
-
-        while (currentTime < endTime) {
-            const slotTime = minutesToTime(currentTime);
-            renderedItems.push({ type: 'slot' as const, time: slotTime, startTime: slotTime, endTime: minutesToTime(currentTime + slotDuration) });
-            currentTime += slotDuration;
-        }
-
-        // Add actual items distinct from slots
-        const overlayItems = [
+        // Merge appointments and blocks into a single sorted list
+        const itemsForDay = [
             ...appointments.map(a => {
                 const service = apiServices.find(s => (a.service_id && s.id === a.service_id) || s.name === a.service);
                 const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
@@ -147,7 +135,38 @@ const ProfessionalColumn: React.FC<{
                 endTime: b.endTime,
                 data: b
             }))
-        ];
+        ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+        const renderedItems = [];
+        let currentTime = timeToMinutes(openingTime);
+        const endTime = timeToMinutes(closingTime);
+        const slotDuration = 30;
+
+        let itemIndex = 0;
+
+        while (currentTime < endTime) {
+            const currentSlotTime = minutesToTime(currentTime);
+
+            // Check if there is an item starting at this time (allow small tolerance if needed, but strict here)
+            const item = itemsForDay.find(i => i.startTime === currentSlotTime); // simplified find, ideally could use index
+
+            if (item) {
+                // Render the item
+                if (item.type === 'appointment') {
+                    const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
+                    renderedItems.push({ ...item, duration });
+                    currentTime += duration; // Advance by appointment duration (e.g. 60)
+                } else if (item.type === 'block') {
+                    const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
+                    renderedItems.push({ ...item, duration });
+                    currentTime += duration;
+                }
+            } else {
+                // Render a slot
+                renderedItems.push({ type: 'slot' as const, time: currentSlotTime });
+                currentTime += slotDuration;
+            }
+        }
 
         return (
             <div
@@ -164,36 +183,15 @@ const ProfessionalColumn: React.FC<{
                         <p className="text-sm text-primary font-semibold">{professional.specialties?.[0] || professional.occupation}</p>
                     </div>
                 </div>
-                <div className="relative h-[calc(100vh-380px)] overflow-y-auto pr-2">
-                    {/* Grid Slots */}
-                    {renderedItems.filter(i => i.type === 'slot').map((item, index) => (
-                        <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group">
-                            <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
-                            <div className="absolute inset-0 top-2" onClick={() => onOpenNewAppointment(professional, item.time)}>
-                                <button className="w-full h-full hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                    <PlusIcon />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Appointments & Blocks Overlays */}
-                    {overlayItems.map(item => {
-                        const startMinutes = timeToMinutes(item.startTime);
-                        const endMinutes = timeToMinutes(item.endTime);
-                        const duration = endMinutes - startMinutes;
-                        const topOffset = ((startMinutes - timeToMinutes(openingTime)) / 30) * 128; // 128px per 30min slot (h-32)
-
-                        if (item.type === 'appointment') {
-                            return (
-                                <div
-                                    key={`appt-${item.data.id}`}
-                                    className="absolute w-full left-0 z-10"
-                                    style={{ top: `${topOffset}px`, height: `${(duration / 30) * 128}px` }}
-                                >
+                <div className="space-y-3 h-[calc(100vh-380px)] overflow-y-auto pr-2 relative">
+                    {renderedItems.length > 0 ? (
+                        renderedItems.map((item, index) => {
+                            if (item.type === 'appointment') {
+                                return (
                                     <AppointmentCard
+                                        key={`appt-${item.data.id}`}
                                         appointment={{ ...item.data, endTime: item.endTime }}
-                                        duration={duration}
+                                        duration={item.duration}
                                         onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
                                         onClick={() => onCardClick(item.data)}
                                         currentUser={currentUser}
@@ -203,25 +201,35 @@ const ProfessionalColumn: React.FC<{
                                         isDraggable={isDraggable}
                                         isDragging={draggedAppointmentId === item.data.id}
                                     />
-                                </div>
-                            );
-                        }
-                        if (item.type === 'block') {
-                            return (
-                                <div
-                                    key={`block-${item.data.id}`}
-                                    className="absolute w-full px-1 z-0"
-                                    style={{ top: `${topOffset}px`, height: `${(duration / 30) * 128}px` }}
-                                >
-                                    <BlockCard
-                                        block={item.data}
-                                        onDelete={onDeleteBlock}
-                                    />
-                                </div>
-                            );
-                        }
-                        return null;
-                    })}
+                                );
+                            }
+                            if (item.type === 'block') {
+                                return (
+                                    <div key={`block-${item.data.id}`} style={{ height: item.duration ? `${(item.duration / 30) * 8}rem` : '8rem' }}>
+                                        <BlockCard
+                                            block={item.data}
+                                            onDelete={onDeleteBlock}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (item.type === 'slot') {
+                                return (
+                                    <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group">
+                                        <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
+                                        <div className="absolute inset-0 top-2" onClick={() => onOpenNewAppointment(professional, item.time)}>
+                                            <button className="w-full h-full hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                <PlusIcon />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })
+                    ) : (
+                        <p className="text-center text-gray-500 text-sm pt-10">{t('noAppointments')}</p>
+                    )}
                 </div>
             </div>
         );
