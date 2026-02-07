@@ -344,22 +344,37 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                     <select value={service} onChange={e => setService(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
                       <option value="">Selecione...</option>
 
-                      <optgroup label="Serviços">
+                      <optgroup label={t('services')}>
                         {contextServices
-                          .filter(s => (!selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId)) && !s.suspended)
-                          .map(s => <option key={`service-${s.id}`} value={`service-${s.id}`}>{s.name}</option>)}
+                          .filter(s =>
+                            (!selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId)) &&
+                            !s.suspended && s.active !== false
+                          )
+                          .map(s => (
+                            <option key={`service-${s.id}`} value={`service-${s.id}`}>{s.name}</option>))}
                       </optgroup>
 
-                      <optgroup label="Pacotes">
+                      <optgroup label={t('packages')}>
                         {contextPackages
-                          .filter(p => (!selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId)) && !p.suspended)
-                          .map(p => <option key={`package-${p.id}`} value={`package-${p.id}`}>{p.name}</option>)}
+                          .filter(p =>
+                            (!selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId)) &&
+                            !p.suspended && p.active !== false && p.isActive !== false
+                          )
+                          .map(p => (
+                            <option key={`package-${p.id}`} value={`package-${p.id}`}>{p.name}</option>))}
                       </optgroup>
 
-                      <optgroup label="Planos">
+                      <optgroup label={t('plans')}>
                         {contextSalonPlans
-                          .filter(pl => (!selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId)) && !pl.suspended)
-                          .map(pl => <option key={`plan-${pl.id}`} value={`plan-${pl.id}`}>{pl.name}</option>)}
+                          .filter(pl =>
+                            (!selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId)) &&
+                            !pl.suspended
+                          )
+                          .map(pl => (
+                            <option key={`plan-${pl.id}`} value={`plan-${pl.id}`}>
+                              {pl.name}
+                            </option>
+                          ))}
                       </optgroup>
                     </select>
                   </div>
