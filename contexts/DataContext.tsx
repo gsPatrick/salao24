@@ -1399,7 +1399,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateAppointmentStatus = async (id: number, status: string): Promise<Appointment | null> => {
         try {
-            const response = await appointmentsAPI.updateStatus(id, status);
+            const response = await appointmentsAPI.updateStatus(id, status.toLowerCase());
             await refreshAppointments();
             if (['Atendido', 'realizado', 'concluído', 'Completed'].includes(status)) {
                 await refreshTransactions();

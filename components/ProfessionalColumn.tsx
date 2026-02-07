@@ -33,7 +33,7 @@ interface TimeBlock {
 const BlockCard: React.FC<{ block: TimeBlock; onDelete: (blockId: number) => void }> = ({ block, onDelete }) => {
     const { t } = useLanguage();
     return (
-        <div className="bg-gray-200 p-3 rounded-lg shadow-inner relative text-center group">
+        <div className="bg-gray-200 p-3 rounded-lg shadow-inner relative text-center group h-full">
             <div
                 className="absolute inset-0 bg-repeat bg-center opacity-10"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")` }}
@@ -111,7 +111,20 @@ const ProfessionalColumn: React.FC<{
             return `${h}:${m}`;
         };
 
-        const itemsForDay = [
+        // Create a full grid of slots
+        const renderedItems = [];
+        let currentTime = timeToMinutes(openingTime);
+        const endTime = timeToMinutes(closingTime);
+        const slotDuration = 30;
+
+        while (currentTime < endTime) {
+            const slotTime = minutesToTime(currentTime);
+            renderedItems.push({ type: 'slot' as const, time: slotTime, startTime: slotTime, endTime: minutesToTime(currentTime + slotDuration) });
+            currentTime += slotDuration;
+        }
+
+        // Add actual items distinct from slots
+        const overlayItems = [
             ...appointments.map(a => {
                 const service = apiServices.find(s => (a.service_id && s.id === a.service_id) || s.name === a.service);
                 const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
@@ -134,36 +147,7 @@ const ProfessionalColumn: React.FC<{
                 endTime: b.endTime,
                 data: b
             }))
-        ].sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-        const renderedItems = [];
-        let currentTime = timeToMinutes(openingTime); // workday start
-        const endTime = timeToMinutes(closingTime); // workday end
-        const slotDuration = 30;
-
-        itemsForDay.forEach(item => {
-            const itemStartTime = timeToMinutes(item.startTime);
-
-            // Fill gap before the item with available slots
-            while (currentTime < itemStartTime) {
-                const slotTime = minutesToTime(currentTime);
-                renderedItems.push({ type: 'slot' as const, time: slotTime });
-                currentTime += slotDuration;
-            }
-
-            // Add the actual item (appointment or block)
-            renderedItems.push(item);
-
-            // Update currentTime to be after the item
-            currentTime = Math.max(currentTime, timeToMinutes(item.endTime));
-        });
-
-        // Fill gap after the last item until end of day
-        while (currentTime < endTime) {
-            const slotTime = minutesToTime(currentTime);
-            renderedItems.push({ type: 'slot' as const, time: slotTime });
-            currentTime += slotDuration;
-        }
+        ];
 
         return (
             <div
@@ -180,15 +164,36 @@ const ProfessionalColumn: React.FC<{
                         <p className="text-sm text-primary font-semibold">{professional.specialties?.[0] || professional.occupation}</p>
                     </div>
                 </div>
-                <div className="space-y-3 h-[calc(100vh-380px)] overflow-y-auto pr-2">
-                    {renderedItems.length > 0 ? (
-                        renderedItems.map((item, index) => {
-                            if (item.type === 'appointment') {
-                                return (
+                <div className="relative h-[calc(100vh-380px)] overflow-y-auto pr-2">
+                    {/* Grid Slots */}
+                    {renderedItems.filter(i => i.type === 'slot').map((item, index) => (
+                        <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group">
+                            <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
+                            <div className="absolute inset-0 top-2" onClick={() => onOpenNewAppointment(professional, item.time)}>
+                                <button className="w-full h-full hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <PlusIcon />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Appointments & Blocks Overlays */}
+                    {overlayItems.map(item => {
+                        const startMinutes = timeToMinutes(item.startTime);
+                        const endMinutes = timeToMinutes(item.endTime);
+                        const duration = endMinutes - startMinutes;
+                        const topOffset = ((startMinutes - timeToMinutes(openingTime)) / 30) * 128; // 128px per 30min slot (h-32)
+
+                        if (item.type === 'appointment') {
+                            return (
+                                <div
+                                    key={`appt-${item.data.id}`}
+                                    className="absolute w-full left-0 z-10"
+                                    style={{ top: `${topOffset}px`, height: `${(duration / 30) * 128}px` }}
+                                >
                                     <AppointmentCard
-                                        key={`appt-${item.data.id}`}
                                         appointment={{ ...item.data, endTime: item.endTime }}
-                                        duration={timeToMinutes(item.endTime) - timeToMinutes(item.startTime)}
+                                        duration={duration}
                                         onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
                                         onClick={() => onCardClick(item.data)}
                                         currentUser={currentUser}
@@ -198,34 +203,25 @@ const ProfessionalColumn: React.FC<{
                                         isDraggable={isDraggable}
                                         isDragging={draggedAppointmentId === item.data.id}
                                     />
-                                );
-                            }
-                            if (item.type === 'block') {
-                                return (
+                                </div>
+                            );
+                        }
+                        if (item.type === 'block') {
+                            return (
+                                <div
+                                    key={`block-${item.data.id}`}
+                                    className="absolute w-full px-1 z-0"
+                                    style={{ top: `${topOffset}px`, height: `${(duration / 30) * 128}px` }}
+                                >
                                     <BlockCard
-                                        key={`block-${item.data.id}`}
                                         block={item.data}
                                         onDelete={onDeleteBlock}
                                     />
-                                );
-                            }
-                            if (item.type === 'slot') {
-                                return (
-                                    <button
-                                        key={`slot-${item.time}-${index}`}
-                                        onClick={() => onOpenNewAppointment(professional, item.time)}
-                                        className="w-full text-center p-3 border-2 border-dashed border-primary/30 rounded-lg text-primary/70 hover:bg-primary/10 hover:border-primary hover:text-primary transition-all duration-200 flex items-center justify-center gap-2"
-                                    >
-                                        <PlusIcon />
-                                        <span className="font-semibold">{item.time}</span>
-                                    </button>
-                                );
-                            }
-                            return null;
-                        })
-                    ) : (
-                        <p className="text-center text-gray-500 text-sm pt-10">{t('noAppointments')}</p>
-                    )}
+                                </div>
+                            );
+                        }
+                        return null;
+                    })}
                 </div>
             </div>
         );
