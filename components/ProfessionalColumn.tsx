@@ -97,7 +97,7 @@ const ProfessionalColumn: React.FC<{
         const { services: apiServices } = useData();
 
         const timeToMinutes = (time: string) => {
-            if (!time) return 0;
+            if (!time || typeof time !== 'string') return 0;
             // Handle HH:MM:SS or HH:MM
             const parts = time.split(':').map(Number);
             const hours = parts[0] || 0;
@@ -154,12 +154,12 @@ const ProfessionalColumn: React.FC<{
                 // Render the item
                 if (item.type === 'appointment') {
                     const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
-                    renderedItems.push({ ...item, duration });
-                    currentTime += duration;
+                    renderedItems.push({ ...item, duration: Math.max(duration, 30) }); // Ensure min duration for rendering
+                    currentTime += Math.max(duration, 30); // Advance by at least 30 mins to avoid infinite loop
                 } else if (item.type === 'block') {
                     const duration = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
-                    renderedItems.push({ ...item, duration });
-                    currentTime += duration;
+                    renderedItems.push({ ...item, duration: Math.max(duration, 30) });
+                    currentTime += Math.max(duration, 30);
                 }
             } else {
                 // Render a slot
