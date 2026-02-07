@@ -77,7 +77,9 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
   selectedUnitId,
 }) => {
   const { t } = useLanguage();
-  const { professionals: contextProfessionals, services: contextServices, packages: contextPackages, salonPlans: contextSalonPlans } = useData();
+  const { professionals: contextProfessionals, services: contextServices, packages: contextPackages, salonPlans: contextSalonPlans, clients: contextClients } = useData();
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<'name' | 'phone' | null>(null);
   const [isExiting, setIsExiting] = useState(false);
   const isEditing = !!client;
 
@@ -140,6 +142,8 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
       setIsExiting(false);
       setName('');
       setPhone('');
+      setSuggestions([]);
+      setShowSuggestions(null);
       setService('');
       setProfessional('');
       setDate(new Date().toISOString().split('T')[0]);
@@ -245,22 +249,95 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                   {t('preRegistrationTitle')}
                 </h3>
                 <div className="mt-4 space-y-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700">{t('clientName')}</label>
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-700 disabled:text-white" />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setName(val);
+                        if (val.length >= 2) {
+                          const matches = contextClients.filter(c =>
+                            c.name.toLowerCase().includes(val.toLowerCase())
+                          ).slice(0, 5);
+                          setSuggestions(matches);
+                          setShowSuggestions('name');
+                        } else {
+                          setSuggestions([]);
+                          setShowSuggestions(null);
+                        }
+                      }}
+                      required
+                      disabled={isEditing}
+                      className="mt-1 w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-700 disabled:text-white bg-white text-gray-900"
+                      autoComplete="off"
+                    />
+                    {showSuggestions === 'name' && suggestions.length > 0 && (
+                      <ul className="absolute z-[60] w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-48 overflow-auto">
+                        {suggestions.map(c => (
+                          <li
+                            key={c.id}
+                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex justify-between items-center"
+                            onClick={() => {
+                              setName(c.name);
+                              setPhone(formatPhone(c.phone || ''));
+                              setSuggestions([]);
+                              setShowSuggestions(null);
+                            }}
+                          >
+                            <span className="font-medium">{c.name}</span>
+                            <span className="text-xs text-gray-500">{formatPhone(c.phone || '')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700">{t('phone')}</label>
                     <input
                       type="tel"
                       value={phone}
-                      onChange={e => setPhone(formatPhone(e.target.value))}
+                      onChange={e => {
+                        const val = formatPhone(e.target.value);
+                        setPhone(val);
+                        const cleanVal = val.replace(/\D/g, '');
+                        if (cleanVal.length >= 3) {
+                          const matches = contextClients.filter(c =>
+                            (c.phone || '').replace(/\D/g, '').includes(cleanVal)
+                          ).slice(0, 5);
+                          setSuggestions(matches);
+                          setShowSuggestions('phone');
+                        } else {
+                          setSuggestions([]);
+                          setShowSuggestions(null);
+                        }
+                      }}
                       required
                       disabled={isEditing}
-                      className="mt-1 w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-700 disabled:text-white"
-                      maxLength={15}
+                      className="mt-1 w-full p-2 border border-gray-300 rounded-md disabled:bg-gray-700 disabled:text-white bg-white text-gray-900"
                       placeholder="(DD) XXXXX-XXXX"
+                      autoComplete="off"
                     />
+                    {showSuggestions === 'phone' && suggestions.length > 0 && (
+                      <ul className="absolute z-[60] w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-48 overflow-auto">
+                        {suggestions.map(c => (
+                          <li
+                            key={c.id}
+                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex justify-between items-center"
+                            onClick={() => {
+                              setName(c.name);
+                              setPhone(formatPhone(c.phone || ''));
+                              setSuggestions([]);
+                              setShowSuggestions(null);
+                            }}
+                          >
+                            <span className="font-medium">{formatPhone(c.phone || '')}</span>
+                            <span className="text-xs text-gray-500">{c.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">{t('procedure')}</label>
