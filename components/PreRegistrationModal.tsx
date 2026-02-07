@@ -126,6 +126,11 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
       else if (appointment?.salon_plan_id) initialServiceValue = `plan-${appointment.salon_plan_id}`;
       else initialServiceValue = appointment?.service || '';
 
+      const initialTime = appointment?.time || initialData?.time || '';
+      const initialDate = initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] :
+        appointment?.date ? (appointment.date.includes('T') ? appointment.date.split('T')[0] : appointment.date) :
+          new Date().toISOString().split('T')[0];
+
       setName(client?.name || '');
       setPhone(client?.phone || '');
       setService(initialServiceValue);
@@ -142,9 +147,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
         setProfessional(initialProfName);
       }
 
-      setDate(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] :
-        appointment?.date ? (appointment.date.includes('T') ? appointment.date.split('T')[0] : appointment.date) :
-          new Date().toISOString().split('T')[0]);
+      setDate(initialDate);
       setTime(initialTime);
       setEndTime(appointment?.endTime || '');
     } else {
@@ -225,6 +228,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
         professionalId: selectedProf.id,
         date,
         time,
+        endTime,
         is_complete_registration: false,
       };
 
