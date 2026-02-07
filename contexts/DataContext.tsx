@@ -596,7 +596,8 @@ const mapBlockFromAPI = (apiBlock: any): TimeBlock => ({
 });
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
+    const isClient = user?.role === 'cliente';
 
     // Data state
     const [clients, setClients] = useState<Client[]>([]);
@@ -631,11 +632,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             localStorage.removeItem('salao_unit_id');
         }
 
-        // Trigger generic refresh if authenticated
-        if (isAuthenticated) {
+        // Trigger generic refresh if authenticated AND not a client
+        // Clients don't have permission to access admin endpoints
+        if (isAuthenticated && !isClient) {
             refreshAll();
         }
-    }, [selectedUnitId, isAuthenticated]); // Removed refreshAll from dependency to avoid loop if refreshAll is not stable, but strictly refreshAll should be stable.
+    }, [selectedUnitId, isAuthenticated, isClient]); // Removed refreshAll from dependency to avoid loop if refreshAll is not stable, but strictly refreshAll should be stable.
 
     // Automatically update category and occupations
     useEffect(() => {
