@@ -355,10 +355,19 @@ const App: React.FC = () => {
     if (user.email === 'admin@salao24h.com') {
       user.plan = 'Vitalício';
     }
-    setCurrentUser(user);
-    setCurrentClient(null);
-    setHistory([]);
-    navigate('dashboard'); // Navigate to dashboard on login
+
+    // Check if user is a client and redirect accordingly
+    if (user.role === 'cliente') {
+      setCurrentClient(user as any);
+      setCurrentUser(null);
+      setHistory([]);
+      navigate('clientApp');
+    } else {
+      setCurrentUser(user);
+      setCurrentClient(null);
+      setHistory([]);
+      navigate('dashboard');
+    }
   };
 
   const handleClientLoginSuccess = (client: Client) => {
