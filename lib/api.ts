@@ -562,8 +562,8 @@ export const aiAPI = {
         const response = await api.put('/ai/config', data);
         return response.data;
     },
-    getChats: async () => {
-        const response = await api.get('/ai/chats');
+    getChats: async (unitId?: string | number) => {
+        const response = await api.get('/ai/chats', { params: { unitId } });
         return response.data;
     },
     toggleChatStatus: async (chatId: number, status: 'active' | 'manual') => {

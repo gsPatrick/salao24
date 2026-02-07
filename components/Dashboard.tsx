@@ -2960,7 +2960,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         toggleSuspendService,
         toggleFavoriteService,
         saveClient,
-        deleteClient
+        deleteClient,
+        selectedUnitId
     } = useData();
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -3635,11 +3636,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
     };
     const handleSendDirectMailCampaign = async (id: number) => {
-        // This would trigger actual sending - for now, just update status
         try {
             const campaign = currentUnitData.directMailCampaigns?.find(c => c.id === id);
             if (campaign) {
-                const updated = await marketingAPI.updateDirectMail(id, { ...campaign, status: 'enviado' });
+                const updated = await marketingAPI.updateDirectMail(id, { ...campaign, status: 'agendado' });
                 setAllData(prev => ({
                     ...prev,
                     [selectedUnit]: {
@@ -3647,7 +3647,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         directMailCampaigns: (prev[selectedUnit].directMailCampaigns || []).map(c => c.id === id ? updated : c)
                     }
                 }));
-                alert("Campanha enviada com sucesso!");
+                alert("Campanha agendada para disparo!");
             }
         } catch (error) {
             console.error("Error sending direct mail campaign:", error);
@@ -4383,6 +4383,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 clients={clients || []}
                 appointments={appointments || []}
                 isIndividualPlan={isIndividualPlan}
+                selectedUnitId={selectedUnitId}
                 unitName={selectedUnit}
                 unitPhone={unitPhone}
                 acquisitionChannels={acquisitionChannels}

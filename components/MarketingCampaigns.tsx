@@ -83,6 +83,7 @@ interface MarketingCampaignsProps {
     isIndividualPlan: boolean;
     unitName: string;
     unitPhone?: string;
+    selectedUnitId?: string | number;
 
     // Acquisition Channel Props
     acquisitionChannels: AcquisitionChannel[];
@@ -635,7 +636,7 @@ const NewCampaignModal: React.FC<{
 // FIX: Changed to a named export to resolve module resolution errors.
 export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => {
     const { t } = useLanguage();
-    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate } = props;
+    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, selectedUnitId } = props;
     const [activeTab, setActiveTab] = useState('campanhas');
 
     const TabButton: React.FC<{ tabId: string; label: string }> = ({ tabId, label }) => (
@@ -656,6 +657,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                     <TabButton tabId="campanhas" label={t('marketingTabCampaigns')} />
                     <TabButton tabId="canal-aquisicao" label={t('marketingTabAcquisitionChannel')} />
                     <TabButton tabId="mala-direta" label={t('marketingTabDirectMail')} />
+                    <TabButton tabId="ai-chat" label="Conversas IA" />
                     <TabButton tabId="servidor" label={t('marketingTabServer')} />
                 </nav>
             </div>
@@ -664,6 +666,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                 {activeTab === 'campanhas' && <CampaignsTab {...props} />}
                 {activeTab === 'canal-aquisicao' && <AcquisitionChannelsTab {...props} />}
                 {activeTab === 'mala-direta' && <DirectMailTab {...props} />}
+                {activeTab === 'ai-chat' && <AIChatTab selectedUnitId={selectedUnitId} />}
                 {activeTab === 'servidor' && (
                     <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
                         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
@@ -985,6 +988,137 @@ const EmailServerSettingsTab: React.FC = () => {
     return (
         <div className="animate-fade-in">
             <EmailServerSettings />
+        </div>
+    );
+};
+
+const AIChatTab: React.FC<{ selectedUnitId?: string | number }> = ({ selectedUnitId }) => {
+    const [chats, setChats] = useState<any[]>([]);
+    const [selectedChat, setSelectedChat] = useState<any | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const loadChats = useCallback(async () => {
+        try {
+            // Don't set loading on poll refresh to avoid flicker
+            const data = await aiAPI.getChats(selectedUnitId);
+            setChats(data || []);
+
+            // Update selected chat if it exists
+            if (selectedChat) {
+                const updated = data.find((c: any) => c.id === selectedChat.id);
+                if (updated) setSelectedChat(updated);
+            }
+        } catch (error) {
+            console.error('Error loading AI chats:', error);
+        }
+    }, [selectedChat, selectedUnitId]);
+
+    useEffect(() => {
+        loadChats();
+        const interval = setInterval(loadChats, 5000); // Polling every 5s for real-time
+        return () => clearInterval(interval);
+    }, [loadChats]);
+
+    const handleToggleStatus = async () => {
+        if (!selectedChat) return;
+        const newStatus = selectedChat.status === 'active' ? 'manual' : 'active';
+        try {
+            await aiAPI.toggleChatStatus(selectedChat.id, newStatus);
+            // Optimistic update
+            setSelectedChat({ ...selectedChat, status: newStatus });
+            // Refresh list
+            loadChats();
+        } catch (error) {
+            console.error('Error toggling status:', error);
+            alert('Erro ao alterar status da conversa');
+        }
+    };
+
+    return (
+        <div className="flex bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] overflow-hidden">
+            {/* Conversations List */}
+            <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
+                <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 className="font-bold text-secondary">Conversas IA</h3>
+                    <button onClick={loadChats} className="text-primary hover:text-primary-dark p-1">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+                {chats.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">Nenhuma conversa encontrada.</div>
+                ) : (
+                    chats.map(chat => (
+                        <div
+                            key={chat.id}
+                            onClick={() => setSelectedChat(chat)}
+                            className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selectedChat?.id === chat.id ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}
+                        >
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="font-bold text-secondary truncate max-w-[150px]">{chat.customer_name || chat.customer_phone}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(chat.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-gray-500 truncate max-w-[120px]">{chat.last_message || 'Iniciando conversa...'}</p>
+                                {chat.status === 'manual' && <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded">Manual</span>}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Conversation Detail */}
+            <div className="flex-1 flex flex-col bg-gray-50">
+                {selectedChat ? (
+                    <>
+                        <header className="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
+                            <div>
+                                <h3 className="font-bold text-secondary">{selectedChat.customer_name || selectedChat.customer_phone}</h3>
+                                <p className="text-xs text-gray-500">{selectedChat.customer_phone}</p>
+                            </div>
+                            <button
+                                onClick={handleToggleStatus}
+                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors border ${selectedChat.status === 'active'
+                                    ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
+                                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+                                    }`}
+                            >
+                                {selectedChat.status === 'active' ? '🤖 Ativo via IA' : '👤 Assumir (Manual)'}
+                            </button>
+                        </header>
+                        <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                            {(selectedChat.history || []).map((msg: any, idx: number) => {
+                                if (msg.role === 'system' || msg.role === 'tool') return null;
+                                return (
+                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[80%] p-3 rounded-xl text-sm ${msg.role === 'user' ? 'bg-primary text-white rounded-br-none' : 'bg-white text-secondary shadow-sm rounded-bl-none'}`}>
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <footer className="p-3 bg-white border-t border-gray-200 text-center">
+                            {selectedChat.status === 'active' ? (
+                                <p className="text-xs text-gray-400">👀 Modo Observação: A IA está respondendo a este cliente.</p>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2 p-2 bg-yellow-50 rounded text-yellow-800 text-sm">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                    <span>Modo Manual Ativado. A IA está pausada.</span>
+                                </div>
+                            )}
+                        </footer>
+                    </>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                        <svg className="w-16 h-16 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        <p>Selecione uma conversa ao lado para ver os detalhes do atendimento da IA.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
