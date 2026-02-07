@@ -28,7 +28,7 @@ export interface User {
     name: string;
     email: string;
     avatarUrl: string;
-    role?: 'admin' | 'gerente' | 'concierge' | 'profissional' | 'Administrador' | 'Gerente' | 'Profissional';
+    role?: 'admin' | 'gerente' | 'concierge' | 'profissional' | 'cliente' | 'Administrador' | 'Gerente' | 'Profissional';
     plan?: 'Individual' | 'Empresa' | 'Vitalício' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium';
     contracts?: Contract[];
     tenant_id?: number;
