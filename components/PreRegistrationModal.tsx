@@ -346,19 +346,19 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
 
                       <optgroup label="Serviços">
                         {contextServices
-                          .filter(s => !selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId))
+                          .filter(s => (!selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId)) && !s.suspended)
                           .map(s => <option key={`service-${s.id}`} value={`service-${s.id}`}>{s.name}</option>)}
                       </optgroup>
 
                       <optgroup label="Pacotes">
                         {contextPackages
-                          .filter(p => !selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId))
+                          .filter(p => (!selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId)) && !p.suspended)
                           .map(p => <option key={`package-${p.id}`} value={`package-${p.id}`}>{p.name}</option>)}
                       </optgroup>
 
                       <optgroup label="Planos">
                         {contextSalonPlans
-                          .filter(pl => !selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId))
+                          .filter(pl => (!selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId)) && !pl.suspended)
                           .map(pl => <option key={`plan-${pl.id}`} value={`plan-${pl.id}`}>{pl.name}</option>)}
                       </optgroup>
                     </select>
