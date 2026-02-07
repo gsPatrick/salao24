@@ -81,8 +81,8 @@ const AppointmentCard: React.FC<{
         const normalizeStatus = (status: string): AppointmentStatus => {
             if (!status) return 'Agendado';
             const lower = status.toLowerCase();
-            if (lower === 'atendido' || lower === 'completed' || lower === 'concluído' || lower === 'realizado') return 'Atendido';
-            if (lower === 'em espera' || lower === 'waiting') return 'Em Espera';
+            if (lower === 'atendido' || lower === 'completed' || lower === 'concluído' || lower === 'concluido' || lower === 'realizado') return 'Atendido';
+            if (lower === 'em espera' || lower === 'em_espera' || lower === 'em_atendimento' || lower === 'waiting') return 'Em Espera';
             if (lower === 'confirmado' || lower === 'confirmed') return 'Confirmado';
             if (lower === 'falta' || lower === 'missed' || lower === 'absent' || lower === 'faltou') return 'Falta';
             if (lower === 'agendado' || lower === 'scheduled' || lower === 'booked') return 'Agendado';
