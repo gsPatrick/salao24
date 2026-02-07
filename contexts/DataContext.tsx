@@ -494,6 +494,10 @@ const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
     professionalId: apiAppointment.professional_id,
     clientId: apiAppointment.client_id,
     service: apiAppointment.service?.name || apiAppointment.package?.name || apiAppointment.salon_plan?.name || apiAppointment.service_name || 'Serviço',
+    endTime: apiAppointment.end_time || apiAppointment.endTime,
+    service_id: apiAppointment.service_id,
+    package_id: apiAppointment.package_id,
+    salon_plan_id: apiAppointment.salon_plan_id,
 });
 
 const mapTransactionFromAPI = (apiTransaction: any): Transaction => ({

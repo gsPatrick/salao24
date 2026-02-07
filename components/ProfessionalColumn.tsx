@@ -98,7 +98,10 @@ const ProfessionalColumn: React.FC<{
 
         const timeToMinutes = (time: string) => {
             if (!time) return 0;
-            const [hours, minutes] = time.split(':').map(Number);
+            // Handle HH:MM:SS or HH:MM
+            const parts = time.split(':').map(Number);
+            const hours = parts[0] || 0;
+            const minutes = parts[1] || 0;
             return hours * 60 + minutes;
         };
 
@@ -111,11 +114,17 @@ const ProfessionalColumn: React.FC<{
         const itemsForDay = [
             ...appointments.map(a => {
                 const service = apiServices.find(s => s.name === a.service);
-                const duration = service ? parseInt(String(service.duration), 10) : 60; // Default 60 min
+                const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
+
+                let itemEndTime = a.endTime || a.end_time;
+                if (!itemEndTime) {
+                    itemEndTime = minutesToTime(timeToMinutes(a.time) + defaultDuration);
+                }
+
                 return {
                     type: 'appointment' as const,
                     startTime: a.time,
-                    endTime: minutesToTime(timeToMinutes(a.time) + duration),
+                    endTime: itemEndTime,
                     data: a
                 };
             }),

@@ -694,7 +694,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         onClose={() => { setIsPreRegModalOpen(false); setSelectedAppointment(null); setPreRegInitialData(null); }}
         onCompleteRegistration={handleOpenFullRegistration}
         client={selectedClient}
-        appointment={selectedAppointment ? { id: selectedAppointment.id, service: selectedAppointment.service, time: selectedAppointment.time } : undefined}
+        appointment={selectedAppointment || undefined}
         initialData={preRegInitialData}
         isIndividualPlan={isIndividualPlan}
         currentUser={currentUser}

@@ -23,6 +23,11 @@ interface AppointmentDetails {
   id?: number;
   service: string;
   time: string;
+  professionalId?: number;
+  endTime?: string;
+  service_id?: number;
+  package_id?: number;
+  salon_plan_id?: number;
 }
 
 interface PreRegistrationModalProps {
@@ -115,28 +120,33 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Pre-fill from props
-      const initialService = appointment?.service || '';
-      const initialTime = appointment?.time || initialData?.time || '';
-      const initialProfName = initialData?.professionalName || '';
-      const initialProfId = initialData?.professionalId;
+      let initialServiceValue = '';
+      if (appointment?.service_id) initialServiceValue = `service-${appointment.service_id}`;
+      else if (appointment?.package_id) initialServiceValue = `package-${appointment.package_id}`;
+      else if (appointment?.salon_plan_id) initialServiceValue = `plan-${appointment.salon_plan_id}`;
+      else initialServiceValue = appointment?.service || '';
 
       setName(client?.name || '');
       setPhone(client?.phone || '');
-      setService(initialService);
+      setService(initialServiceValue);
+
+      const profIdToSelect = appointment?.professionalId || initialData?.professionalId;
+      const initialProfName = initialData?.professionalName || '';
 
       if (professionalsToShow.length === 1) {
         setProfessional(professionalsToShow[0].name);
-      } else if (initialProfId) {
-        // Robust ID matching (String comparison to handle "1" vs 1)
-        const found = professionalsToShow.find(p => String(p.id) === String(initialProfId));
+      } else if (profIdToSelect) {
+        const found = professionalsToShow.find(p => String(p.id) === String(profIdToSelect));
         setProfessional(found ? found.name : initialProfName);
       } else {
         setProfessional(initialProfName);
       }
 
-      setDate(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDate(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] :
+        appointment?.date ? (appointment.date.includes('T') ? appointment.date.split('T')[0] : appointment.date) :
+          new Date().toISOString().split('T')[0]);
       setTime(initialTime);
-      setEndTime(''); // Will be calculated by the other effect
+      setEndTime(appointment?.endTime || '');
     } else {
       // Reset on close
       setIsExiting(false);
@@ -154,31 +164,39 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
 
   // Effect to calculate end time based on service and start time
   useEffect(() => {
-    if (!isOpen) return; // Only run when modal is open
+    if (!isOpen) return;
+    if (isEditing && appointment?.endTime) {
+      setEndTime(appointment.endTime);
+      return;
+    }
 
     if (service && time) {
-      const selectedService = contextServices.find(s => s.name === service);
-      if (selectedService) {
-        const duration = parseInt(String(selectedService.duration), 10);
-        if (!isNaN(duration)) {
-          const [hours, minutes] = time.split(':').map(Number);
-          if (isNaN(hours) || isNaN(minutes)) {
-            setEndTime('');
-            return;
-          }
-          const startDateObj = new Date();
-          startDateObj.setHours(hours, minutes, 0, 0);
-          const endDateObj = new Date(startDateObj.getTime() + duration * 60000);
-          const endHours = endDateObj.getHours().toString().padStart(2, '0');
-          const endMinutes = endDateObj.getMinutes().toString().padStart(2, '0');
-          setEndTime(`${endHours}:${endMinutes}`);
+      const [type, idStr] = service.split('-');
+      const id = parseInt(idStr, 10);
+
+      let selectedItem: any;
+      if (type === 'service') selectedItem = contextServices.find(s => s.id === id);
+      else if (type === 'package') selectedItem = contextPackages.find(p => p.id === id);
+      else if (type === 'plan') selectedItem = contextSalonPlans.find(p => p.id === id);
+
+      if (selectedItem) {
+        const duration = parseInt(String(selectedItem.duration), 10) || 60;
+        const [hours, minutes] = time.split(':').map(Number);
+        if (isNaN(hours) || isNaN(minutes)) {
+          setEndTime('');
+          return;
         }
+        const startDateObj = new Date();
+        startDateObj.setHours(hours, minutes, 0, 0);
+        const endDateObj = new Date(startDateObj.getTime() + duration * 60000);
+        const endHours = endDateObj.getHours().toString().padStart(2, '0');
+        const endMinutes = endDateObj.getMinutes().toString().padStart(2, '0');
+        setEndTime(`${endHours}:${endMinutes}`);
       }
     } else {
-      // If no service or time, clear end time
       setEndTime('');
     }
-  }, [service, time, isOpen]);
+  }, [service, time, isOpen, isEditing, appointment]);
 
   const handleClose = () => {
     setIsExiting(true);
