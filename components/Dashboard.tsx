@@ -3004,8 +3004,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const [marketingCampaigns, setMarketingCampaigns] = useState<Campaign[]>([]);
     const [acquisitionChannels, setAcquisitionChannels] = useState<AcquisitionChannel[]>([]);
 
-    // Initial Data Load
+    // Initial Data Load - reloads when unit changes
     useEffect(() => {
+        // Immediately clear data when unit changes to prevent showing stale data
+        setMonthlyPackages([]);
+        setPackageSubscriptions([]);
+        setMarketingCampaigns([]);
+        setAcquisitionChannels([]);
+
         const loadDashboardData = async () => {
             try {
                 const [pkgs, subs, campaigns, channels, directMail] = await Promise.all([
@@ -3036,7 +3042,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             }
         };
         loadDashboardData();
-    }, []);
+    }, [selectedUnit]);
 
     // --- Promotion Handlers ---
     const handleSavePromotion = async (promotion: Promotion) => {
