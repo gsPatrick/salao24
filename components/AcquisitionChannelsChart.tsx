@@ -20,8 +20,10 @@ const AcquisitionChannelsChart: React.FC<AcquisitionChannelsChartProps> = ({ cli
   const { t } = useLanguage();
 
   const filteredClients = clients.filter(client => {
-    if (!client.registrationDate) return false;
-    const registrationDate = new Date(client.registrationDate);
+    // Use registrationDate with fallback to createdAt or created_at
+    const regDate = client.registrationDate || client.createdAt || client.created_at;
+    if (!regDate) return false;
+    const registrationDate = new Date(regDate);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -33,7 +35,8 @@ const AcquisitionChannelsChart: React.FC<AcquisitionChannelsChartProps> = ({ cli
 
   const channelData: { [key: string]: number } = {};
   filteredClients.forEach(client => {
-    const channel = client.howTheyFoundUs || 'Outros';
+    // Use howTheyFoundUs with fallback to how_found_us or how_they_found_us
+    const channel = client.howTheyFoundUs || client.how_found_us || client.how_they_found_us || 'Outros';
     channelData[channel] = (channelData[channel] || 0) + 1;
   });
 
