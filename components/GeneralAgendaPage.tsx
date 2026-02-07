@@ -251,10 +251,13 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   const handleQuickSchedule = async (payload: {
     clientName: string;
     clientPhone: string;
-    serviceId: number;
+    serviceId?: number;
+    packageId?: number;
+    salonPlanId?: number;
     professionalId: number;
-    date: string; // YYYY-MM-DD
-    time: string; // HH:MM
+    date: string;
+    time: string;
+    is_complete_registration?: boolean;
   }) => {
     // 1) Find or Create Client
     let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
@@ -275,6 +278,8 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         clientId: client.id,
         professionalId: payload.professionalId,
         service_id: payload.serviceId,
+        package_id: payload.packageId,
+        salon_plan_id: payload.salonPlanId,
         date: payload.date,
         time: payload.time,
         status: 'Agendado',

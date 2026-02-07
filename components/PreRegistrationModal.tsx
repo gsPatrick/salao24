@@ -43,7 +43,9 @@ interface PreRegistrationModalProps {
   onQuickSchedule?: (payload: {
     clientName: string;
     clientPhone: string;
-    serviceId: number;
+    serviceId?: number;
+    packageId?: number;
+    salonPlanId?: number;
     professionalId: number;
     date: string; // YYYY-MM-DD
     time: string; // HH:MM
@@ -75,7 +77,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
   selectedUnitId,
 }) => {
   const { t } = useLanguage();
-  const { professionals: contextProfessionals, services: contextServices } = useData();
+  const { professionals: contextProfessionals, services: contextServices, packages: contextPackages, salonPlans: contextSalonPlans } = useData();
   const [isExiting, setIsExiting] = useState(false);
   const isEditing = !!client;
 
@@ -189,20 +191,26 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
     }
 
     if (onQuickSchedule) {
-      const selectedService = contextServices.find(s => s.name === service);
       const selectedProf = professionalsToShow.find(p => p.name === professional);
+      if (!selectedProf) return;
 
-      if (selectedService && selectedProf) {
-        onQuickSchedule({
-          clientName: name,
-          clientPhone: phone,
-          serviceId: selectedService.id,
-          professionalId: selectedProf.id,
-          date,
-          time,
-          is_complete_registration: false, // Mark as incomplete for quick bookings
-        });
-      }
+      const [type, idStr] = service.split('-');
+      const id = parseInt(idStr, 10);
+
+      const payload: any = {
+        clientName: name,
+        clientPhone: phone,
+        professionalId: selectedProf.id,
+        date,
+        time,
+        is_complete_registration: false,
+      };
+
+      if (type === 'service') payload.serviceId = id;
+      else if (type === 'package') payload.packageId = id;
+      else if (type === 'plan') payload.salonPlanId = id;
+
+      onQuickSchedule(payload);
     }
 
     handleClose();
@@ -258,9 +266,24 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700">{t('procedure')}</label>
                     <select value={service} onChange={e => setService(e.target.value)} required disabled={isEditing} className="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-100 disabled:opacity-70">
                       <option value="">Selecione...</option>
-                      {contextServices
-                        .filter(s => !selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId))
-                        .map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+
+                      <optgroup label="Serviços">
+                        {contextServices
+                          .filter(s => !selectedUnitId || !s.unit_id || Number(s.unit_id) === Number(selectedUnitId))
+                          .map(s => <option key={`service-${s.id}`} value={`service-${s.id}`}>{s.name}</option>)}
+                      </optgroup>
+
+                      <optgroup label="Pacotes">
+                        {contextPackages
+                          .filter(p => !selectedUnitId || !p.unit_id || Number(p.unit_id) === Number(selectedUnitId))
+                          .map(p => <option key={`package-${p.id}`} value={`package-${p.id}`}>{p.name}</option>)}
+                      </optgroup>
+
+                      <optgroup label="Planos">
+                        {contextSalonPlans
+                          .filter(pl => !selectedUnitId || !pl.unit_id || Number(pl.unit_id) === Number(selectedUnitId))
+                          .map(pl => <option key={`plan-${pl.id}`} value={`plan-${pl.id}`}>{pl.name}</option>)}
+                      </optgroup>
                     </select>
                   </div>
                   <div>
