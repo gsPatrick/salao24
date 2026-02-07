@@ -36,8 +36,16 @@ api.interceptors.response.use((response) => {
         }));
     }
     // Handle 401 Unauthorized (token expired)
+    // Only logout if the 401 is from an auth-related endpoint or token validation
+    // Don't logout for resource access denials (e.g., client trying to access admin endpoints)
     if (error.response?.status === 401) {
-        window.dispatchEvent(new Event('auth:logout'));
+        const url = error.config?.url || '';
+        const isAuthEndpoint = url.includes('/auth/') || url.includes('/auth/me');
+        if (isAuthEndpoint) {
+            window.dispatchEvent(new Event('auth:logout'));
+        } else {
+            console.warn('[API] 401 on non-auth endpoint, skipping logout:', url);
+        }
     }
     return Promise.reject(error);
 });
