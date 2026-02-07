@@ -352,17 +352,23 @@ const App: React.FC = () => {
   };
 
   const handleLoginSuccess = (user: User) => {
+    console.log('[DEBUG] handleLoginSuccess called with user:', user);
+    console.log('[DEBUG] user.role:', user.role);
+    console.log('[DEBUG] user.role === cliente:', user.role === 'cliente');
+
     if (user.email === 'admin@salao24h.com') {
       user.plan = 'Vitalício';
     }
 
     // Check if user is a client and redirect accordingly
     if (user.role === 'cliente') {
+      console.log('[DEBUG] Redirecting to clientApp');
       setCurrentClient(user as any);
       setCurrentUser(null);
       setHistory([]);
       navigate('clientApp');
     } else {
+      console.log('[DEBUG] Redirecting to dashboard, role is:', user.role);
       setCurrentUser(user);
       setCurrentClient(null);
       setHistory([]);
