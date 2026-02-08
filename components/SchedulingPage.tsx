@@ -264,14 +264,16 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                     .filter(p => {
                         const matchesUnit = !p.unit_id || (selectedUnitId && String(p.unit_id) === String(selectedUnitId));
                         const isActive = !p.suspended && p.isActive !== false;
-                        return matchesUnit && isActive;
+                        const isServiceType = !p.usageType || p.usageType === 'Serviços';
+                        return matchesUnit && isActive && isServiceType;
                     });
 
                 const availablePlans = (plans || [])
                     .filter(p => {
                         const matchesUnit = !p.unit_id || (selectedUnitId && String(p.unit_id) === String(selectedUnitId));
                         const isActive = !p.suspended && p.isActive !== false;
-                        return matchesUnit && isActive;
+                        const isServiceType = !p.usageType || p.usageType === 'Serviços';
+                        return matchesUnit && isActive && isServiceType;
                     });
 
                 return (

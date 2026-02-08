@@ -181,7 +181,7 @@ const App: React.FC = () => {
         setSelectedUnit('Unidade Principal');
       }
     }
-  }, [units, clients, professionals, services, products, transactions, appointments]);
+  }, [units, clients, professionals, services, products, transactions, appointments, packages, salonPlans]);
 
   const currentUnitData = allData[selectedUnit] || {
     clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
@@ -610,10 +610,10 @@ const App: React.FC = () => {
             goBack={goBack}
             isIndividualPlan={currentUser?.plan === 'Individual' && !isSuperAdmin}
             onPayForService={handleServicePayment}
-            services={currentUnitData.services}
-            packages={currentUnitData.packages}
-            plans={currentUnitData.salonPlans}
-            professionals={currentUnitData.professionals}
+            services={services}
+            packages={packages}
+            plans={salonPlans}
+            professionals={professionals}
             onCreateAppointment={(appointment) => handleSaveAppointment(appointment as any)}
           />
         </div>
@@ -628,10 +628,10 @@ const App: React.FC = () => {
             goBack={() => navigate('clientApp')}
             isClientView={true}
             onPayForService={handleServicePayment}
-            services={currentUnitData.services}
-            packages={currentUnitData.packages}
-            plans={currentUnitData.salonPlans}
-            professionals={currentUnitData.professionals}
+            services={services}
+            packages={packages}
+            plans={salonPlans}
+            professionals={professionals}
             onCreateAppointment={(appointment) => handleSaveAppointment(appointment as any)}
             currentClientId={currentClient?.id}
           />
