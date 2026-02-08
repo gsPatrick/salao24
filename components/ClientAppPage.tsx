@@ -526,20 +526,20 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                 onClick={() => setActiveSubTab('servicos')}
                 className={`px-4 py-2 font-medium text-sm ${activeSubTab === 'servicos' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}
               >
-                Histórico de Serviços
+                Serviços Realizados
               </button>
               <button
                 onClick={() => setActiveSubTab('agendamentos')}
                 className={`px-4 py-2 font-medium text-sm ${activeSubTab === 'agendamentos' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}
               >
-                Histórico de Agendamentos
+                Agendamentos Futuros
               </button>
             </div>
 
             {/* Content based on sub-tab */}
             {activeSubTab === 'servicos' && (
               <>
-                <h2 className="text-xl font-bold text-secondary mb-4">Histórico de Serviços</h2>
+                <h2 className="text-xl font-bold text-secondary mb-4">Serviços Realizados</h2>
                 {pastAppointments.length > 0 ? (
                   <div className="space-y-3">
                     {pastAppointments.map(item => {
@@ -550,12 +550,12 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                             <div>
                               <p className="font-bold text-secondary">{item.service}</p>
                               <p className="text-sm text-gray-500">
-                                {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
+                                {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
                                 {prof && <span> com {prof.name}</span>}
                               </p>
                             </div>
                             <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
-                              Concluído
+                              {item.status}
                             </span>
                           </div>
                         </div>
@@ -570,35 +570,35 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
 
             {activeSubTab === 'agendamentos' && (
               <>
-                <h2 className="text-xl font-bold text-secondary mb-4">Histórico de Agendamentos</h2>
-                {allAppointments.length > 0 ? (
+                <h2 className="text-xl font-bold text-secondary mb-4">Agendamentos Futuros</h2>
+                {upcomingAppointments.length > 0 ? (
                   <div className="space-y-3">
-                    {allAppointments.map(item => (
-                      <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-bold text-secondary">{item.name}</p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
-                            </p>
-                            <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
-                            <p className="text-sm text-gray-500">Status: {item.status}</p>
+                    {upcomingAppointments.map(item => {
+                      const prof = professionals.find(p => p.id === item.professionalId);
+                      return (
+                        <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-secondary">{item.service}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
+                                {prof && <span> com {prof.name}</span>}
+                              </p>
+                              <p className="text-xs text-primary font-semibold mt-1 uppercase">Status: {item.status}</p>
+                            </div>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${item.status === 'Agendado' ? 'bg-blue-100 text-blue-800' :
+                              item.status === 'Em Espera' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                              {item.status}
+                            </span>
                           </div>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${item.status === 'concluído' ? 'bg-green-100 text-green-800' :
-                            item.status === 'Atendido' ? 'bg-green-100 text-green-800' :
-                              item.status === 'Agendado' ? 'bg-blue-100 text-blue-800' :
-                                item.status === 'Reagendado' ? 'bg-yellow-100 text-yellow-800' :
-                                  item.status === 'Faltante' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
-                            }`}>
-                            {item.status}
-                          </span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8 bg-gray-100 rounded-lg">Seu histórico de agendamentos está vazio.</p>
+                  <p className="text-gray-500 text-center py-8 bg-gray-100 rounded-lg">Você não possui agendamentos futuros.</p>
                 )}
               </>
             )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentsAPI, unitsAPI } from '../lib/api';
-import { Service, Professional, Unit } from '../types';
+import { Service, Professional, Unit, Package, SalonPlan } from '../types';
 
 // --- Constants ---
 const anyProfessional: Professional = {
@@ -24,13 +24,17 @@ interface SchedulingPageProps {
     isClientView?: boolean;
     isIndividualPlan?: boolean;
     onPayForService: (service: { name: string; price: string; }) => void;
-    services: Service[];
+    packages: Package[];
+    plans: SalonPlan[];
     professionals: Professional[];
     onCreateAppointment?: (appointment: {
         clientId?: number;
         date: string;
         time: string;
-        service: string;
+        service?: string;
+        package_id?: number;
+        salon_plan_id?: number;
+        service_id?: number;
         status: 'Agendado' | 'Em Espera' | 'Atendido';
     }) => void;
     currentClientId?: number;
@@ -39,6 +43,8 @@ interface SchedulingPageProps {
 interface Selection {
     unit: string | null;
     service: Service | null;
+    package: Package | null;
+    plan: SalonPlan | null;
     professional: Professional | null;
     date: string | null;
     time: string | null;
@@ -46,16 +52,19 @@ interface Selection {
 }
 
 // --- Component ---
-const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isClientView, isIndividualPlan, onPayForService, services, professionals, onCreateAppointment, currentClientId }) => {
+const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isClientView, isIndividualPlan, onPayForService, services, packages, plans, professionals, onCreateAppointment, currentClientId }) => {
     const [step, setStep] = useState(1);
     const [selection, setSelection] = useState<Selection>({
         unit: null,
         service: null,
+        package: null,
+        plan: null,
         professional: null,
         date: null,
         time: null,
         availableSlots: [],
     });
+    const [categoryTab, setCategoryTab] = useState<'services' | 'packages' | 'plans'>('services');
     const [calendarMonth, setCalendarMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [loadingSlots, setLoadingSlots] = useState(false);
@@ -81,14 +90,16 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
 
     useEffect(() => {
         const fetchSlots = async () => {
-            if (selection.professional?.id && selection.service?.id && selectedDate) {
+            // Priority: Service > Package > Plan (currently slot availability is service-based)
+            const itemId = selection.service?.id || selection.package?.id || selection.plan?.id;
+            if (selection.professional?.id && itemId && selectedDate) {
                 setLoadingSlots(true);
                 try {
                     const formattedDate = selectedDate.toISOString().split('T')[0];
                     const response = await appointmentsAPI.getAvailability({
                         date: formattedDate,
                         professionalId: selection.professional.id,
-                        serviceId: selection.service.id
+                        serviceId: selection.service?.id // Backend currently expects serviceId
                     });
                     if (response.success) {
                         setSelection(prev => ({ ...prev, availableSlots: response.data.slots || [] }));
@@ -101,7 +112,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
             }
         };
         fetchSlots();
-    }, [selection.professional, selection.service, selectedDate]);
+    }, [selection.professional, selection.service, selection.package, selection.plan, selectedDate]);
 
     const unitsToShow = isIndividualPlan ? (units.length > 0 ? [units[0]] : []) : units;
     const professionalForIndividualPlan = professionals.length > 0 ? professionals[0] : null;
@@ -126,7 +137,11 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
     };
 
     const select = (key: keyof Selection, value: any) => {
-        setSelection(prev => ({ ...prev, [key]: value }));
+        // Reset others when selecting service/package/plan
+        if (key === 'service') setSelection(prev => ({ ...prev, service: value, package: null, plan: null }));
+        else if (key === 'package') setSelection(prev => ({ ...prev, service: null, package: value, plan: null }));
+        else if (key === 'plan') setSelection(prev => ({ ...prev, service: null, package: null, plan: value }));
+        else setSelection(prev => ({ ...prev, [key]: value }));
         handleNextStep();
     };
 
@@ -154,7 +169,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
 
             // In a real app, we might check if this specific date has ANY slots
             // For now, let's just enable all future dates if a service is selected
-            let hasSlots = !isPast && selection.service !== null;
+            let hasSlots = !isPast && (selection.service !== null || selection.package !== null || selection.plan !== null);
 
             let buttonClasses = "w-10 h-10 rounded-full flex flex-col items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 relative pt-1";
             let dayIndicator;
@@ -231,57 +246,111 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                     </div>
                 );
 
-            case 2:
+            case 2: {
                 // Find the ID of the selected unit
                 const selectedUnitObj = units.find(u => u.name === selection.unit);
                 const selectedUnitId = selectedUnitObj ? selectedUnitObj.id : null;
 
-                const availableServices = services
+                const availableServices = (services || [])
                     .filter(s => {
-                        // Filter by unit_id. If global services exist without ID, decide whether to show them.
-                        // Assuming strict isolation is requested:
-                        // Cast to any because unit_id might be missing from type definition but present in data
                         const serviceUnitId = (s as any).unit_id || (s as any).unitId;
                         return !serviceUnitId || (selectedUnitId && serviceUnitId === selectedUnitId);
-                    })
-                    .map(s => ({
-                        ...s,
-                        duration: parseInt(String(s.duration)),
-                        // Fix price parsing: ensure it handles potential string formats or defaults to 0
-                        price: parseFloat(String(s.price || 0)),
-                        professional_ids: s.professional_ids || [],
-                        allowAny: s.allowAny ?? true,
-                    }));
+                    });
+
+                const availablePackages = (packages || [])
+                    .filter(p => !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId));
+
+                const availablePlans = (plans || [])
+                    .filter(p => !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId));
 
                 return (
                     <div>
-                        <h2 className="text-2xl font-bold text-center text-secondary mb-6">Qual serviço você deseja?</h2>
+                        <h2 className="text-2xl font-bold text-center text-secondary mb-6">O que você deseja?</h2>
+
+                        {/* Category Tabs */}
+                        <div className="flex justify-center mb-8 bg-gray-100 p-1 rounded-xl">
+                            <button
+                                onClick={() => setCategoryTab('services')}
+                                className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${categoryTab === 'services' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Serviços
+                            </button>
+                            <button
+                                onClick={() => setCategoryTab('packages')}
+                                className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${categoryTab === 'packages' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Pacotes
+                            </button>
+                            <button
+                                onClick={() => setCategoryTab('plans')}
+                                className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${categoryTab === 'plans' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Planos
+                            </button>
+                        </div>
+
                         <div className="space-y-4">
-                            {availableServices.length > 0 ? (
-                                availableServices.map(service => (
-                                    <button key={service.id} onClick={() => select('service', service)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
-                                        <div>
-                                            <p className="font-bold text-secondary">{service.name}</p>
-                                            <p className="text-sm text-gray-500">{service.duration} min</p>
-                                        </div>
-                                        <p className="text-lg font-semibold text-primary">R$ {service.price.toFixed(2)}</p>
-                                    </button>
-                                ))
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <p>Nenhum serviço disponível nesta unidade.</p>
-                                </div>
+                            {categoryTab === 'services' && (
+                                availableServices.length > 0 ? (
+                                    availableServices.map(service => (
+                                        <button key={service.id} onClick={() => select('service', service)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
+                                            <div>
+                                                <p className="font-bold text-secondary">{service.name}</p>
+                                                <p className="text-sm text-gray-500">{service.duration} min</p>
+                                            </div>
+                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(service.price || 0)).toFixed(2)}</p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">Nenhum serviço disponível nesta unidade.</div>
+                                )
+                            )}
+
+                            {categoryTab === 'packages' && (
+                                availablePackages.length > 0 ? (
+                                    availablePackages.map(pkg => (
+                                        <button key={pkg.id} onClick={() => select('package', pkg)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
+                                            <div>
+                                                <p className="font-bold text-secondary">{pkg.name}</p>
+                                                <p className="text-sm text-gray-500">{pkg.sessions} sessões</p>
+                                            </div>
+                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(pkg.price || 0)).toFixed(2)}</p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">Nenhum pacote disponível nesta unidade.</div>
+                                )
+                            )}
+
+                            {categoryTab === 'plans' && (
+                                availablePlans.length > 0 ? (
+                                    availablePlans.map(plan => (
+                                        <button key={plan.id} onClick={() => select('plan', plan)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
+                                            <div>
+                                                <p className="font-bold text-secondary">{plan.name}</p>
+                                                <p className="text-sm text-gray-500">Recorrência mensal</p>
+                                            </div>
+                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(plan.price || 0)).toFixed(2)}</p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">Nenhum plano disponível nesta unidade.</div>
+                                )
                             )}
                         </div>
                     </div>
                 );
+            }
 
             case 3: {
-                const hasSpecificProfessionals = selection.service?.professional_ids && selection.service.professional_ids.length > 0;
+                const selectedUnitObj = units.find(u => u.name === selection.unit);
+                const selectedUnitId = selectedUnitObj ? selectedUnitObj.id : null;
+                const selectedItem = selection.service || selection.package || selection.plan;
+                const hasSpecificProfessionals = (selectedItem as any)?.professional_ids && (selectedItem as any).professional_ids.length > 0;
 
                 const qualifiedProfessionals = professionalsToShow.filter(prof => {
                     const matchesService = hasSpecificProfessionals
-                        ? selection.service?.professional_ids?.includes(prof.id)
+                        ? (selectedItem as any).professional_ids.includes(prof.id)
                         : true;
 
                     // STRICT FIX: Filter by Unit ID to prevent data leakage (e.g. Agua Fria profs in Piedade)
@@ -323,14 +392,17 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                             ))}
                         </div>
                         {displayOptions.length === 0 && (
-                            <p className="text-center text-gray-500 mt-6">Nenhum profissional disponível para este serviço. Por favor, volte e selecione outro serviço.</p>
+                            <div className="text-center py-8">
+                                <p className="text-gray-500 mb-4">Nenhum profissional disponível para este item.</p>
+                                <button onClick={handlePrevStep} className="text-primary font-bold hover:underline">Voltar e escolher outro</button>
+                            </div>
                         )}
                     </div>
                 );
             }
 
             case 4:
-                if (!selection.professional || !selection.service) return null;
+                if (!selection.professional) return null;
 
                 return (
                     <div>
@@ -373,7 +445,12 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                     </div>
                 );
 
-            case 5:
+            case 5: {
+                const selectedItem = selection.service || selection.package || selection.plan;
+                const itemName = selectedItem?.name;
+                const itemPrice = parseFloat(String(selectedItem?.price || 0)).toFixed(2);
+                const itemType = selection.service ? 'Serviço' : selection.package ? 'Pacote' : 'Plano';
+
                 return (
                     <div>
                         <h2 className="text-2xl font-bold text-center text-secondary mb-6">Confirme seu Agendamento</h2>
@@ -383,8 +460,8 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                 <span className="font-bold">{selection.unit}</span>
                             </div>
                             <div className="flex justify-between items-center border-b pb-2">
-                                <span className="font-medium text-gray-500">Serviço:</span>
-                                <span className="font-bold">{selection.service?.name}</span>
+                                <span className="font-medium text-gray-500">{itemType}:</span>
+                                <span className="font-bold">{itemName}</span>
                             </div>
                             <div className="flex justify-between items-center border-b pb-2">
                                 <span className="font-medium text-gray-500">Profissional:</span>
@@ -396,20 +473,21 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                             </div>
                             <div className="flex justify-between items-center pt-4">
                                 <span className="text-xl font-medium text-gray-500">Total:</span>
-                                <span className="text-2xl font-extrabold text-primary">R$ {selection.service?.price}</span>
+                                <span className="text-2xl font-extrabold text-primary">R$ {itemPrice}</span>
                             </div>
                         </div>
                         <div className="mt-8 space-y-4">
                             <button
                                 onClick={() => {
-                                    if (selection.service && selection.date && selection.time) {
+                                    if (selectedItem && selection.date && selection.time) {
                                         onCreateAppointment?.({
                                             clientId: currentClientId,
                                             date: selectedDate.toISOString().split('T')[0],
                                             time: selection.time,
-                                            service_id: selection.service.id,
-                                            professional_id: selection.professional?.id,
-                                            unit: selection.unit,
+                                            service_id: selection.service?.id,
+                                            package_id: selection.package?.id,
+                                            salon_plan_id: selection.plan?.id,
+                                            service: itemName,
                                             status: 'Agendado',
                                         });
                                     }
@@ -420,8 +498,8 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                 Confirmar e pagar na unidade
                             </button>
                             <button onClick={() => {
-                                if (selection.service) {
-                                    onPayForService({ name: selection.service.name, price: selection.service.price });
+                                if (selectedItem) {
+                                    onPayForService({ name: itemName!, price: itemPrice });
                                 }
                             }} className="w-full flex justify-center py-4 px-4 border-2 border-primary text-lg font-medium rounded-md text-primary bg-transparent hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-300">
                                 Pagar adiantado
@@ -429,6 +507,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                         </div>
                     </div>
                 );
+            }
 
             case 6:
                 return (

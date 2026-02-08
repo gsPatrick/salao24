@@ -83,9 +83,13 @@ const App: React.FC = () => {
     clients, professionals, services, appointments, transactions, units, products, promotions,
     notifications: contextNotifications,
     refreshAll,
-    setSelectedUnitId
+    setSelectedUnitId,
+    packages,
+    salonPlans
   } = useData() || {
-    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], promotions: [], notifications: [], refreshAll: async () => { }, setSelectedUnitId: () => { }
+    clients: [], professionals: [], services: [], appointments: [], transactions: [], units: [], products: [], promotions: [], notifications: [],
+    packages: [], salonPlans: [],
+    refreshAll: async () => { }, setSelectedUnitId: () => { }
   };
 
   const [page, setPage] = useState('home');
@@ -162,6 +166,8 @@ const App: React.FC = () => {
             clients: clients.filter(c => c.preferredUnit === unit.name),
             professionals: professionals.filter(p => p.unit === unit.name),
             services,
+            packages: packages.filter(pkg => !pkg.unit_id || pkg.unit_id === unit.id),
+            salonPlans: salonPlans.filter(sp => !sp.unit_id || sp.unit_id === unit.id),
             products,
             transactions: transactions.filter(t => t.unit === unit.name),
             appointments: appointments.filter(a => a.unit === unit.name),
@@ -605,6 +611,8 @@ const App: React.FC = () => {
             isIndividualPlan={currentUser?.plan === 'Individual' && !isSuperAdmin}
             onPayForService={handleServicePayment}
             services={currentUnitData.services}
+            packages={currentUnitData.packages}
+            plans={currentUnitData.salonPlans}
             professionals={currentUnitData.professionals}
             onCreateAppointment={(appointment) => handleSaveAppointment(appointment as any)}
           />
@@ -621,6 +629,8 @@ const App: React.FC = () => {
             isClientView={true}
             onPayForService={handleServicePayment}
             services={currentUnitData.services}
+            packages={currentUnitData.packages}
+            plans={currentUnitData.salonPlans}
             professionals={currentUnitData.professionals}
             onCreateAppointment={(appointment) => handleSaveAppointment(appointment as any)}
             currentClientId={currentClient?.id}

@@ -83,6 +83,7 @@ export interface Professional {
         state: string;
     };
     unit: string;
+    unit_id?: number;
     suspended?: boolean;
     archived?: boolean;
     startTime?: string;
@@ -488,6 +489,7 @@ const mapProfessionalFromAPI = (apiProfessional: any): Professional => ({
     suspended: !!apiProfessional.is_suspended,
     archived: !!apiProfessional.is_archived,
     specialties: apiProfessional.specialties || [],
+    unit_id: apiProfessional.unit_id,
 });
 
 const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
