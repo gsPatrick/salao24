@@ -60,7 +60,6 @@ interface ClientDetailModalProps {
     existingClients: Client[];
     onDelete?: (clientId: number) => void;
     onBlock?: (clientId: number, reason: string) => void;
-    onBlock?: (clientId: number, reason: string) => void;
     onUnblock?: (clientId: number) => void;
     onDeleteAppointment?: (appointmentId: number) => void;
 }
