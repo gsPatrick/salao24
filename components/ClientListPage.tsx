@@ -249,7 +249,7 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
         }
 
         return filtered;
-    }, [clients, startDate, endDate, searchQuery]);
+    }, [clients, startDate, endDate, searchQuery, completenessFilter]);
 
 
     const handleOpenDetailModal = (client: Client) => {
