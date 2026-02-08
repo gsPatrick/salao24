@@ -517,7 +517,12 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                       appointmentsForDay.sort((a, b) => a.time.localeCompare(b.time)).map((appt) => {
                         const prof = contextProfessionals.find(p => p.id === appt.professionalId);
                         return (
-                          <div key={appt.id} className="bg-white p-2 rounded shadow text-xs" title={`${appt.service} com ${prof?.name}`}>
+                          <div
+                            key={appt.id}
+                            className="bg-white p-2 rounded shadow text-xs cursor-pointer hover:bg-gray-50 transition-colors"
+                            title={`${appt.service} com ${prof?.name}`}
+                            onClick={() => handleCardClick(appt as any)}
+                          >
                             <p className="font-semibold text-primary">{appt.time}</p>
                             <p className="text-gray-600 truncate">{contextClients.find(c => c.id === appt.clientId)?.name}</p>
                             <p className="text-gray-400 truncate text-[10px]">{prof?.name.split(' ')[0]}</p>
@@ -562,7 +567,12 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                   {appointmentsForDay.map((appt) => {
                     const prof = contextProfessionals.find(p => p.id === appt.professionalId);
                     return (
-                      <div key={appt.id} className="bg-primary/10 text-primary text-xs p-1 rounded mt-1 truncate" title={`${appt.time} - ${contextClients.find(c => c.id === appt.clientId)?.name} com ${prof?.name}`}>
+                      <div
+                        key={appt.id}
+                        className="bg-primary/10 text-primary text-xs p-1 rounded mt-1 truncate cursor-pointer hover:bg-primary/20 transition-colors"
+                        title={`${appt.time} - ${contextClients.find(c => c.id === appt.clientId)?.name} com ${prof?.name}`}
+                        onClick={() => handleCardClick(appt as any)}
+                      >
                         {appt.time}
                       </div>
                     );
