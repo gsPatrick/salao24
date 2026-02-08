@@ -300,7 +300,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                         {suggestions.map(c => (
                           <li
                             key={c.id}
-                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex justify-between items-center"
+                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex items-center gap-3"
                             onClick={() => {
                               setName(c.name);
                               setPhone(formatPhone(c.phone || ''));
@@ -308,8 +308,18 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                               setShowSuggestions(null);
                             }}
                           >
-                            <span className="font-medium">{c.name}</span>
-                            <span className="text-xs text-gray-500">{formatPhone(c.phone || '')}</span>
+                            <img
+                              src={c.photo_url || c.avatar || c.photo || 'https://via.placeholder.com/40?text=' + (c.name?.charAt(0) || 'C')}
+                              alt={c.name}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || 'Cliente')}&background=10b981&color=fff`;
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium block truncate">{c.name}</span>
+                              <span className="text-xs text-gray-500">{formatPhone(c.phone || '')}</span>
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -346,7 +356,7 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                         {suggestions.map(c => (
                           <li
                             key={c.id}
-                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex justify-between items-center"
+                            className="p-2 hover:bg-primary/10 cursor-pointer text-gray-900 flex items-center gap-3"
                             onClick={() => {
                               setName(c.name);
                               setPhone(formatPhone(c.phone || ''));
@@ -354,8 +364,18 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
                               setShowSuggestions(null);
                             }}
                           >
-                            <span className="font-medium">{formatPhone(c.phone || '')}</span>
-                            <span className="text-xs text-gray-500">{c.name}</span>
+                            <img
+                              src={c.photo_url || c.avatar || c.photo || 'https://via.placeholder.com/40?text=' + (c.name?.charAt(0) || 'C')}
+                              alt={c.name}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || 'Cliente')}&background=10b981&color=fff`;
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium block truncate">{formatPhone(c.phone || '')}</span>
+                              <span className="text-xs text-gray-500">{c.name}</span>
+                            </div>
                           </li>
                         ))}
                       </ul>
