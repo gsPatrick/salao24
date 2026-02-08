@@ -255,21 +255,21 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                 const availableServices = (services || [])
                     .filter(s => {
                         const serviceUnitId = (s as any).unit_id || (s as any).unitId;
-                        const matchesUnit = !serviceUnitId || (selectedUnitId && serviceUnitId === selectedUnitId);
-                        const isActive = !s.suspended;
+                        const matchesUnit = !serviceUnitId || (selectedUnitId && String(serviceUnitId) === String(selectedUnitId));
+                        const isActive = !s.suspended && s.isActive !== false;
                         return matchesUnit && isActive;
                     });
 
                 const availablePackages = (packages || [])
                     .filter(p => {
-                        const matchesUnit = !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId);
+                        const matchesUnit = !p.unit_id || (selectedUnitId && String(p.unit_id) === String(selectedUnitId));
                         const isActive = !p.suspended && p.isActive !== false;
                         return matchesUnit && isActive;
                     });
 
                 const availablePlans = (plans || [])
                     .filter(p => {
-                        const matchesUnit = !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId);
+                        const matchesUnit = !p.unit_id || (selectedUnitId && String(p.unit_id) === String(selectedUnitId));
                         const isActive = !p.suspended && p.isActive !== false;
                         return matchesUnit && isActive;
                     });

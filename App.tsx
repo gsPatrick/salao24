@@ -164,8 +164,8 @@ const App: React.FC = () => {
           newData[unit.name] = {
             ...newData[unit.name],
             clients: clients.filter(c => c.preferredUnit === unit.name),
-            professionals: professionals.filter(p => p.unit === unit.name),
-            services,
+            professionals: professionals.filter(p => (p.unit === unit.name) || (p.unit_id === unit.id)),
+            services: services.filter(s => !s.unit_id || s.unit_id === unit.id),
             packages: packages.filter(pkg => !pkg.unit_id || pkg.unit_id === unit.id),
             salonPlans: salonPlans.filter(sp => !sp.unit_id || sp.unit_id === unit.id),
             products,

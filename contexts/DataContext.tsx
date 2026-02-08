@@ -471,8 +471,10 @@ export const mapClientFromAPI = (apiClient: any): Client => ({
 
 const mapServiceFromAPI = (apiService: any): Service => ({
     ...apiService,
-    suspended: apiService.is_suspended !== undefined ? apiService.is_suspended : apiService.suspended,
-    isFavorite: apiService.is_favorite !== undefined ? apiService.is_favorite : apiService.isFavorite,
+    suspended: apiService.is_suspended !== undefined ? apiService.is_suspended : (apiService.suspended !== undefined ? apiService.suspended : false),
+    isFavorite: apiService.is_favorite !== undefined ? apiService.is_favorite : (apiService.isFavorite !== undefined ? apiService.isFavorite : false),
+    unit_id: apiService.unit_id !== undefined ? apiService.unit_id : apiService.unitId,
+    isActive: apiService.active !== undefined ? apiService.active : (apiService.isActive !== undefined ? apiService.isActive : true),
 });
 
 const mapProfessionalFromAPI = (apiProfessional: any): Professional => ({
@@ -569,15 +571,19 @@ const mapUnitFromAPI = (apiUnit: any): Unit => ({
 
 const mapPackageFromAPI = (apiPackage: any): Package => ({
     ...apiPackage,
-    suspended: apiPackage.is_suspended !== undefined ? apiPackage.is_suspended : apiPackage.suspended,
-    isFavorite: apiPackage.is_favorite !== undefined ? apiPackage.is_favorite : apiPackage.isFavorite,
+    suspended: apiPackage.is_suspended !== undefined ? apiPackage.is_suspended : (apiPackage.suspended !== undefined ? apiPackage.suspended : false),
+    isFavorite: apiPackage.is_favorite !== undefined ? apiPackage.is_favorite : (apiPackage.isFavorite !== undefined ? apiPackage.isFavorite : false),
+    isActive: apiPackage.active !== undefined ? apiPackage.active : (apiPackage.isActive !== undefined ? apiPackage.isActive : true),
+    unit_id: apiPackage.unit_id !== undefined ? apiPackage.unit_id : apiPackage.unitId,
     usageType: apiPackage.usageType || apiPackage.usage_type,
 });
 
 const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
     ...apiPlan,
-    suspended: apiPlan.is_suspended !== undefined ? apiPlan.is_suspended : apiPlan.suspended,
-    isFavorite: apiPlan.is_favorite !== undefined ? apiPlan.is_favorite : apiPlan.isFavorite,
+    suspended: apiPlan.is_suspended !== undefined ? apiPlan.is_suspended : (apiPlan.suspended !== undefined ? apiPlan.suspended : false),
+    isFavorite: apiPlan.is_favorite !== undefined ? apiPlan.is_favorite : (apiPlan.isFavorite !== undefined ? apiPlan.isFavorite : false),
+    isActive: apiPlan.active !== undefined ? apiPlan.active : (apiPlan.isActive !== undefined ? apiPlan.isActive : true),
+    unit_id: apiPlan.unit_id !== undefined ? apiPlan.unit_id : apiPlan.unitId,
 });
 
 const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
