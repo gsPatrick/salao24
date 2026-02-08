@@ -1048,8 +1048,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 response = await clientsAPI.create(apiData);
             }
-            await refreshClients();
-            return mapClientFromAPI(response.data);
+
+            if (response && response.data) {
+                const savedClient = mapClientFromAPI(response.data);
+
+                // Optimistic update: Update local state immediately
+                setClients(prev => {
+                    const exists = prev.find(c => c.id === savedClient.id);
+                    if (exists) {
+                        return prev.map(c => c.id === savedClient.id ? savedClient : c);
+                    }
+                    return [...prev, savedClient];
+                });
+
+                // Still trigger refresh to ensure consistency/sync with other potential updates
+                refreshClients(); // Fire and forget
+
+                return savedClient;
+            }
+
+            return null;
         } catch (error) {
             console.error('Error saving client:', error);
             return null;
