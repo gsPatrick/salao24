@@ -501,6 +501,11 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
               const dayDateKey = formatDateForLookup(day);
               const appointmentsForDay = contextAppointments.filter(a => {
                 const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
+                // Exclude cancelled/deleted appointments
+                const status = (a.status || '').toLowerCase();
+                if (status === 'cancelado' || status === 'cancelled' || status === 'excluido' || status === 'deleted') {
+                  return false;
+                }
                 return apptDate === dayDateKey;
               });
               return (
@@ -544,6 +549,11 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
               const dayDateKey = formatDateForLookup(date);
               const appointmentsForDay = contextAppointments.filter(a => {
                 const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
+                // Exclude cancelled/deleted appointments
+                const status = (a.status || '').toLowerCase();
+                if (status === 'cancelado' || status === 'cancelled' || status === 'excluido' || status === 'deleted') {
+                  return false;
+                }
                 return apptDate === dayDateKey;
               });
               return (

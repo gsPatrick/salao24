@@ -59,6 +59,14 @@ export const authAPI = {
         const response = await api.post('/auth/register', data);
         return response.data;
     },
+    clientRegisterByCpf: async (data: { cpf: string; loginEmail: string; password: string }) => {
+        const response = await api.post('/auth/client-register', data);
+        return response.data;
+    },
+    checkCpf: async (cpf: string) => {
+        const response = await api.get(`/auth/check-cpf/${cpf}`);
+        return response.data;
+    },
     me: async () => {
         const response = await api.get('/auth/me');
         return response.data;

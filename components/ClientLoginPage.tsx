@@ -30,12 +30,20 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [mode, setMode] = useState<'login' | 'signup'>('login');
+    const [mode, setMode] = useState<'login' | 'signup' | 'cpf-check' | 'create-credentials'>('login');
+    const [cpfData, setCpfData] = useState<{ cpf: string; clientName?: string; tenantName?: string } | null>(null);
 
-    const nameRef = useRef<HTMLInputElement>(null);
+    const cpfRef = useRef<HTMLInputElement>(null);
     const emailRef = useRef<HTMLInputElement>(null);
-    const phoneRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
+
+    const formatCpf = (value: string) => {
+        const digits = value.replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+        if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+    };
 
     const handleLogin = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -58,27 +66,55 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
         }
     };
 
-    const handleSignUp = async (event: React.FormEvent) => {
+    const handleCheckCpf = async (event: React.FormEvent) => {
         event.preventDefault();
         setIsLoading(true);
         setError(null);
 
-        const name = nameRef.current?.value || '';
+        const cpf = cpfRef.current?.value || '';
+
+        try {
+            const response = await authAPI.checkCpf(cpf.replace(/\D/g, ''));
+
+            if (response.data.exists) {
+                if (response.data.hasLoginCredentials) {
+                    setError('Este CPF já possui uma conta. Por favor, faça login.');
+                    setMode('login');
+                } else {
+                    setCpfData({
+                        cpf: cpf.replace(/\D/g, ''),
+                        clientName: response.data.clientName,
+                        tenantName: response.data.tenantName
+                    });
+                    setMode('create-credentials');
+                }
+            } else {
+                setError('CPF não encontrado. Você precisa estar cadastrado em um de nossos salões primeiro.');
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erro ao verificar CPF');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateCredentials = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
         const email = emailRef.current?.value.trim() || '';
-        const phone = phoneRef.current?.value || '';
         const password = passwordRef.current?.value || '';
 
         try {
-            const response = await authAPI.register({
-                userName: name,
-                email,
-                phone,
-                password,
-                userType: 'client'
+            const response = await authAPI.clientRegisterByCpf({
+                cpf: cpfData!.cpf,
+                loginEmail: email,
+                password
             });
 
             if (response.success) {
-                // After signup, automatically login
+                // Auto login after registration
                 const loginResult = await login(email, password, false);
                 if (loginResult.success) {
                     const storedUser = localStorage.getItem('authUser');
@@ -87,10 +123,10 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                     }
                 }
             } else {
-                setError(response.message || 'Erro ao realizar cadastro');
+                setError(response.message || 'Erro ao criar conta');
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Erro ao realizar cadastro');
+            setError(err.response?.data?.message || 'Erro ao criar conta');
         } finally {
             setIsLoading(false);
         }
@@ -128,93 +164,150 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                 <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
                     <div>
                         <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-secondary">
-                            {mode === 'login' ? (t('clientLoginTitle') || 'Bem-vindo, Cliente!') : 'Criar sua Conta'}
+                            {mode === 'login' && (t('clientLoginTitle') || 'Bem-vindo, Cliente!')}
+                            {mode === 'cpf-check' && 'Criar sua Conta'}
+                            {mode === 'create-credentials' && `Olá, ${cpfData?.clientName?.split(' ')[0]}!`}
                         </h2>
                         <p className="mt-2 text-center text-sm text-gray-600">
-                            {mode === 'login'
-                                ? (t('clientLoginSubtitle') || 'Acesse seus agendamentos e histórico')
-                                : 'Preencha seus dados para começar'}
+                            {mode === 'login' && (t('clientLoginSubtitle') || 'Acesse seus agendamentos e histórico')}
+                            {mode === 'cpf-check' && 'Digite seu CPF para verificar seu cadastro'}
+                            {mode === 'create-credentials' && `Encontramos seu cadastro em ${cpfData?.tenantName}! Crie seu acesso.`}
                         </p>
                     </div>
-                    <form className="space-y-4" onSubmit={mode === 'login' ? handleLogin : handleSignUp}>
-                        {mode === 'signup' && (
-                            <>
-                                <div>
-                                    <label htmlFor="user-name" className="sr-only font-bold">Nome Completo</label>
-                                    <input
-                                        id="user-name"
-                                        name="name"
-                                        type="text"
-                                        ref={nameRef}
-                                        required
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
-                                        placeholder="Seu nome completo"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="user-phone" className="sr-only font-bold">WhatsApp</label>
-                                    <input
-                                        id="user-phone"
-                                        name="phone"
-                                        type="tel"
-                                        ref={phoneRef}
-                                        required
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
-                                        placeholder="Seu WhatsApp"
-                                    />
-                                </div>
-                            </>
-                        )}
-                        <div>
-                            <label htmlFor="email-address" className="sr-only font-bold">{t('loginEmailAddress') || 'E-mail'}</label>
-                            <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                ref={emailRef}
-                                autoComplete="email"
-                                required
-                                className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
-                                placeholder={t('loginYourEmail') || 'Seu e-mail'}
-                            />
-                        </div>
-                        <div className="relative">
-                            <label htmlFor="password" className="sr-only font-bold">{t('password') || 'Senha'}</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type={showPassword ? 'text' : 'password'}
-                                ref={passwordRef}
-                                autoComplete="current-password"
-                                required
-                                className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
-                                placeholder={t('loginPassword') || 'Senha'}
-                            />
+
+                    {/* Login Form */}
+                    {mode === 'login' && (
+                        <form className="space-y-4" onSubmit={handleLogin}>
+                            <div>
+                                <label htmlFor="email-address" className="sr-only font-bold">{t('loginEmailAddress') || 'E-mail'}</label>
+                                <input
+                                    id="email-address"
+                                    name="email"
+                                    type="email"
+                                    ref={emailRef}
+                                    autoComplete="email"
+                                    required
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                    placeholder={t('loginYourEmail') || 'Seu e-mail de login'}
+                                />
+                            </div>
+                            <div className="relative">
+                                <label htmlFor="password" className="sr-only font-bold">{t('password') || 'Senha'}</label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    ref={passwordRef}
+                                    autoComplete="current-password"
+                                    required
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
+                                    placeholder={t('loginPassword') || 'Senha'}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                >
+                                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                </button>
+                            </div>
+                            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
                             <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                aria-label={showPassword ? t('loginHidePassword') : t('loginShowPassword')}
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
                             >
-                                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                {isLoading ? 'Entrando...' : (t('clientLoginEnter') || 'Entrar na Área do Cliente')}
                             </button>
-                        </div>
-                        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+                        </form>
+                    )}
 
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
-                        >
-                            <SubmitButtonContent />
-                        </button>
-                    </form>
+                    {/* CPF Check Form */}
+                    {mode === 'cpf-check' && (
+                        <form className="space-y-4" onSubmit={handleCheckCpf}>
+                            <div>
+                                <label htmlFor="cpf" className="sr-only font-bold">CPF</label>
+                                <input
+                                    id="cpf"
+                                    name="cpf"
+                                    type="text"
+                                    ref={cpfRef}
+                                    required
+                                    onChange={(e) => {
+                                        e.target.value = formatCpf(e.target.value);
+                                    }}
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                    placeholder="Digite seu CPF (ex: 123.456.789-00)"
+                                />
+                            </div>
+                            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? 'Verificando...' : 'Verificar CPF'}
+                            </button>
+                        </form>
+                    )}
 
+                    {/* Create Credentials Form (after CPF verified) */}
+                    {mode === 'create-credentials' && (
+                        <form className="space-y-4" onSubmit={handleCreateCredentials}>
+                            <div className="bg-green-50 border border-green-200 rounded-md p-3 text-center">
+                                <p className="text-sm text-green-700">
+                                    ✓ CPF verificado! Agora crie seu email e senha de acesso.
+                                </p>
+                            </div>
+                            <div>
+                                <label htmlFor="login-email" className="sr-only font-bold">E-mail de Login</label>
+                                <input
+                                    id="login-email"
+                                    name="loginEmail"
+                                    type="email"
+                                    ref={emailRef}
+                                    required
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                    placeholder="Seu e-mail para login"
+                                />
+                            </div>
+                            <div className="relative">
+                                <label htmlFor="new-password" className="sr-only font-bold">Senha</label>
+                                <input
+                                    id="new-password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    ref={passwordRef}
+                                    required
+                                    minLength={4}
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
+                                    placeholder="Crie uma senha (mínimo 4 caracteres)"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                >
+                                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                </button>
+                            </div>
+                            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? 'Criando conta...' : 'Criar minha Conta'}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Navigation links */}
                     {mode === 'login' && (
                         <div className="text-center text-sm">
                             <span className="text-gray-600">Ainda não tem conta? </span>
                             <button
-                                onClick={() => { setMode('signup'); setError(null); }}
+                                onClick={() => { setMode('cpf-check'); setError(null); }}
                                 className="font-bold text-primary hover:text-primary-dark transition-colors"
                             >
                                 Cadastre-se aqui
@@ -222,11 +315,11 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                         </div>
                     )}
 
-                    {mode === 'signup' && (
+                    {(mode === 'cpf-check' || mode === 'create-credentials') && (
                         <div className="text-center text-sm">
                             <span className="text-gray-600">Já possui uma conta? </span>
                             <button
-                                onClick={() => { setMode('login'); setError(null); }}
+                                onClick={() => { setMode('login'); setError(null); setCpfData(null); }}
                                 className="font-bold text-primary hover:text-primary-dark transition-colors"
                             >
                                 Faça login
@@ -234,9 +327,8 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                         </div>
                     )}
 
-
                     <div className="pt-4 text-center text-xs text-gray-500">
-                        <p>{t('clientLoginHint') || 'Dica: use juliana.costa@example.com / 123 para testar.'}</p>
+                        <p>Para criar sua conta, você precisa ter um CPF cadastrado em um de nossos salões parceiros.</p>
                     </div>
                 </div>
 
