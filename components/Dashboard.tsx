@@ -3871,7 +3871,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             return;
         }
         if (view === 'Agendamento') {
-            navigate('scheduling');
+            // navigate('scheduling'); // Removed from sidebar
         } else {
             if (view === activeView && mainContentRef.current) {
                 mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4435,7 +4435,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         { name: t('channels'), icon: <ChannelsIcon />, key: 'Canais', internalKey: 'channels' },
         { name: t('chat'), icon: <ChatIcon />, key: 'Chat', internalKey: 'chat' },
         { name: t('myAgenda'), icon: <MyAgendaIcon />, key: 'Minha Agenda', internalKey: 'minhaAgenda' },
-        { name: t('scheduling'), icon: <SidebarCalendarIcon />, key: 'Agendamento', internalKey: 'agenda' },
         { name: t('clients'), icon: <SidebarUsersIcon />, key: 'Clientes', internalKey: 'clientes' },
         { name: t('crm'), icon: <CrmIcon />, key: 'CRM', internalKey: 'crm' },
         { name: t('professionals'), icon: <ProfessionalsIcon />, key: 'Profissionais', internalKey: 'profissionais' },
