@@ -59,9 +59,14 @@ const AppointmentCard: React.FC<{
         const { t } = useLanguage();
         const { getClientById, clients } = useData();
 
-        // Use passed clientData or look up from context, fallback to mock-style lookup
-        const client = clientData || getClientById(appointment.clientId) || clients.find(c => c.id === appointment.clientId);
-        if (!client) return null;
+        // Use passed clientData or look up from context, fallback to appointment.client (nested object from API)
+        const client = clientData || getClientById(appointment.clientId) || clients.find(c => c.id === appointment.clientId) || appointment.client;
+
+        // Ensure client has name before rendering, but handle missing other fields gracefully
+        if (!client || !client.name) {
+            // console.warn('AppointmentCard: Missing client data for appointment', appointment.id);
+            return null;
+        }
 
         const appointmentDate = new Date(appointment.date + 'T00:00:00');
         const [clientBirthYear, clientBirthMonth, clientBirthDay] = client.birthdate ? client.birthdate.split('-').map(Number) : [null, null, null];
