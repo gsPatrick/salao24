@@ -30,10 +30,13 @@ interface TimeBlock {
     unit: string;
 }
 
-const BlockCard: React.FC<{ block: TimeBlock; onDelete: (blockId: number) => void }> = ({ block, onDelete }) => {
+const BlockCard: React.FC<{ block: TimeBlock; onDelete: (blockId: number) => void; style?: React.CSSProperties; className?: string }> = ({ block, onDelete, style, className }) => {
     const { t } = useLanguage();
     return (
-        <div className="bg-gray-200 p-3 rounded-lg shadow-inner relative text-center group h-full">
+        <div
+            className={`bg-gray-200 p-3 rounded-lg shadow-inner relative text-center group h-full ${className || ''}`}
+            style={style}
+        >
             <div
                 className="absolute inset-0 bg-repeat bg-center opacity-10"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")` }}
@@ -142,115 +145,128 @@ const ProfessionalColumn: React.FC<{
             }))
         ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-        const renderedItems: any[] = [];
-        let currentTime = timeToMinutes(openingTime);
-        const endTime = timeToMinutes(closingTime);
-        const slotDuration = 30;
+        const SLOT_HEIGHT = 120; // Height of a 30-min slot in pixels matches the 'h-32' class used before (approx)
+        // Actually h-32 is 8rem = 128px. Let's use standard h-24 (96px) or h-32 (128px) for 30 mins to make it spacious.
+        // The previous code had h-32 (128px) for empty slots. Let's stick to that for consistency.
+        const PIXELS_PER_MINUTE = 4.26; // 128px / 30min ~= 4.26
 
-        while (currentTime < endTime) {
-            const currentSlotTime = minutesToTime(currentTime);
+        // Generate all 30-min slots for the background grid
+        const slots: any[] = [];
+        let currentT = timeToMinutes(openingTime);
+        const end = timeToMinutes(closingTime);
 
-            // Check if any item COVERS this time slot (starts at or before, ends after)
-            const coveringItem = itemsForDay.find(i => {
-                const itemStart = timeToMinutes(i.startTime);
-                const itemEnd = timeToMinutes(i.endTime);
-                return currentTime >= itemStart && currentTime < itemEnd;
+        while (currentT < end) {
+            slots.push({
+                time: minutesToTime(currentT),
+                minutes: currentT
             });
-
-            if (coveringItem) {
-                const itemStart = timeToMinutes(coveringItem.startTime);
-
-                if (Math.abs(currentTime - itemStart) < 1) {
-                    // This is the START of the item - render the appointment/block card
-                    renderedItems.push({
-                        type: coveringItem.type,
-                        data: coveringItem.data,
-                        startTime: coveringItem.startTime,
-                        endTime: coveringItem.endTime,
-                        slotTime: currentSlotTime
-                    });
-                } else {
-                    // This slot is COVERED by the item but not the start - render as "reserved"
-                    renderedItems.push({
-                        type: 'reserved' as const,
-                        time: formatTime(currentSlotTime),
-                        parentType: coveringItem.type,
-                        parentData: coveringItem.data
-                    });
-                }
-                currentTime += slotDuration;
-            } else {
-                // Normal empty slot
-                renderedItems.push({ type: 'slot' as const, time: formatTime(currentSlotTime) });
-                currentTime += slotDuration;
-            }
+            currentT += 30;
         }
+
+        // Calculate absolute position and height for items
+        const getPositionStyles = (startTime: string, endTime: string) => {
+            const start = timeToMinutes(startTime);
+            const end = timeToMinutes(endTime);
+            const duration = end - start;
+
+            const startOffset = start - timeToMinutes(openingTime);
+            const top = (startOffset / 30) * 128; // 128px per 30 mins
+            const height = (duration / 30) * 128;
+
+            return { top, height };
+        };
 
         return (
             <div
-                className={`flex-shrink-0 w-full sm:w-80 bg-light p-4 rounded-xl space-y-4 transition-all duration-300 ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
+                className={`flex-shrink-0 w-full sm:w-80 bg-light rounded-xl transition-all duration-300 flex flex-col h-full ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
                 onDragOver={onDragOver}
                 onDrop={onDrop}
                 onDragEnter={onDragEnter}
                 onDragLeave={onDragLeave}
             >
-                <div className="flex items-center space-x-3 pb-3 border-b">
-                    <img src={professional.photo} alt={professional.name} className="w-10 h-10 rounded-full" />
+                {/* Header */}
+                <div className="flex items-center space-x-3 p-4 border-b bg-white rounded-t-xl z-20 sticky top-0 shadow-sm">
+                    <img src={professional.photo} alt={professional.name} className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" />
                     <div>
                         <h3 className="font-bold text-secondary">{professional.name}</h3>
-                        <p className="text-sm text-primary font-semibold">{professional.occupation || professional.role || professional.specialties?.[0]}</p>
+                        <p className="text-xs text-primary font-semibold uppercase tracking-wide">{professional.occupation || professional.role || 'Profissional'}</p>
                     </div>
                 </div>
-                <div className="space-y-3 h-[calc(100vh-380px)] overflow-y-auto pr-2 relative">
-                    {renderedItems.length > 0 ? (
-                        renderedItems.map((item, index) => {
+
+                {/* Scrollable Timeline */}
+                <div className="flex-1 overflow-y-auto relative custom-scrollbar bg-white/50" style={{ height: 'calc(100vh - 280px)' }}>
+                    <div className="relative" style={{ height: `${slots.length * 128}px` }}> {/* Total height container */}
+
+                        {/* 1. Background Grid Slots */}
+                        {slots.map((slot, index) => (
+                            <div
+                                key={`slot-${slot.time}`}
+                                className="absolute w-full border-b border-gray-100/80 hover:bg-gray-50 transition-colors group"
+                                style={{
+                                    top: `${index * 128}px`,
+                                    height: '128px'
+                                }}
+                                onClick={() => onOpenNewAppointment(professional, slot.time)}
+                            >
+                                <div className="absolute top-2 left-2 text-xs text-gray-400 font-medium bg-white/80 px-1 rounded">
+                                    {slot.time}
+                                </div>
+                                <div className="hidden group-hover:flex items-center justify-center h-full cursor-pointer">
+                                    <div className="bg-primary/10 text-primary p-2 rounded-full hover:bg-primary/20 transition-all transform hover:scale-110">
+                                        <PlusIcon />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* 2. Items (Appointments & Blocks) - Rendered over the grid */}
+                        {itemsForDay.map((item: any) => {
+                            const { top, height } = getPositionStyles(item.startTime, item.endTime);
+
+                            // Slight padding to fit within lines
+                            const style = {
+                                top: `${top}px`,
+                                height: `${height}px`,
+                                paddingBottom: '2px', // gap
+                                zIndex: 10
+                            };
+
                             if (item.type === 'appointment') {
                                 return (
-                                    <AppointmentCard
-                                        key={`appt-${item.data.id}`}
-                                        appointment={{ ...item.data, time: formatTime(item.data.time), endTime: item.endTime }}
-                                        onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
-                                        onClick={() => onCardClick(item.data)}
-                                        currentUser={currentUser}
-                                        onReassignClick={() => onReassignClick(item.data)}
-                                        onDragStart={(e) => onDragStart(e, item.data.id)}
-                                        onDragEnd={onDragEnd}
-                                        isDraggable={isDraggable}
-                                        isDragging={draggedAppointmentId === item.data.id}
-                                    />
+                                    <div key={`appt-${item.data.id}`} className="absolute w-full px-1 left-0 right-0 transition-all hover:z-20" style={style}>
+                                        <AppointmentCard
+                                            appointment={{ ...item.data, time: item.startTime, endTime: item.endTime }} // normalized content
+                                            onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
+                                            onClick={() => onCardClick(item.data)}
+                                            currentUser={currentUser}
+                                            onReassignClick={() => onReassignClick(item.data)}
+                                            onDragStart={(e) => onDragStart(e, item.data.id)}
+                                            onDragEnd={onDragEnd}
+                                            isDraggable={isDraggable}
+                                            isDragging={draggedAppointmentId === item.data.id}
+                                            // Pass height style to card if accepted, or wrapping div handles it
+                                            // AppointmentCard handles its own internal layout, but we need to ensure it fills height
+                                            className="h-full"
+                                        />
+                                    </div>
                                 );
                             }
+
                             if (item.type === 'block') {
                                 return (
-                                    <BlockCard
-                                        key={`block-${item.data.id}`}
-                                        block={{ ...item.data }}
-                                        onDelete={onDeleteBlock}
-                                    />
-                                );
-                            }
-                            if (item.type === 'reserved') {
-                                return (
-                                    <div key={`reserved-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative bg-gray-50/50 rounded-lg flex items-center justify-center -mt-2 z-0 opacity-50">
-                                        {/* Minimalist reserved slot - mostly hidden/subtle */}
+                                    <div key={`block-${item.data.id}`} className="absolute w-full px-1 left-0 right-0 group z-10" style={style}>
+                                        <BlockCard
+                                            block={{ ...item.data }}
+                                            onDelete={onDeleteBlock}
+                                        />
                                     </div>
                                 );
                             }
-                            if (item.type === 'slot') {
-                                return (
-                                    <div key={`slot-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative group" onClick={() => onOpenNewAppointment(professional, item.time)}>
-                                        <div className="flex items-center justify-center h-full cursor-pointer hover:bg-primary/5 transition-colors">
-                                            <PlusIcon />
-                                            <span className="ml-1 text-sm text-gray-500">{item.time}</span>
-                                        </div>
-                                    </div>
-                                );
-                            }
+
                             return null;
-                        })
-                    ) : (
-                        <p className="text-center text-gray-500 text-sm pt-10">{t('noAppointments')}</p>
-                    )}
+                        })}
+
+                    </div>
                 </div>
             </div>
         );

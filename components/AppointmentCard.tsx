@@ -39,6 +39,8 @@ const AppointmentCard: React.FC<{
     isDragging: boolean;
     duration?: number;
     clientData?: any;
+    style?: React.CSSProperties;
+    className?: string; // Add className prop
 }> = ({
     appointment,
     onStatusChange,
@@ -51,6 +53,8 @@ const AppointmentCard: React.FC<{
     isDragging,
     duration,
     clientData,
+    style,
+    className,
 }) => {
         const { t } = useLanguage();
         const { getClientById, clients } = useData();
@@ -109,9 +113,10 @@ const AppointmentCard: React.FC<{
         return (
             <div
                 onClick={onClick}
+                style={style}
                 className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group ${isBirthday ? 'bg-yellow-300' : 'bg-white'
                     } ${isDraggable ? 'cursor-grab' : 'cursor-pointer'} ${isDragging ? 'opacity-30' : 'transform hover:scale-105'
-                    }`}
+                    } ${className || ''}`}
                 draggable={isDraggable}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
