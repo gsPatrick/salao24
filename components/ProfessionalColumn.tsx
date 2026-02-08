@@ -171,8 +171,9 @@ const ProfessionalColumn: React.FC<{
                 // Fallback for 0 duration (shouldn't happen but safety first)
                 if (duration <= 0) duration = 30;
 
-                // Calculate height based on duration
-                const height = duration * PIXELS_PER_MINUTE;
+                // Force fixed height for visual compactness (30 min equivalent), 
+                // but keep duration for stepping through time in the loop
+                const height = 30 * PIXELS_PER_MINUTE;
 
                 renderedItems.push({
                     type: startingItem.type,
