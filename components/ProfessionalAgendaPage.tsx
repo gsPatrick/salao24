@@ -105,7 +105,7 @@ const ClientAppointmentCard: React.FC<{
                 <p className={`${isBirthday ? 'text-gray-700' : 'text-gray-600'}`}>{appointment.service}</p>
             </div>
             <div className="text-center space-y-2 relative z-10">
-                <p className={`font-bold text-xl ${isBirthday ? 'text-black' : 'text-primary'}`}>{appointment.time}</p>
+                <p className={`font-bold text-xl ${isBirthday ? 'text-black' : 'text-primary'}`}>{appointment.time?.slice(0, 5)}</p>
                 <select
                     value={appointment.status}
                     onClick={handleSelectClick}
@@ -337,7 +337,7 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
                                     {appointments.length > 0 ? (
                                         appointments.sort((a, b) => a.time.localeCompare(b.time)).map((appt) => (
                                             <div key={`${appt.id}`} className="bg-white p-2 rounded shadow text-xs">
-                                                <p className="font-semibold text-primary">{appt.time}</p>
+                                                <p className="font-semibold text-primary">{appt.time?.slice(0, 5)}</p>
                                                 <p className="text-gray-600 truncate">{contextClients.find(c => c.id === appt.clientId)?.name}</p>
                                             </div>
                                         ))
@@ -368,7 +368,7 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
                                     <p className="font-bold text-gray-700">{day + 1}</p>
                                     {appointments.map((appt) => (
                                         <div key={`${appt.id}`} className="bg-primary/10 text-primary text-xs p-1 rounded mt-1 truncate">
-                                            {appt.time} - {contextClients.find(c => c.id === appt.clientId)?.name.split(' ')[0]}
+                                            {appt.time?.slice(0, 5)} - {contextClients.find(c => c.id === appt.clientId)?.name.split(' ')[0]}
                                         </div>
                                     ))}
                                 </div>

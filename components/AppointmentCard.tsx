@@ -166,7 +166,7 @@ const AppointmentCard: React.FC<{
                         </div>
                     </div>
                     <div className="flex-shrink-0 pl-2 text-right">
-                        <p className={`font-semibold text-lg ${isBirthday ? 'text-black' : 'text-primary'}`}>{appointment.time}</p>
+                        <p className={`font-semibold text-lg ${isBirthday ? 'text-black' : 'text-primary'}`}>{appointment.time?.slice(0, 5)}</p>
                         {appointment.endTime && (
                             <p className="text-[10px] text-gray-400 font-medium">até {appointment.endTime.slice(0, 5)}</p>
                         )}

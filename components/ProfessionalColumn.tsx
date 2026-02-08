@@ -32,6 +32,10 @@ interface TimeBlock {
 
 const BlockCard: React.FC<{ block: TimeBlock; onDelete: (blockId: number) => void; style?: React.CSSProperties; className?: string }> = ({ block, onDelete, style, className }) => {
     const { t } = useLanguage();
+    const formatTime = (time: string) => {
+        if (!time) return '';
+        return time.split(':').slice(0, 2).join(':');
+    };
     return (
         <div
             className={`bg-gray-200 p-3 rounded-lg shadow-inner relative text-center group h-full ${className || ''}`}
@@ -45,7 +49,7 @@ const BlockCard: React.FC<{ block: TimeBlock; onDelete: (blockId: number) => voi
                 &times;
             </button>
             <p className="font-bold text-gray-700">{block.reason}</p>
-            <p className="text-sm text-gray-600">{block.startTime} - {block.endTime}</p>
+            <p className="text-sm text-gray-600">{formatTime(block.startTime)} - {formatTime(block.endTime)}</p>
             {block.unit && block.unit !== 'all' && <p className="text-xs text-gray-500 mt-1">({block.unit})</p>}
         </div>
     )
