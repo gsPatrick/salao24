@@ -489,6 +489,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [completenessFilter, setCompletenessFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
     const [columnFilter, setColumnFilter] = useState<string[]>([]);
     const [isColumnFilterOpen, setIsColumnFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
@@ -593,6 +594,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         };
 
         const filteredClients = clients.filter(client => {
+            // Completeness Filter (based on CPF)
+            if (completenessFilter === 'complete') {
+                const isComplete = !!client.cpf && client.cpf.replace(/\D/g, '').length === 11;
+                if (!isComplete) return false;
+            } else if (completenessFilter === 'incomplete') {
+                const isComplete = !!client.cpf && client.cpf.replace(/\D/g, '').length === 11;
+                if (isComplete) return false;
+            }
+
             // Text Search
             const textSearchMatch = (() => {
                 if (!searchQuery) return true;
@@ -735,7 +745,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         }
 
         return groups;
-    }, [clients, appointments, searchQuery, startDate, endDate, sortOrder]);
+    }, [clients, appointments, searchQuery, startDate, endDate, sortOrder, completenessFilter]);
 
     // Initialize/reset manual positions when automatic groups change.
     useEffect(() => {
@@ -1370,11 +1380,24 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                             aria-label="Filtrar por data final do agendamento"
                         />
                     </div>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="crm-completeness-filter" className="text-sm font-medium text-gray-700">Cadastro:</label>
+                        <select
+                            id="crm-completeness-filter"
+                            value={completenessFilter}
+                            onChange={(e) => setCompletenessFilter(e.target.value as any)}
+                            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-sm"
+                        >
+                            <option value="all">Todos</option>
+                            <option value="complete">Completos (CPF)</option>
+                            <option value="incomplete">Incompletos (S/ CPF)</option>
+                        </select>
+                    </div>
                     <div className="flex items-center gap-2 sm:gap-4 sm:ml-auto">
-                        {(searchQuery || startDate || endDate) && (
+                        {(searchQuery || startDate || endDate || completenessFilter !== 'all') && (
                             <button
-                                onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                                className="text-sm text-primary hover:underline font-semibold"
+                                onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); setCompletenessFilter('all'); }}
+                                className="text-sm text-primary hover:underline font-semibold whitespace-nowrap"
                             >
                                 Limpar Filtros
                             </button>

@@ -202,9 +202,17 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [completenessFilter, setCompletenessFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
 
     const filteredClients = useMemo(() => {
         let filtered = clients;
+
+        // Completeness Filter (based on CPF)
+        if (completenessFilter === 'complete') {
+            filtered = filtered.filter(client => !!client.cpf && client.cpf.replace(/\D/g, '').length === 11);
+        } else if (completenessFilter === 'incomplete') {
+            filtered = filtered.filter(client => !client.cpf || client.cpf.replace(/\D/g, '').length !== 11);
+        }
 
         // Date Filter (by visit history)
         if (startDate || endDate) {
@@ -455,9 +463,22 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
                             aria-label="Filtrar por data final da visita"
                         />
                     </div>
-                    {(startDate || endDate || searchQuery) && (
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="completeness-filter" className="text-sm font-medium text-gray-700">Cadastro:</label>
+                        <select
+                            id="completeness-filter"
+                            value={completenessFilter}
+                            onChange={(e) => setCompletenessFilter(e.target.value as any)}
+                            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-sm"
+                        >
+                            <option value="all">Todos</option>
+                            <option value="complete">Completos (CPF)</option>
+                            <option value="incomplete">Incompletos (S/ CPF)</option>
+                        </select>
+                    </div>
+                    {(startDate || endDate || searchQuery || completenessFilter !== 'all') && (
                         <button
-                            onClick={() => { setStartDate(''); setEndDate(''); setSearchQuery(''); }}
+                            onClick={() => { setStartDate(''); setEndDate(''); setSearchQuery(''); setCompletenessFilter('all'); }}
                             className="text-sm text-primary hover:underline font-semibold"
                         >
                             Limpar Filtros
