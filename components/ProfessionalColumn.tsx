@@ -111,6 +111,11 @@ const ProfessionalColumn: React.FC<{
             return `${h}:${m}`;
         };
 
+        const formatTime = (time: string) => {
+            if (!time) return '';
+            return time.split(':').slice(0, 2).join(':');
+        };
+
         // Merge appointments and blocks into a single sorted list
         const itemsForDay = [
             ...appointments.map(a => {
@@ -124,15 +129,15 @@ const ProfessionalColumn: React.FC<{
 
                 return {
                     type: 'appointment' as const,
-                    startTime: a.time,
-                    endTime: itemEndTime,
+                    startTime: formatTime(a.time),
+                    endTime: formatTime(itemEndTime),
                     data: a
                 };
             }),
             ...blocks.map(b => ({
                 type: 'block' as const,
-                startTime: b.startTime,
-                endTime: b.endTime,
+                startTime: formatTime(b.startTime),
+                endTime: formatTime(b.endTime),
                 data: b
             }))
         ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
@@ -168,7 +173,7 @@ const ProfessionalColumn: React.FC<{
                     // This slot is COVERED by the item but not the start - render as "reserved"
                     renderedItems.push({
                         type: 'reserved' as const,
-                        time: currentSlotTime,
+                        time: formatTime(currentSlotTime),
                         parentType: coveringItem.type,
                         parentData: coveringItem.data
                     });
@@ -176,7 +181,7 @@ const ProfessionalColumn: React.FC<{
                 currentTime += slotDuration;
             } else {
                 // Normal empty slot
-                renderedItems.push({ type: 'slot' as const, time: currentSlotTime });
+                renderedItems.push({ type: 'slot' as const, time: formatTime(currentSlotTime) });
                 currentTime += slotDuration;
             }
         }
@@ -203,7 +208,7 @@ const ProfessionalColumn: React.FC<{
                                 return (
                                     <AppointmentCard
                                         key={`appt-${item.data.id}`}
-                                        appointment={{ ...item.data, endTime: item.endTime }}
+                                        appointment={{ ...item.data, time: formatTime(item.data.time), endTime: item.endTime }}
                                         onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
                                         onClick={() => onCardClick(item.data)}
                                         currentUser={currentUser}
@@ -219,16 +224,15 @@ const ProfessionalColumn: React.FC<{
                                 return (
                                     <BlockCard
                                         key={`block-${item.data.id}`}
-                                        block={item.data}
+                                        block={{ ...item.data }}
                                         onDelete={onDeleteBlock}
                                     />
                                 );
                             }
                             if (item.type === 'reserved') {
                                 return (
-                                    <div key={`reserved-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative bg-gray-50 rounded-lg flex items-center justify-center">
-                                        <span className="absolute -top-2 left-0 text-[10px] text-gray-400">{item.time}</span>
-                                        <span className="text-xs text-gray-400 italic">Reservado</span>
+                                    <div key={`reserved-${item.time}-${index}`} className="h-32 border-b border-gray-100 relative bg-gray-50/50 rounded-lg flex items-center justify-center -mt-2 z-0 opacity-50">
+                                        {/* Minimalist reserved slot - mostly hidden/subtle */}
                                     </div>
                                 );
                             }

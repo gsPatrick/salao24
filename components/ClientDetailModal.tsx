@@ -1097,8 +1097,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div id="print-section" className="p-6 flex-grow overflow-y-auto bg-gray-50">
                         {activeTab === 'info' && renderInfoTab()}
                         {activeTab === 'history' && (() => {
-                            const completedServices = localClient.history.filter(item => ['Atendido', 'concluído'].includes(item.status));
-                            const pendingServices = localClient.history.filter(item => ['Agendado', 'a realizar'].includes(item.status));
+                            const completedServices = localClient.history.filter(item => ['atendido', 'concluído', 'concluido'].includes((item.status || '').toLowerCase()));
+                            const pendingServices = localClient.history.filter(item => ['agendado', 'a realizar'].includes((item.status || '').toLowerCase()));
                             return (
                                 <div>
                                     {/* Sub-tabs */}
@@ -1174,8 +1174,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <div className="space-y-3">
                                                 {pendingServices.length > 0 ? (
                                                     pendingServices.map(item => {
-                                                        const statusStyles: { [key: string]: string } = { 'Agendado': 'bg-blue-100 text-blue-800', 'a realizar': 'bg-orange-100 text-orange-800 cursor-pointer hover:bg-green-200 hover:text-green-900 transition-colors', };
-                                                        const statusClass = statusStyles[item.status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800';
+                                                        const statusKey = (item.status || '').toLowerCase();
+                                                        let statusBaseClass = 'bg-gray-100 text-gray-800';
+                                                        if (statusKey === 'agendado') statusBaseClass = 'bg-blue-100 text-blue-800';
+                                                        else if (statusKey === 'a realizar') statusBaseClass = 'bg-orange-100 text-orange-800 cursor-pointer hover:bg-green-200 hover:text-green-900 transition-colors';
+
                                                         const isValidDate = item.date && !isNaN(new Date(item.date).getTime()) && item.date !== 'Pendente';
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
 
@@ -1186,9 +1189,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <p className="text-sm text-gray-500">{dateDisplay}</p>
                                                                 </div>
                                                                 {item.status === 'a realizar' ? (
-                                                                    <button onClick={() => handleUpdateServiceStatus(item.id)} className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>{item.status}</button>
+                                                                    <button onClick={() => handleUpdateServiceStatus(item.id)} className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</button>
                                                                 ) : (
-                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>{item.status}</span>
+                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</span>
                                                                 )}
                                                             </div>
                                                         )
