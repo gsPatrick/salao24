@@ -145,47 +145,84 @@ const ProfessionalColumn: React.FC<{
             }))
         ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-        const SLOT_HEIGHT = 120; // Height of a 30-min slot in pixels matches the 'h-32' class used before (approx)
-        // Actually h-32 is 8rem = 128px. Let's use standard h-24 (96px) or h-32 (128px) for 30 mins to make it spacious.
-        // The previous code had h-32 (128px) for empty slots. Let's stick to that for consistency.
         const PIXELS_PER_MINUTE = 4.26; // 128px / 30min ~= 4.26
 
-        // Generate all 30-min slots for the background grid
-        const slots: any[] = [];
-        let currentT = timeToMinutes(openingTime);
-        const end = timeToMinutes(closingTime);
+        const renderedItems: any[] = [];
+        let currentTime = timeToMinutes(openingTime);
+        const endTime = timeToMinutes(closingTime);
+        const slotDuration = 30;
 
-        while (currentT < end) {
-            slots.push({
-                time: minutesToTime(currentT),
-                minutes: currentT
+        while (currentTime < endTime) {
+            const currentSlotTime = minutesToTime(currentTime);
+
+            // Check if any item STARTS at this time slot
+            const startingItem = itemsForDay.find(i => {
+                const itemStart = timeToMinutes(i.startTime);
+                // Allow a small margin of error (e.g., 1 min) for float comparisons
+                return Math.abs(currentTime - itemStart) < 1;
             });
-            currentT += 30;
+
+            if (startingItem) {
+                // Determine item duration
+                const itemStart = timeToMinutes(startingItem.startTime);
+                const itemEnd = timeToMinutes(startingItem.endTime);
+                let duration = itemEnd - itemStart;
+
+                // Fallback for 0 duration (shouldn't happen but safety first)
+                if (duration <= 0) duration = 30;
+
+                // Calculate height based on duration
+                const height = duration * PIXELS_PER_MINUTE;
+
+                renderedItems.push({
+                    type: startingItem.type,
+                    data: startingItem.data,
+                    startTime: startingItem.startTime,
+                    endTime: startingItem.endTime,
+                    height: height,
+                    slotTime: currentSlotTime
+                });
+
+                // Advance currentTime by the duration of the item
+                // This effectively "skips" the slots covered by this item
+                currentTime += duration;
+            } else {
+                // No item starts here. check if we are inside an item (covered)
+                // Actually, since we advance by duration, we shouldn't be "inside" an item here 
+                // UNLESS there's an overlap which the backend logic supposedly prevents.
+                // But let's check just in case to avoid double rendering if data is messy.
+                const isCovered = itemsForDay.some(i => {
+                    const itemStart = timeToMinutes(i.startTime);
+                    const itemEnd = timeToMinutes(i.endTime);
+                    return currentTime > itemStart && currentTime < itemEnd;
+                });
+
+                if (!isCovered) {
+                    // Render an empty available slot
+                    renderedItems.push({
+                        type: 'slot',
+                        time: formatTime(currentSlotTime),
+                        height: 30 * PIXELS_PER_MINUTE // Standard 30 min height
+                    });
+                    currentTime += slotDuration;
+                } else {
+                    // If covered but not starting (shouldn't happen with clean data + jump logic), 
+                    // just advance to next slot to find the end of the blockage
+                    currentTime += slotDuration;
+                }
+            }
         }
-
-        // Calculate absolute position and height for items
-        const getPositionStyles = (startTime: string, endTime: string) => {
-            const start = timeToMinutes(startTime);
-            const end = timeToMinutes(endTime);
-            const duration = end - start;
-
-            const startOffset = start - timeToMinutes(openingTime);
-            const top = (startOffset / 30) * 128; // 128px per 30 mins
-            const height = (duration / 30) * 128;
-
-            return { top, height };
-        };
 
         return (
             <div
-                className={`flex-shrink-0 w-full sm:w-80 bg-light rounded-xl transition-all duration-300 flex flex-col h-full ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
+                className={`flex-shrink-0 w-full sm:w-80 bg-light p-4 rounded-xl space-y-4 transition-all duration-300 flex flex-col h-full ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
                 onDragOver={onDragOver}
                 onDrop={onDrop}
                 onDragEnter={onDragEnter}
                 onDragLeave={onDragLeave}
             >
                 {/* Header */}
-                <div className="flex items-center space-x-3 p-4 border-b bg-white rounded-t-xl z-20 sticky top-0 shadow-sm">
+                <div className="flex items-center space-x-3 pb-3 border-b flex-shrink-0">
                     <img src={professional.photo} alt={professional.name} className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" />
                     <div>
                         <h3 className="font-bold text-secondary">{professional.name}</h3>
@@ -194,79 +231,61 @@ const ProfessionalColumn: React.FC<{
                 </div>
 
                 {/* Scrollable Timeline */}
-                <div className="flex-1 overflow-y-auto relative custom-scrollbar bg-white/50" style={{ height: 'calc(100vh - 280px)' }}>
-                    <div className="relative" style={{ height: `${slots.length * 128}px` }}> {/* Total height container */}
+                <div className="flex-1 overflow-y-auto pr-2 relative custom-scrollbar space-y-1" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                    {renderedItems.map((item, index) => {
+                        if (item.type === 'appointment') {
+                            return (
+                                <AppointmentCard
+                                    key={`appt-${item.data.id}`}
+                                    appointment={{ ...item.data, time: item.startTime, endTime: item.endTime }}
+                                    onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
+                                    onClick={() => onCardClick(item.data)}
+                                    currentUser={currentUser}
+                                    onReassignClick={() => onReassignClick(item.data)}
+                                    onDragStart={(e) => onDragStart(e, item.data.id)}
+                                    onDragEnd={onDragEnd}
+                                    isDraggable={isDraggable}
+                                    isDragging={draggedAppointmentId === item.data.id}
+                                    style={{ height: `${item.height}px` }}
+                                    className="w-full"
+                                />
+                            );
+                        }
 
-                        {/* 1. Background Grid Slots */}
-                        {slots.map((slot, index) => (
-                            <div
-                                key={`slot-${slot.time}`}
-                                className="absolute w-full border-b border-gray-100/80 hover:bg-gray-50 transition-colors group"
-                                style={{
-                                    top: `${index * 128}px`,
-                                    height: '128px'
-                                }}
-                                onClick={() => onOpenNewAppointment(professional, slot.time)}
-                            >
-                                <div className="absolute top-2 left-2 text-xs text-gray-400 font-medium bg-white/80 px-1 rounded">
-                                    {slot.time}
-                                </div>
-                                <div className="hidden group-hover:flex items-center justify-center h-full cursor-pointer">
-                                    <div className="bg-primary/10 text-primary p-2 rounded-full hover:bg-primary/20 transition-all transform hover:scale-110">
-                                        <PlusIcon />
+                        if (item.type === 'block') {
+                            return (
+                                <BlockCard
+                                    key={`block-${item.data.id}`}
+                                    block={{ ...item.data }}
+                                    onDelete={onDeleteBlock}
+                                    style={{ height: `${item.height}px` }}
+                                    className="w-full"
+                                />
+                            );
+                        }
+
+                        if (item.type === 'slot') {
+                            return (
+                                <div
+                                    key={`slot-${item.time}-${index}`}
+                                    className="w-full border-b border-gray-100 relative group transition-colors hover:bg-gray-50 rounded-lg"
+                                    style={{ height: `${item.height}px` }}
+                                    onClick={() => onOpenNewAppointment(professional, item.time)}
+                                >
+                                    <div className="flex items-center justify-center h-full cursor-pointer">
+                                        <div className="flex items-center text-gray-400 group-hover:text-primary transition-colors">
+                                            <span className="text-sm mr-2">{item.time}</span>
+                                            <div className="bg-primary/10 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <PlusIcon />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        }
 
-                        {/* 2. Items (Appointments & Blocks) - Rendered over the grid */}
-                        {itemsForDay.map((item: any) => {
-                            const { top, height } = getPositionStyles(item.startTime, item.endTime);
-
-                            // Slight padding to fit within lines
-                            const style = {
-                                top: `${top}px`,
-                                height: `${height}px`,
-                                paddingBottom: '2px', // gap
-                                zIndex: 10
-                            };
-
-                            if (item.type === 'appointment') {
-                                return (
-                                    <div key={`appt-${item.data.id}`} className="absolute w-full px-1 left-0 right-0 transition-all hover:z-20" style={style}>
-                                        <AppointmentCard
-                                            appointment={{ ...item.data, time: item.startTime, endTime: item.endTime }} // normalized content
-                                            onStatusChange={(newStatus) => onStatusChange(item.data.id, newStatus)}
-                                            onClick={() => onCardClick(item.data)}
-                                            currentUser={currentUser}
-                                            onReassignClick={() => onReassignClick(item.data)}
-                                            onDragStart={(e) => onDragStart(e, item.data.id)}
-                                            onDragEnd={onDragEnd}
-                                            isDraggable={isDraggable}
-                                            isDragging={draggedAppointmentId === item.data.id}
-                                            // Pass height style to card if accepted, or wrapping div handles it
-                                            // AppointmentCard handles its own internal layout, but we need to ensure it fills height
-                                            className="h-full"
-                                        />
-                                    </div>
-                                );
-                            }
-
-                            if (item.type === 'block') {
-                                return (
-                                    <div key={`block-${item.data.id}`} className="absolute w-full px-1 left-0 right-0 group z-10" style={style}>
-                                        <BlockCard
-                                            block={{ ...item.data }}
-                                            onDelete={onDeleteBlock}
-                                        />
-                                    </div>
-                                );
-                            }
-
-                            return null;
-                        })}
-
-                    </div>
+                        return null;
+                    })}
                 </div>
             </div>
         );
