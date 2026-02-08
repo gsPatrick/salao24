@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { clientsAPI } from '../lib/api';
+import { clientsAPI, appointmentsAPI } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, Client as DataContextClient, mapClientFromAPI } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
@@ -60,7 +60,9 @@ interface ClientDetailModalProps {
     existingClients: Client[];
     onDelete?: (clientId: number) => void;
     onBlock?: (clientId: number, reason: string) => void;
+    onBlock?: (clientId: number, reason: string) => void;
     onUnblock?: (clientId: number) => void;
+    onDeleteAppointment?: (appointmentId: number) => void;
 }
 
 // --- Icons ---
@@ -555,6 +557,31 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         setLocalClient(updatedClient);
         if (onSave) {
             onSave(updatedClient);
+        }
+    };
+
+    const handleDeleteAppointment = async (appointmentId: number, event: React.MouseEvent) => {
+        event.stopPropagation();
+        if (!window.confirm(t('confirmDeleteAppointment') || 'Tem certeza que deseja excluir este agendamento?')) return;
+
+        try {
+            const response = await appointmentsAPI.delete(appointmentId);
+            if (response.success || response.deleted) {
+                // Update local state by removing the appointment
+                if (localClient) {
+                    const updatedHistory = localClient.history.filter(h => h.id !== appointmentId);
+                    setLocalClient({
+                        ...localClient,
+                        history: updatedHistory
+                    });
+                    setNotification('Agendamento excluído com sucesso');
+                }
+            } else {
+                alert('Erro ao excluir agendamento');
+            }
+        } catch (error) {
+            console.error('Error deleting appointment:', error);
+            alert('Erro ao excluir agendamento');
         }
     };
 
@@ -1193,6 +1220,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 ) : (
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</span>
                                                                 )}
+                                                                <button
+                                                                    onClick={(e) => handleDeleteAppointment(item.id, e)}
+                                                                    className="ml-2 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                                                    title="Excluir agendamento"
+                                                                >
+                                                                    <TrashIcon className="h-4 w-4" />
+                                                                </button>
                                                             </div>
                                                         )
                                                     })
