@@ -24,6 +24,7 @@ interface SchedulingPageProps {
     isClientView?: boolean;
     isIndividualPlan?: boolean;
     onPayForService: (service: { name: string; price: string; }) => void;
+    services: Service[];
     packages: Package[];
     plans: SalonPlan[];
     professionals: Professional[];
@@ -254,14 +255,24 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                 const availableServices = (services || [])
                     .filter(s => {
                         const serviceUnitId = (s as any).unit_id || (s as any).unitId;
-                        return !serviceUnitId || (selectedUnitId && serviceUnitId === selectedUnitId);
+                        const matchesUnit = !serviceUnitId || (selectedUnitId && serviceUnitId === selectedUnitId);
+                        const isActive = !s.suspended;
+                        return matchesUnit && isActive;
                     });
 
                 const availablePackages = (packages || [])
-                    .filter(p => !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId));
+                    .filter(p => {
+                        const matchesUnit = !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId);
+                        const isActive = !p.suspended && p.isActive !== false;
+                        return matchesUnit && isActive;
+                    });
 
                 const availablePlans = (plans || [])
-                    .filter(p => !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId));
+                    .filter(p => {
+                        const matchesUnit = !p.unit_id || (selectedUnitId && p.unit_id === selectedUnitId);
+                        const isActive = !p.suspended && p.isActive !== false;
+                        return matchesUnit && isActive;
+                    });
 
                 return (
                     <div>
