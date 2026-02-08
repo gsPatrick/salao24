@@ -259,33 +259,52 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     time: string;
     is_complete_registration?: boolean;
   }) => {
-    // 1) Find or Create Client
-    let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
-    if (!client) {
-      client = await saveClient({
-        name: payload.clientName,
-        phone: payload.clientPhone,
-        howTheyFoundUs: 'Agendamento Rápido',
-        registrationDate: new Date().toISOString(),
-        is_complete_registration: (payload as any).is_complete_registration ?? false,
-        unit_id: selectedUnitId, // Essential for isolation
-      }) as any;
-    }
+    try {
+      // 1) Find or Create Client
+      let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
+      if (!client) {
+        try {
+          client = await saveClient({
+            name: payload.clientName,
+            phone: payload.clientPhone,
+            howTheyFoundUs: 'Agendamento Rápido',
+            registrationDate: new Date().toISOString(),
+            is_complete_registration: (payload as any).is_complete_registration ?? false,
+            unit_id: selectedUnitId, // Essential for isolation
+          }) as any;
+        } catch (clientError) {
+          console.error("Error creating client:", clientError);
+          alert("Erro ao criar cliente. Verifique os dados e tente novamente.");
+          return;
+        }
+      }
 
-    if (client && client.id) {
-      // 2) Create Appointment
-      await saveAppointment({
-        clientId: client.id,
-        professionalId: payload.professionalId,
-        service_id: payload.serviceId,
-        package_id: payload.packageId,
-        salon_plan_id: payload.salonPlanId,
-        date: payload.date,
-        time: payload.time,
-        endTime: (payload as any).endTime,
-        status: 'Agendado',
-        unit_id: selectedUnitId,
-      });
+      if (client && client.id) {
+        // 2) Create Appointment
+        await saveAppointment({
+          clientId: client.id,
+          professionalId: payload.professionalId,
+          service_id: payload.serviceId,
+          package_id: payload.packageId,
+          salon_plan_id: payload.salonPlanId,
+          date: payload.date,
+          time: payload.time,
+          endTime: (payload as any).endTime,
+          status: 'Agendado',
+          unit_id: selectedUnitId,
+        });
+
+        // Force refresh to ensure the new appointment appears immediately
+        await refreshAppointments();
+
+        // Optional: Show success message/toast
+        // alert("Agendamento realizado com sucesso!"); 
+      } else {
+        alert("Falha ao identificar ou criar o cliente.");
+      }
+    } catch (error) {
+      console.error("Error in Quick Schedule:", error);
+      alert("Ocorreu um erro ao realizar o agendamento.");
     }
   };
 
