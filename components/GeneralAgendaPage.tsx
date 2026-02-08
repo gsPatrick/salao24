@@ -62,6 +62,19 @@ const QRCodeIcon = ({ value }: { value: string }) => (
   </div>
 );
 const UserPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>;
+const timeToMinutes = (time: string) => {
+  if (!time || typeof time !== 'string') return 0;
+  const parts = time.split(':').map(Number);
+  const hours = parts[0] || 0;
+  const minutes = parts[1] || 0;
+  return hours * 60 + minutes;
+};
+
+const minutesToTime = (minutes: number) => {
+  const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+  const m = (minutes % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+};
 
 
 const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUser, isIndividualPlan, professionals: propProfessionals, onComingSoon }) => {
@@ -174,6 +187,27 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
     if (appointment && appointment.professionalId !== targetProfessionalId) {
       await saveAppointment({ ...appointment, professionalId: targetProfessionalId });
+    }
+    handleDragEnd();
+  };
+
+  const handleDropAtTime = async (e: React.DragEvent, targetProfessionalId: number, targetTime: string) => {
+    e.preventDefault();
+    const appointmentId = Number(e.dataTransfer.getData('appointmentId'));
+    const appointment = contextAppointments.find(a => a.id === appointmentId);
+
+    if (appointment) {
+      const updateData: any = { ...appointment, professionalId: targetProfessionalId, time: targetTime };
+
+      // Recalculate end time based on original duration if time changes
+      const currentStart = timeToMinutes(appointment.time);
+      const currentEnd = timeToMinutes((appointment as any).end_time || appointment.endTime || minutesToTime(currentStart + 60));
+      const duration = currentEnd - currentStart;
+
+      const newStart = timeToMinutes(targetTime);
+      updateData.endTime = minutesToTime(newStart + duration);
+
+      await saveAppointment(updateData);
     }
     handleDragEnd();
   };
@@ -496,6 +530,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                 onDragLeave={handleDragLeave}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onDropAtTime={handleDropAtTime}
                 isDraggable={canDragAndDrop}
                 draggedAppointmentId={draggedAppointmentId}
                 onOpenNewAppointment={handleOpenNewAppointment}

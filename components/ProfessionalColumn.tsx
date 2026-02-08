@@ -75,6 +75,7 @@ const ProfessionalColumn: React.FC<{
     onDragLeave: (e: React.DragEvent) => void;
     onDragStart: (e: React.DragEvent, appointmentId: number) => void;
     onDragEnd: () => void;
+    onDropAtTime?: (e: React.DragEvent, professionalId: number, time: string) => void;
     onOpenNewAppointment: (professional: any, time: string) => void;
     openingTime?: string;
     closingTime?: string;
@@ -96,12 +97,13 @@ const ProfessionalColumn: React.FC<{
     onDragLeave,
     onDragStart,
     onDragEnd,
+    onDropAtTime,
     onOpenNewAppointment,
     openingTime = '08:00',
     closingTime = '18:00',
 }) => {
         const { t } = useLanguage();
-        const { services: apiServices } = useData();
+        const { services: apiServices, packages: apiPackages, salonPlans: apiSalonPlans } = useData();
 
         const timeToMinutes = (time: string) => {
             if (!time || typeof time !== 'string') return 0;
@@ -126,8 +128,17 @@ const ProfessionalColumn: React.FC<{
         // Merge appointments and blocks into a single sorted list
         const itemsForDay = [
             ...appointments.map(a => {
-                const service = apiServices.find(s => (a.service_id && s.id === a.service_id) || s.name === a.service);
-                const defaultDuration = service ? parseInt(String(service.duration), 10) : 60;
+                const service = apiServices.find(s => (a.service_id && Number(s.id) === Number(a.service_id)) || s.name === a.service);
+                const pkg = apiPackages.find(p => (a.package_id && Number(p.id) === Number(a.package_id)));
+                const plan = apiSalonPlans.find(pl => (a.salon_plan_id && Number(pl.id) === Number(a.salon_plan_id)));
+
+                const itemName = plan?.name || pkg?.name || service?.name || a.service || 'Serviço';
+                const defaultDuration = Number(plan?.duration || pkg?.duration || service?.duration || 60);
+
+                const itemData = {
+                    ...a,
+                    service: itemName
+                };
 
                 let itemEndTime = (a as any).end_time || a.endTime;
                 if (!itemEndTime) {
@@ -138,7 +149,7 @@ const ProfessionalColumn: React.FC<{
                     type: 'appointment' as const,
                     startTime: formatTime(a.time),
                     endTime: formatTime(itemEndTime),
-                    data: a
+                    data: itemData
                 };
             }),
             ...blocks.map(b => ({
@@ -273,9 +284,22 @@ const ProfessionalColumn: React.FC<{
                             return (
                                 <div
                                     key={`slot-${item.time}-${index}`}
-                                    className="w-full border-b border-gray-100 relative group transition-colors hover:bg-gray-50 rounded-lg"
+                                    className={`w-full border-b border-gray-100 relative group transition-colors hover:bg-white/50 rounded-lg ${draggedAppointmentId ? 'border-2 border-dashed border-primary/30 bg-primary/5' : ''}`}
                                     style={{ height: `${item.height}px` }}
                                     onClick={() => onOpenNewAppointment(professional, item.time)}
+                                    onDragOver={(e) => {
+                                        if (isDraggable) {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = 'move';
+                                        }
+                                    }}
+                                    onDrop={(e) => {
+                                        if (isDraggable && onDropAtTime) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onDropAtTime(e, professional.id, item.time);
+                                        }
+                                    }}
                                 >
                                     <div className="flex items-center justify-center h-full cursor-pointer">
                                         <div className="flex items-center text-gray-400 group-hover:text-primary transition-colors">
