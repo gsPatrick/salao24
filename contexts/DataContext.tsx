@@ -47,8 +47,8 @@ export interface Client {
     tags?: string[];
     reminders?: any[];
     relationships?: any[];
-    crmColumnId?: string;
     crmData?: any;
+    isCompleteRegistration?: boolean;
     [key: string]: any;
 }
 
@@ -463,6 +463,7 @@ export const mapClientFromAPI = (apiClient: any): Client => ({
     planId: apiClient.plan_id,
     packageId: apiClient.package_id,
     isActive: apiClient.is_active,
+    isCompleteRegistration: apiClient.is_complete_registration,
     blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
     preferredUnit: apiClient.preferred_unit,
 });

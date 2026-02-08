@@ -310,11 +310,13 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
 
   const handleOpenFullRegistration = () => {
-    const client = selectedAppointment ? contextClients.find(c => c.id === selectedAppointment.clientId) : undefined;
+    const client = selectedClient;
     if (client) {
       setClientToEdit(client);
       setIsPreRegModalOpen(false);
       setIsNewClientModalOpen(true);
+    } else {
+      alert("Dados do cliente não encontrados para completar o cadastro.");
     }
   };
 
@@ -606,7 +608,23 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     return null;
   };
 
-  const selectedClient = selectedAppointment ? contextClients.find(c => c.id === selectedAppointment.clientId) : undefined;
+  const selectedClient = useMemo(() => {
+    if (!selectedAppointment) return undefined;
+    const fromContext = contextClients.find(c => c.id === selectedAppointment.clientId);
+    if (fromContext) return fromContext;
+
+    // Fallback to the client object nested in the appointment (API returns this)
+    if (selectedAppointment.client) {
+      return {
+        ...selectedAppointment.client,
+        id: selectedAppointment.client.id,
+        name: selectedAppointment.client.name,
+        phone: selectedAppointment.client.phone,
+        is_complete_registration: selectedAppointment.client.is_complete_registration
+      };
+    }
+    return undefined;
+  }, [selectedAppointment, contextClients]);
 
   const mockAcquisitionChannels = [
     { id: 1, name: 'Indicação' },

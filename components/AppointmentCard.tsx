@@ -132,7 +132,21 @@ const AppointmentCard: React.FC<{
                 <div className="flex justify-between items-start w-full">
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <div className="relative flex-shrink-0 z-10">
-                            <img src={client.photo} alt={client.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                            {client.photo && client.photo !== 'null' && client.photo !== 'undefined' ? (
+                                <img
+                                    src={client.photo}
+                                    alt={client.name}
+                                    className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-200"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gray-300 text-gray-600 font-bold text-xs flex-shrink-0 ${client.photo && client.photo !== 'null' && client.photo !== 'undefined' ? 'hidden' : ''}`}>
+                                {client.name ? client.name.charAt(0).toUpperCase() : '?'}
+                            </div>
                             {isBirthday && (
                                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
                             )}

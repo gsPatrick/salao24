@@ -10,6 +10,7 @@ interface Client {
   avatar: string;
   phone?: string;
   photo_url?: string;
+  is_complete_registration?: boolean;
 }
 
 interface User {
@@ -464,9 +465,14 @@ const PreRegistrationModal: React.FC<PreRegistrationModalProps> = ({
               <button
                 type="button"
                 onClick={onCompleteRegistration}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:w-auto sm:text-sm"
+                className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:w-auto sm:text-sm ${client?.is_complete_registration === false
+                    ? 'bg-orange-500 hover:bg-orange-600 animate-pulse'
+                    : 'bg-primary hover:bg-primary-dark'
+                  }`}
               >
-                {t('newClientRegistration')}
+                {client?.is_complete_registration === false
+                  ? 'Finalizar Cadastro'
+                  : (t('newClientRegistration') || 'Ver Cadastro')}
               </button>
             )}
             {isEditing && appointment?.id && (
