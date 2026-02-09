@@ -258,11 +258,13 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
     };
 
     const handleEditClient = (client: Client) => {
+        setIsDetailModalOpen(false); // FIX: Close detail modal to avoid overlap
         setClientToEdit(client);
         setIsNewClientModalOpen(true);
     };
 
     const handleAddNewClient = () => {
+        setIsDetailModalOpen(false); // FIX: Ensure detail modal is closed
         setClientToEdit(null);
         setIsNewClientModalOpen(true);
     };
