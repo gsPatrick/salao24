@@ -116,7 +116,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
         <span className="mt-1 text-gray-400 flex-shrink-0">{icon}</span>
         <div>
             <p className="text-xs font-semibold text-gray-500">{label}</p>
-            <p className="text-sm text-gray-800">{value || 'Não informado'}</p>
+            <p className="text-sm text-gray-800 break-words max-w-[200px]">{value || 'Não informado'}</p>
         </div>
     </div>
 );
@@ -839,6 +839,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         })()} />
                         {localClient.maritalStatus && <InfoItem icon={<UsersIcon />} label={t('maritalStatus')} value={localClient.maritalStatus} />}
                         {localClient.preferredUnit && <InfoItem icon={<BuildingStorefrontIcon />} label="Unidade de Preferência" value={localClient.preferredUnit} />}
+                        {/* New Fields */}
+                        <InfoItem icon={<UsersIcon />} label="Time" value={localClient.team} />
+                        <InfoItem icon={<StarIcon className="h-5 w-5 text-gray-400" />} label="Observações" value={localClient.observations} />
+                        <InfoItem icon={<UserPlusIcon />} label="Parentesco" value={localClient.kinship} />
                     </div>
                     {localClient.relationships && localClient.relationships.length > 0 && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1263,9 +1267,23 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
                                                                         {item.price && <p className="text-sm text-gray-500">Valor: R$ {item.price}</p>}
                                                                     </div>
-                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
-                                                                        {item.status}
-                                                                    </span>
+                                                                    <div className="flex flex-col items-end gap-2">
+                                                                        <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
+                                                                            {item.status}
+                                                                        </span>
+                                                                        {['Agendado', 'Reagendado', 'a realizar'].includes(item.status || '') && (
+                                                                            <button
+                                                                                onClick={() => handleUpdateServiceStatus(item.id)}
+                                                                                className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
+                                                                                title="Marcar como Concluído"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                </svg>
+                                                                                Concluir
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         );

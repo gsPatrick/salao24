@@ -445,6 +445,8 @@ export const mapClientFromAPI = (apiClient: any): Client => ({
     howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
     indicatedBy: apiClient.indicated_by,
     observations: apiClient.observation,
+    team: apiClient.team,
+    kinship: apiClient.kinship,
     // Map snake_case to camelCase
     lastVisit: apiClient.last_visit || apiClient.last_visit_at,
     totalVisits: apiClient.total_visits || 0,
