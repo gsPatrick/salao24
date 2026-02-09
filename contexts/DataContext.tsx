@@ -49,6 +49,7 @@ export interface Client {
     reminders?: any[];
     relationships?: any[];
     crmData?: any;
+    additionalPhones?: { sector: string; number: string }[];
     isCompleteRegistration?: boolean;
     [key: string]: any;
 }
@@ -438,42 +439,50 @@ export interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Map API response to frontend format
-export const mapClientFromAPI = (apiClient: any): Client => ({
-    ...apiClient,
-    legalName: apiClient.legal_name || apiClient.name,
-    socialName: apiClient.social_name,
-    photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
-    birthdate: apiClient.birth_date || apiClient.birthdate,
-    howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
-    indicatedBy: apiClient.indicated_by,
-    observations: apiClient.observation,
-    team: apiClient.team,
-    kinship: apiClient.kinship,
-    // Map snake_case to camelCase
-    lastVisit: apiClient.last_visit || apiClient.last_visit_at,
-    totalVisits: apiClient.total_visits || 0,
-    registrationDate: apiClient.created_at || apiClient.registration_at,
-    maritalStatus: apiClient.marital_status,
-    history: apiClient.history || [],
-    packages: apiClient.packages || [],
-    procedurePhotos: apiClient.procedure_photos || [],
-    documents: apiClient.documents || [],
-    preferences: apiClient.preferences || [],
-    additionalPhones: apiClient.additional_phones || [],
-    reminders: apiClient.reminders || [],
-    relationships: apiClient.relationships || [],
-    tags: apiClient.tags || [],
-    crmColumnId: apiClient.crm_column_id,
-    crmData: apiClient.crm_data,
-    planId: apiClient.plan_id,
-    packageId: apiClient.package_id,
-    isActive: apiClient.is_active,
-    isCompleteRegistration: apiClient.is_complete_registration,
-    blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
-    preferredUnit: apiClient.preferred_unit,
-});
+export const mapClientFromAPI = (apiClient: any): Client => {
+    const useSocialName = !!apiClient.use_social_name;
+    const originalName = apiClient.name || '';
+    const socialName = apiClient.social_name || '';
 
-const mapServiceFromAPI = (apiService: any): Service => ({
+    return {
+        ...apiClient,
+        useSocialName,
+        legalName: originalName,
+        socialName: socialName,
+        name: (useSocialName && socialName) ? socialName : originalName,
+        photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+        birthdate: apiClient.birth_date || apiClient.birthdate,
+        howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
+        indicatedBy: apiClient.indicated_by,
+        observations: apiClient.observation,
+        team: apiClient.team,
+        kinship: apiClient.kinship,
+        // Map snake_case to camelCase
+        lastVisit: apiClient.last_visit || apiClient.last_visit_at,
+        totalVisits: apiClient.total_visits || 0,
+        registrationDate: apiClient.created_at || apiClient.registration_at,
+        maritalStatus: apiClient.marital_status,
+        history: apiClient.history || [],
+        packages: apiClient.packages || [],
+        procedurePhotos: apiClient.procedure_photos || [],
+        documents: apiClient.documents || [],
+        preferences: apiClient.preferences || [],
+        additionalPhones: apiClient.additional_phones || apiClient.additionalPhones || [],
+        reminders: apiClient.reminders || [],
+        relationships: apiClient.relationships || [],
+        tags: apiClient.tags || [],
+        crmColumnId: apiClient.crm_column_id,
+        crmData: apiClient.crm_data,
+        planId: apiClient.plan_id,
+        packageId: apiClient.package_id,
+        isActive: apiClient.is_active,
+        isCompleteRegistration: apiClient.is_complete_registration,
+        blocked: apiClient.blocked || { status: apiClient.status === 'blocked', reason: apiClient.blocked_reason || '' },
+        preferredUnit: apiClient.preferred_unit,
+    };
+};
+
+export const mapServiceFromAPI = (apiService: any): Service => ({
     ...apiService,
     suspended: apiService.is_suspended !== undefined ? apiService.is_suspended : (apiService.suspended !== undefined ? apiService.suspended : false),
     isFavorite: apiService.is_favorite !== undefined ? apiService.is_favorite : (apiService.isFavorite !== undefined ? apiService.isFavorite : false),
@@ -481,24 +490,33 @@ const mapServiceFromAPI = (apiService: any): Service => ({
     isActive: apiService.active !== undefined ? apiService.active : (apiService.isActive !== undefined ? apiService.isActive : true),
 });
 
-const mapProfessionalFromAPI = (apiProfessional: any): Professional => ({
-    ...apiProfessional,
-    socialName: apiProfessional.social_name,
-    photo: apiProfessional.photo || apiProfessional.avatar_url || 'https://i.pravatar.cc/150?u=professional',
-    maritalStatus: apiProfessional.marital_status,
-    startTime: apiProfessional.start_time,
-    lunchStart: apiProfessional.lunch_start,
-    lunchEnd: apiProfessional.lunch_end,
-    endTime: apiProfessional.end_time,
-    allowOvertime: !!apiProfessional.allow_overtime,
-    openSchedule: apiProfessional.open_schedule !== undefined && apiProfessional.open_schedule !== null ? !!apiProfessional.open_schedule : true,
-    suspended: !!apiProfessional.is_suspended,
-    archived: !!apiProfessional.is_archived,
-    specialties: apiProfessional.specialties || [],
-    unit_id: apiProfessional.unit_id,
-});
+export const mapProfessionalFromAPI = (apiProfessional: any): Professional => {
+    const useSocialName = !!apiProfessional.use_social_name;
+    const originalName = apiProfessional.name || '';
+    const socialName = apiProfessional.social_name || '';
 
-const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
+    return {
+        ...apiProfessional,
+        useSocialName,
+        legalName: originalName,
+        socialName: socialName,
+        name: (useSocialName && socialName) ? socialName : originalName,
+        photo: apiProfessional.photo || apiProfessional.avatar_url || 'https://i.pravatar.cc/150?u=professional',
+        maritalStatus: apiProfessional.marital_status,
+        startTime: apiProfessional.start_time,
+        lunchStart: apiProfessional.lunch_start,
+        lunchEnd: apiProfessional.lunch_end,
+        endTime: apiProfessional.end_time,
+        allowOvertime: !!apiProfessional.allow_overtime,
+        openSchedule: apiProfessional.open_schedule !== undefined && apiProfessional.open_schedule !== null ? !!apiProfessional.open_schedule : true,
+        suspended: !!apiProfessional.is_suspended,
+        archived: !!apiProfessional.is_archived,
+        specialties: apiProfessional.specialties || [],
+        unit_id: apiProfessional.unit_id,
+    };
+};
+
+export const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
     ...apiAppointment,
     professionalId: apiAppointment.professional_id,
     clientId: apiAppointment.client_id,
@@ -509,7 +527,7 @@ const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
     salon_plan_id: apiAppointment.salon_plan_id,
 });
 
-const mapTransactionFromAPI = (apiTransaction: any): Transaction => ({
+export const mapTransactionFromAPI = (apiTransaction: any): Transaction => ({
     ...apiTransaction,
     description: apiTransaction.description,
     amount: parseFloat(apiTransaction.amount),
@@ -519,7 +537,7 @@ const mapTransactionFromAPI = (apiTransaction: any): Transaction => ({
     receiptAttachment: apiTransaction.receipt_attachment || apiTransaction.receiptAttachment,
 });
 
-const mapProductFromAPI = (apiProduct: any): Product => ({
+export const mapProductFromAPI = (apiProduct: any): Product => ({
     ...apiProduct,
     purchaseValue: apiProduct.purchase_price,
     lowStockAlert: apiProduct.min_stock_level,
@@ -528,14 +546,14 @@ const mapProductFromAPI = (apiProduct: any): Product => ({
     suspended: apiProduct.is_suspended !== undefined ? apiProduct.is_suspended : apiProduct.suspended,
 });
 
-const mapUserFromAPI = (apiUser: any): SystemUser => ({
+export const mapUserFromAPI = (apiUser: any): SystemUser => ({
     ...apiUser,
     avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
     suspended: apiUser.is_active === false,
     lastLoginAt: apiUser.last_login_at || apiUser.lastLoginAt,
 });
 
-const mapTenantFromAPI = (apiTenant: any): Tenant => {
+export const mapTenantFromAPI = (apiTenant: any): Tenant => {
     const mapped = {
         ...apiTenant,
         description: apiTenant.description,
@@ -560,7 +578,7 @@ const mapTenantFromAPI = (apiTenant: any): Tenant => {
     return mapped;
 };
 
-const mapUnitFromAPI = (apiUnit: any): Unit => ({
+export const mapUnitFromAPI = (apiUnit: any): Unit => ({
     ...apiUnit,
     suspended: apiUnit.is_suspended,
     logo: apiUnit.logo_url || apiUnit.logo,
@@ -573,7 +591,7 @@ const mapUnitFromAPI = (apiUnit: any): Unit => ({
     settings: apiUnit.settings || {},
 });
 
-const mapPackageFromAPI = (apiPackage: any): Package => ({
+export const mapPackageFromAPI = (apiPackage: any): Package => ({
     ...apiPackage,
     suspended: apiPackage.is_suspended !== undefined ? apiPackage.is_suspended : (apiPackage.suspended !== undefined ? apiPackage.suspended : false),
     isFavorite: apiPackage.is_favorite !== undefined ? apiPackage.is_favorite : (apiPackage.isFavorite !== undefined ? apiPackage.isFavorite : false),
@@ -582,7 +600,7 @@ const mapPackageFromAPI = (apiPackage: any): Package => ({
     usageType: apiPackage.usageType || apiPackage.usage_type,
 });
 
-const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
+export const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
     ...apiPlan,
     suspended: apiPlan.is_suspended !== undefined ? apiPlan.is_suspended : (apiPlan.suspended !== undefined ? apiPlan.suspended : false),
     isFavorite: apiPlan.is_favorite !== undefined ? apiPlan.is_favorite : (apiPlan.isFavorite !== undefined ? apiPlan.isFavorite : false),
@@ -590,7 +608,7 @@ const mapSalonPlanFromAPI = (apiPlan: any): SalonPlan => ({
     unit_id: apiPlan.unit_id !== undefined ? apiPlan.unit_id : apiPlan.unitId,
 });
 
-const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
+export const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
     id: apiTemplate.id,
     name: apiTemplate.name,
     type: apiTemplate.type,
@@ -598,7 +616,7 @@ const mapContractTemplateFromAPI = (apiTemplate: any): ContractTemplate => ({
     logo: apiTemplate.logo || null
 });
 
-const mapBlockFromAPI = (apiBlock: any): TimeBlock => ({
+export const mapBlockFromAPI = (apiBlock: any): TimeBlock => ({
     id: apiBlock.id,
     professionalId: apiBlock.professional_id,
     date: apiBlock.date,
@@ -1053,6 +1071,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 blocked_reason: client.blocked?.status ? (client.blocked?.reason || client.blockReason) : '',
                 is_active: client.isActive ?? true,
                 preferred_unit: client.preferredUnit,
+                use_social_name: client.useSocialName,
             };
 
             let response;
@@ -1073,7 +1092,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                     return [...prev, savedClient];
                 });
-
                 // Still trigger refresh to ensure consistency/sync with other potential updates
                 refreshClients(); // Fire and forget
 
@@ -1113,6 +1131,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 open_schedule: professional.openSchedule,
                 is_suspended: professional.suspended,
                 is_archived: professional.archived,
+                use_social_name: professional.useSocialName,
             };
 
             let response;
@@ -1121,8 +1140,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 response = await professionalsAPI.create(apiData);
             }
-            await refreshProfessionals();
-            return mapProfessionalFromAPI(response.data || response);
+
+            if (response && response.data) {
+                const savedProf = mapProfessionalFromAPI(response.data);
+
+                // Optimistic update
+                setProfessionals(prev => {
+                    const exists = prev.find(p => p.id === savedProf.id);
+                    if (exists) {
+                        return prev.map(p => p.id === savedProf.id ? savedProf : p);
+                    }
+                    return [...prev, savedProf];
+                });
+
+                refreshProfessionals();
+                return savedProf;
+            }
+
+            return null;
         } catch (error) {
             console.error('Error saving professional:', error);
             return null;

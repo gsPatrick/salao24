@@ -390,16 +390,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           state: clientToEdit.address?.state || '',
           team: clientToEdit.team || '',
           preferredUnit: clientToEdit.preferredUnit || '',
-          howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
-          indicatedBy: clientToEdit.indicatedBy || '',
           observations: clientToEdit.observations || '',
+          indicatedBy: clientToEdit.indicatedBy || '',
+          howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
+          instagram: clientToEdit.instagram || '',
+          kinship: clientToEdit.kinship || '',
+          isCompleteRegistration: clientToEdit.isCompleteRegistration || false,
           reminders: clientToEdit.reminders || [],
           blocked: clientToEdit.blocked || { status: false, reason: '' },
+          packageId: clientToEdit.packageId || null,
         });
-        setPhoto(clientToEdit.photo);
-        setProcedurePhotos(clientToEdit.procedurePhotos || []);
+
+        if (clientToEdit.photo) setPhoto(clientToEdit.photo);
+        if (clientToEdit.procedurePhotos) setProcedurePhotos(clientToEdit.procedurePhotos);
+        if (clientToEdit.additionalPhones) setAdditionalPhones(clientToEdit.additionalPhones);
+
+        // Use the explicit flag from mapping
+        setUseSocialName(!!clientToEdit.useSocialName);
         setRelationships(clientToEdit.relationships || []);
-        setAdditionalPhones(clientToEdit.additionalPhones || []);
         setStagedDocuments(clientToEdit.documents?.filter((d: any) => d.id !== undefined && d.type !== 'Anexo') || []);
         setAttachedDocuments(clientToEdit.documents?.filter((d: any) => d.type === 'Anexo').map((doc: any) => ({
           title: doc.name,
@@ -883,9 +891,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       servicesOfInterest: servicesOfInterest,
       reminders: reminders,
       blocked: blocked,
-      planId,
       packageId,
       is_complete_registration: true,
+      useSocialName,
     };
 
     try {
@@ -959,7 +967,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField label={`${t('fullName')} *`} name="fullName" value={formData.fullName} onChange={handleChange} onBlur={handleBlur} required disabled={useSocialName} error={errors.fullName} />
+            <InputField label={`${t('fullName')} *`} name="fullName" value={formData.fullName} onChange={handleChange} onBlur={handleBlur} required error={errors.fullName} />
             <InputField label={t('socialName')} name="socialName" value={formData.socialName} onChange={handleChange} />
             <div className="md:col-span-2 flex items-center">
               <input id="useSocialName" name="useSocialName" type="checkbox" checked={useSocialName} onChange={handleUseSocialNameChange} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />

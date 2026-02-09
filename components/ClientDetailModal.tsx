@@ -300,7 +300,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             // Title
             doc.setFontSize(20);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Perfil do Cliente: ${localClient.name}`, margin, y);
+            doc.text(`Perfil do Cliente: ${localClient.legalName || localClient.name}`, margin, y);
             y += 20;
 
             // --- Personal & Contact Info ---
@@ -313,6 +313,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 theme: 'grid',
                 headStyles: { fillColor: [240, 240, 240], textColor: 20 },
                 body: [
+                    ['Nome Completo', localClient.legalName || localClient.name],
+                    ['Nome Social', localClient.socialName || 'N/A'],
                     ['E-mail', localClient.email],
                     ['Telefone', localClient.phone],
                     ['CPF', localClient.cpf],
@@ -829,8 +831,19 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             <div className="space-y-0">
                 <InfoSection title={t('identificationAndAccess')}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                        <InfoItem icon={<UsersIcon />} label={t('fullName')} value={localClient.legalName} />
+                        <InfoItem icon={<UsersIcon />} label={t('socialName')} value={localClient.socialName} />
+                        <InfoItem icon={<MailIcon />} label={t('email')} value={localClient.email} />
                         <InfoItem icon={<MailIcon />} label={t('email')} value={localClient.email} />
                         <InfoItem icon={<PhoneIcon />} label={t('phone')} value={localClient.phone} />
+                        {localClient.additionalPhones?.map((phone: any, idx: number) => (
+                            <InfoItem
+                                key={idx}
+                                icon={<PhoneIcon />}
+                                label={`${t('additionalContacts')} (${phone.sector || 'Geral'})`}
+                                value={phone.number}
+                            />
+                        ))}
                     </div>
                 </InfoSection>
 
@@ -1075,8 +1088,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     <h3 className="text-2xl font-bold text-white" id="modal-title">
                                         {localClient.name}
                                     </h3>
-                                    {localClient.socialName && localClient.socialName !== localClient.name && (
-                                        <p className="text-lg font-medium text-gray-300">({localClient.socialName})</p>
+                                    {localClient.useSocialName ? (
+                                        localClient.legalName && localClient.legalName !== localClient.name && (
+                                            <p className="text-lg font-medium text-gray-300">({localClient.legalName})</p>
+                                        )
+                                    ) : (
+                                        localClient.socialName && localClient.socialName !== localClient.name && (
+                                            <p className="text-lg font-medium text-gray-300">({localClient.socialName})</p>
+                                        )
                                     )}
                                     {badgeInfo && (
                                         <span className={`mt-2 inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${badgeInfo.classes}`}>

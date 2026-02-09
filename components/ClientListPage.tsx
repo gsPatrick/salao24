@@ -113,12 +113,12 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
             y += 5;
             pdf.setFont('helvetica', 'normal');
             pdf.setFontSize(12);
-            addText(`Cliente: ${client.name}`, { fontSize: 12 });
+            addText(`Cliente: ${client.legalName || client.name}`, { fontSize: 12 });
             addText(`CPF: ${client.cpf}`, { fontSize: 12 });
             y += 10;
 
             pdf.setFontSize(10);
-            addText(doc.content.replace(/\[NOME DO CLIENTE\]/g, client.name).replace(/\[CPF DO CLIENTE\]/g, client.cpf), { fontSize: 10 });
+            addText(doc.content.replace(/\[NOME DO CLIENTE\]/g, client.legalName || client.name).replace(/\[CPF DO CLIENTE\]/g, client.cpf), { fontSize: 10 });
             y += 20;
 
             if (doc.signed) {
@@ -128,7 +128,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
                 }
             }
 
-            const filename = `${doc.type}_${client.name.replace(/ /g, '_')}.pdf`;
+            const filename = `${doc.type}_${(client.legalName || client.name).replace(/ /g, '_')}.pdf`;
             pdf.save(filename);
         } catch (error) {
             console.error("Error generating PDF:", error);
@@ -361,16 +361,17 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
             const { jsPDF } = jspdf;
             const doc = new jsPDF();
 
-            const tableColumns = ["Nome", "Telefone", "E-mail", "Última Visita", "Total de Visitas"];
+            const tableColumns = ["Nome Principal", "Nome Legal", "Nome Social", "Telefone", "E-mail", "Última Visita"];
             const tableRows: (string | number)[][] = [];
 
             clients.forEach(client => {
                 const clientData = [
                     client.name,
+                    client.legalName || '-',
+                    client.socialName || '-',
                     client.phone,
                     client.email,
-                    client.lastVisit ? new Date(client.lastVisit + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A',
-                    client.totalVisits
+                    client.lastVisit ? new Date(client.lastVisit + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'
                 ];
                 tableRows.push(clientData);
             });

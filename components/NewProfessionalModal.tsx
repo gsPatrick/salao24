@@ -249,10 +249,9 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     useEffect(() => {
         if (isOpen) {
             if (professionalToEdit) {
-                const isUsingSocialName = professionalToEdit.socialName && professionalToEdit.name === professionalToEdit.socialName;
-                setUseSocialName(isUsingSocialName);
+                setUseSocialName(!!professionalToEdit.useSocialName);
                 setFormData({
-                    name: professionalToEdit.name || '',
+                    name: professionalToEdit.legalName || professionalToEdit.name || '',
                     socialName: professionalToEdit.socialName || '',
                     cpf: professionalToEdit.cpf || '',
                     birthdate: professionalToEdit.birthdate || '',
@@ -430,9 +429,9 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 ...restOfData,
                 address: { cep, street, number, complement: addressComplement, neighborhood, city, state },
                 specialties: selectedSpecialties,
-                allowOvertime: allowOvertime,
                 openSchedule: openSchedule,
                 documents: uploadedDocs,
+                useSocialName,
             };
             onSave(finalData);
             handleClose();
@@ -494,7 +493,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InputField label={`${t('fullName')} *`} name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} required disabled={useSocialName} error={errors.name} />
+                        <InputField label={`${t('fullName')} *`} name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} required error={errors.name} />
                         <InputField label={t('socialName')} name="socialName" value={formData.socialName} onChange={handleChange} />
                         <div className="md:col-span-2 flex items-center">
                             <input id="useSocialName" name="useSocialName" type="checkbox" checked={useSocialName} onChange={handleUseSocialNameChange} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
