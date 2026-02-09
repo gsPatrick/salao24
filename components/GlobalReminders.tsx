@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext'; // Using AuthContext directly for socket if available, or just fetch
+import { getSocket } from '../lib/socket';
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 
 interface Reminder {
@@ -42,20 +43,35 @@ const GlobalReminders: React.FC = () => {
         }
     };
 
+    import { getSocket } from '../lib/socket';
+
+    // ...
+
     useEffect(() => {
         fetchReminders();
 
-        // Setup socket listener if possible
-        // We might need to access the global socket instance.
-        // If it's not easily accessible, we'll rely on periodic polling or just init fetch. 
-        // But the plan was to listen to 'reminder:update'.
-        // Assuming window.socket or similar if global, OR if we can import the socket instance from somewhere.
-        // Since we don't have a direct socket context hook visible yet (except Auth maybe?), let's rely on event listener pattern if implemented, 
-        // OR just polling every minute for robustness in this "safe" implementation.
+        const socket = getSocket();
+        if (socket) {
+            console.log('GlobalReminders: Connecting to socket...');
 
-        const interval = setInterval(fetchReminders, 60000); // Poll every minute
-        return () => clearInterval(interval);
+            const handleReminderUpdate = (data: any) => {
+                console.log('GlobalReminders: Received update', data);
+                // We could be more granular, but re-fetching is safest to get latest state
+                fetchReminders();
+            };
 
+            socket.on('reminder:update', handleReminderUpdate);
+            socket.on('client:update', handleReminderUpdate); // Also refresh on general client update just in case
+
+            return () => {
+                socket.off('reminder:update', handleReminderUpdate);
+                socket.off('client:update', handleReminderUpdate);
+            };
+        } else {
+            // Fallback to polling if socket not available (though it should be)
+            const interval = setInterval(fetchReminders, 30000);
+            return () => clearInterval(interval);
+        }
     }, [token]);
 
     // Calculate pending reminders
