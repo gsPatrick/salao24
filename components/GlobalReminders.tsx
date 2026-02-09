@@ -65,14 +65,55 @@ const GlobalReminders: React.FC = () => {
 
     if (!user) return null;
 
+    const handleMarkAsDone = async (clientId: number, reminderId: string) => {
+        if (!token) return;
+
+        try {
+            const client = reminders.find(c => c.id === clientId);
+            if (!client) return;
+
+            // Create updated reminders list
+            const updatedReminders = client.reminders.map(r =>
+                r.id === reminderId ? { ...r, completed: true } : r
+            ); // Logic to mark locally first could be good but we rely on refresh
+
+            // We need to update the client's reminders in the backend.
+            // Since we don't have a specific endpoint for just this, we might need to send the whole array
+            // via the client update endpoint which is typically PUT /api/clients/:id
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/clients/${clientId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    reminders: updatedReminders
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Refresh list locally to reflect change immediately
+                setReminders(prev => prev.map(c =>
+                    c.id === clientId
+                        ? { ...c, reminders: updatedReminders }
+                        : c
+                ));
+            }
+        } catch (error) {
+            console.error('Error marking reminder as done:', error);
+        }
+    };
+
     return (
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none"
+                className="relative p-2 text-gray-400 hover:text-white transition-colors focus:outline-none"
             >
                 <span className="sr-only">View notifications</span>
-                <ClockIcon className="h-6 w-6" />
+                <ClockIcon />
                 {pendingCount > 0 && (
                     <span className="absolute top-0 right-0 block h-4 w-4 rounded-full ring-2 ring-white bg-red-500 text-xs text-white text-center leading-4 font-bold">
                         {pendingCount}
@@ -99,10 +140,23 @@ const GlobalReminders: React.FC = () => {
                             ) : (
                                 reminders.map(client => (
                                     client.reminders.filter(r => !r.completed).map((reminder, idx) => (
-                                        <div key={`${client.id}-${idx}`} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0">
-                                            <p className="text-sm font-medium text-gray-900">{client.name}</p>
-                                            <p className="text-sm text-gray-600 mt-1">{reminder.text}</p>
-                                            <p className="text-xs text-gray-400 mt-1">{new Date(reminder.date).toLocaleDateString()}</p>
+                                        <div key={`${client.id}-${idx}`} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 group">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">{client.name}</p>
+                                                    <p className="text-sm text-gray-600 mt-1">{reminder.text}</p>
+                                                    <p className="text-xs text-gray-400 mt-1">{new Date(reminder.date).toLocaleDateString()} - {new Date(reminder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleMarkAsDone(client.id, reminder.id)}
+                                                    className="opacity-0 group-hover:opacity-100 text-green-500 hover:text-green-700 p-1"
+                                                    title="Marcar como concluído"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 ))

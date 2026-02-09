@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 id: apiUser.id,
                                 name: apiUser.name,
                                 email: apiUser.email,
-                                avatarUrl: apiUser.avatar_url || `https://i.pravatar.cc/150?u=${apiUser.email}`,
+                                avatarUrl: apiUser.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
                                 role: apiUser.role,
                                 tenant_id: apiUser.tenant_id,
                                 is_super_admin: apiUser.is_super_admin || false,
