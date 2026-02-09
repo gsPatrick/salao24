@@ -21,20 +21,40 @@ const GlobalReminders: React.FC = () => {
     const [reminders, setReminders] = useState<ClientReminder[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' } | null>(null);
+
+    // Clear toast after 5s
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => setToast(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     // Fetch reminders
-    const fetchReminders = async () => {
+    const fetchReminders = async (showToast = false) => {
         if (!token) return;
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/clients/reminders`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${baseUrl}${baseUrl.endsWith('/api') ? '' : '/api'}/clients/reminders`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             const data = await response.json();
             if (data.success) {
-                setReminders(data.data);
+                const newReminders = data.data;
+                const totalNewPending = newReminders.reduce((acc: number, c: any) => acc + (c.reminders?.filter((r: any) => !r.completed).length || 0), 0);
+                const currentPending = reminders.reduce((acc, c) => acc + (c.reminders?.filter(r => !r.completed).length || 0), 0);
+
+                // If showToast is true OR we detected a numeric increase in pending reminders
+                if (showToast || totalNewPending > currentPending) {
+                    setToast({ message: `Você tem ${totalNewPending} lembrete(s) pendente(s)`, type: 'info' });
+                    // Try to play a subtle sound if possible (optional)
+                }
+
+                setReminders(newReminders);
             }
         } catch (error) {
             console.error('Error fetching reminders:', error);
@@ -43,35 +63,43 @@ const GlobalReminders: React.FC = () => {
         }
     };
 
-    import { getSocket } from '../lib/socket';
-
-    // ...
-
     useEffect(() => {
+        // Initial fetch
         fetchReminders();
 
+        // 60s polling fallback (requested by user)
+        const pollingInterval = setInterval(() => {
+            console.log('GlobalReminders: Polling check...');
+            fetchReminders();
+        }, 60000);
+
         const socket = getSocket();
+
+        const onConnect = () => {
+            console.log('GlobalReminders: Socket connected');
+        };
+
         if (socket) {
-            console.log('GlobalReminders: Connecting to socket...');
+            console.log('GlobalReminders: Setting up socket listeners...');
+            socket.on('connect', onConnect);
 
             const handleReminderUpdate = (data: any) => {
                 console.log('GlobalReminders: Received update', data);
-                // We could be more granular, but re-fetching is safest to get latest state
-                fetchReminders();
+                fetchReminders(true);
             };
 
             socket.on('reminder:update', handleReminderUpdate);
-            socket.on('client:update', handleReminderUpdate); // Also refresh on general client update just in case
+            socket.on('client:update', handleReminderUpdate);
 
             return () => {
+                clearInterval(pollingInterval);
+                socket.off('connect', onConnect);
                 socket.off('reminder:update', handleReminderUpdate);
                 socket.off('client:update', handleReminderUpdate);
             };
-        } else {
-            // Fallback to polling if socket not available (though it should be)
-            const interval = setInterval(fetchReminders, 30000);
-            return () => clearInterval(interval);
         }
+
+        return () => clearInterval(pollingInterval);
     }, [token]);
 
     // Calculate pending reminders
@@ -97,7 +125,8 @@ const GlobalReminders: React.FC = () => {
             // Since we don't have a specific endpoint for just this, we might need to send the whole array
             // via the client update endpoint which is typically PUT /api/clients/:id
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/clients/${clientId}`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${baseUrl}${baseUrl.endsWith('/api') ? '' : '/api'}/clients/${clientId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -193,6 +222,23 @@ const GlobalReminders: React.FC = () => {
                         </div>
                     </div>
                 </>
+            )}
+            {/* Local Toast Notification */}
+            {toast && (
+                <div className="fixed bottom-4 right-4 z-[9999] animate-bounce">
+                    <div className="bg-primary text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border-2 border-white/20 backdrop-blur-sm">
+                        <div className="bg-white/20 p-1.5 rounded-lg">
+                            <ClockIcon />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Novo Lembrete!</p>
+                            <p className="text-xs opacity-90">{toast.message}</p>
+                        </div>
+                        <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

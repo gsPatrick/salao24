@@ -111,15 +111,18 @@ const InfoSection: React.FC<{ title: string; children: React.ReactNode; }> = ({ 
     </div>
 );
 
-const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string | React.ReactNode; }> = ({ icon, label, value }) => (
-    <div className="flex items-start gap-3">
-        <span className="mt-1 text-gray-400 flex-shrink-0">{icon}</span>
-        <div>
-            <p className="text-xs font-semibold text-gray-500">{label}</p>
-            <p className="text-sm text-gray-800 break-words max-w-[200px]">{value || 'Não informado'}</p>
+const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string | React.ReactNode; }> = ({ icon, label, value }) => {
+    if (!value || value === 'Não informado' || (typeof value === 'string' && value.trim() === '')) return null;
+    return (
+        <div className="flex items-start gap-3">
+            <span className="mt-1 text-gray-400 flex-shrink-0">{icon}</span>
+            <div>
+                <p className="text-xs font-semibold text-gray-500">{label}</p>
+                <p className="text-sm text-gray-800 break-words max-w-[200px]">{value}</p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock }) => {
     const { t } = useLanguage();
@@ -830,19 +833,25 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 <InfoSection title={t('personalDocuments')}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                         <InfoItem icon={<IdCardIcon />} label="CPF" value={localClient.cpf} />
-                        {localClient.rg && <InfoItem icon={<IdCardIcon />} label="RG" value={localClient.rg} />}
+                        <InfoItem icon={<IdCardIcon />} label="RG" value={localClient.rg} />
                         <InfoItem icon={<CakeIcon />} label={t('birthDate')} value={(() => {
-                            if (!localClient.birthdate) return 'Não informado';
+                            if (!localClient.birthdate) return null;
                             const datePart = localClient.birthdate.split('T')[0];
                             const [year, month, day] = datePart.split('-');
                             return `${day}/${month}/${year}`;
                         })()} />
-                        {localClient.maritalStatus && <InfoItem icon={<UsersIcon />} label={t('maritalStatus')} value={localClient.maritalStatus} />}
-                        {localClient.preferredUnit && <InfoItem icon={<BuildingStorefrontIcon />} label="Unidade de Preferência" value={localClient.preferredUnit} />}
+                        <InfoItem icon={<UsersIcon />} label={t('maritalStatus')} value={localClient.maritalStatus} />
+                        <InfoItem icon={<BuildingStorefrontIcon />} label="Unidade de Preferência" value={localClient.preferredUnit} />
                         {/* New Fields */}
                         <InfoItem icon={<UsersIcon />} label="Time" value={localClient.team} />
                         <InfoItem icon={<StarIcon className="h-5 w-5 text-gray-400" />} label="Observações" value={localClient.observations} />
                         <InfoItem icon={<UserPlusIcon />} label="Parentesco" value={localClient.kinship} />
+                        <InfoItem icon={<UsersIcon />} label="Gênero" value={localClient.gender} />
+                        <InfoItem
+                            icon={<StarIcon className="h-5 w-5 text-gray-400" />}
+                            label="Cadastro Completo"
+                            value={localClient.isCompleteRegistration ? 'Sim' : 'Não'}
+                        />
                     </div>
                     {localClient.relationships && localClient.relationships.length > 0 && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
