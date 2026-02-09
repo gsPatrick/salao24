@@ -1056,6 +1056,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Map frontend fields (camelCase) to backend fields (snake_case)
             const apiData = {
                 ...client,
+                name: client.legalName || client.name, // Ensure we send the legal name
                 social_name: client.socialName,
                 birth_date: client.birthdate,
                 photo_url: client.photo,
@@ -1121,6 +1122,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Map frontend fields (camelCase) to backend fields (snake_case)
             const apiData = {
                 ...professional,
+                name: professional.legalName || professional.name, // Ensure we send the legal name
                 social_name: professional.socialName,
                 marital_status: professional.maritalStatus,
                 start_time: professional.startTime,
