@@ -154,28 +154,41 @@ const GlobalReminders: React.FC = () => {
                             ) : reminders.length === 0 ? (
                                 <p className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum lembrete ativo.</p>
                             ) : (
-                                reminders.map(client => (
-                                    client.reminders.filter(r => !r.completed).map((reminder, idx) => (
-                                        <div key={`${client.id}-${idx}`} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 group">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900">{client.name}</p>
-                                                    <p className="text-sm text-gray-600 mt-1">{reminder.text}</p>
-                                                    <p className="text-xs text-gray-400 mt-1">{new Date(reminder.date).toLocaleDateString()} - {new Date(reminder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                reminders.flatMap(client =>
+                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id }))
+                                ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                                    .map((reminder, idx) => {
+                                        const isOverdue = new Date(reminder.date) < new Date();
+                                        return (
+                                            <div key={`${reminder.clientId}-${reminder.id}-${idx}`} className={`px-4 py-3 border-b border-gray-100 last:border-0 group ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
+                                                            {isOverdue && (
+                                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-800">
+                                                                    ATRASADO
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className={`text-sm mt-1 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
+                                                        <p className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                                                            {new Date(reminder.date).toLocaleDateString()} - {new Date(reminder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleMarkAsDone(reminder.clientId, reminder.id)}
+                                                        className={`opacity-0 group-hover:opacity-100 p-1 transition-opacity ${isOverdue ? 'text-red-600 hover:text-red-800' : 'text-green-500 hover:text-green-700'}`}
+                                                        title="Marcar como concluído"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleMarkAsDone(client.id, reminder.id)}
-                                                    className="opacity-0 group-hover:opacity-100 text-green-500 hover:text-green-700 p-1"
-                                                    title="Marcar como concluído"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))
-                                ))
+                                        );
+                                    })
                             )}
                         </div>
                     </div>
