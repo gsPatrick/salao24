@@ -18,6 +18,7 @@ import CRMPage from './CRMPage';
 import ClientListPage from './ClientListPage';
 import ChatPage from './ChatPage';
 import ProfessionalAgendaPage from './ProfessionalAgendaPage';
+import GlobalReminders from './GlobalReminders';
 import GeneralAgendaPage from './GeneralAgendaPage';
 import FinancialDashboardPage from './FinancialDashboardPage';
 import ProfessionalsPage from './ProfessionalsPage'; // New import
@@ -4523,6 +4524,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button onClick={() => handleSidebarClick('Visão Geral')} className="text-gray-500 hover:text-primary"><HomeIcon /></button>
                                 <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>{t('overview')}<div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div></div>
                             </div>
+
+                            <GlobalReminders />
 
                             <div className="relative group" ref={notificationPanelRef}>
                                 <button onClick={() => setIsNotificationPanelOpen(prev => !prev)} className="text-gray-500 hover:text-primary relative"><BellIcon />{unreadCount > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-white text-xs items-center justify-center">{unreadCount}</span></span>}</button>
