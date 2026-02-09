@@ -25,7 +25,15 @@ const ProfessionalCard: React.FC<{
             {professional.archived && (
                 <span className="absolute top-2 right-2 text-xs font-bold bg-gray-800 text-white px-2 py-1 rounded-full z-10">{t('statusArchived')}</span>
             )}
-            <img src={professional.photo} alt={professional.name} className="w-24 h-24 rounded-full object-cover ring-4 ring-primary/20" />
+            {professional.photo && !professional.photo.includes('pravatar') ? (
+                <img src={professional.photo} alt={professional.name} className="w-24 h-24 rounded-full object-cover ring-4 ring-primary/20" />
+            ) : (
+                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 ring-4 ring-primary/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+            )}
             <div className="flex-1">
                 <h3 className="font-bold text-lg text-secondary">{professional.name}</h3>
                 <p className="text-sm text-primary font-semibold">{professional.occupation}</p>

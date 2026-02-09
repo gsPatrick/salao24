@@ -39,8 +39,10 @@ interface Reminder {
     id: number;
     subject: string;
     text: string;
-    dateTime: string;
+    date: string; // Unified field
+    dateTime: string; // Keep for legacy/UI compatibility
     status: 'pending' | 'completed';
+    completed: boolean; // Unified field
 }
 
 type Client = DataContextClient & {
@@ -178,8 +180,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         if (!isOpen || !localClient?.reminders) return;
 
         const upcomingReminder = localClient.reminders
-            .filter(r => r.status === 'pending' && !dismissedReminders.includes(r.id))
-            .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())[0];
+            .filter(r => (r.status === 'pending' || !r.completed) && !dismissedReminders.includes(r.id))
+            .sort((a, b) => new Date(a.date || a.dateTime).getTime() - new Date(b.date || b.dateTime).getTime())[0];
 
         setActiveReminder(upcomingReminder || null);
     }, [isOpen, localClient, dismissedReminders]);
@@ -205,7 +207,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         const updatedClient = {
             ...localClient,
             reminders: localClient.reminders?.map(r =>
-                r.id === activeReminder.id ? { ...r, status: 'completed' as const } : r
+                r.id === activeReminder.id ? { ...r, status: 'completed' as const, completed: true } : r
             )
         };
 
@@ -233,6 +235,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         const newReminder: Reminder = {
             id: Date.now(),
             status: 'pending',
+            completed: false,
+            date: reminder.dateTime, // Ensure both are present
             ...reminder,
         };
 
@@ -669,7 +673,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             if (!localClient) return;
             const updatedClient = {
                 ...localClient,
-                photo: `https://i.pravatar.cc/150?u=${Date.now()}`,
+                photo: '',
             };
             setLocalClient(updatedClient);
             if (onSave) {
@@ -1058,7 +1062,15 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="p-6 bg-secondary rounded-t-lg">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center space-x-4">
-                                <img src={localClient.photo} alt={localClient.name} className="w-20 h-20 rounded-full object-cover ring-4 ring-primary" />
+                                {localClient.photo && !localClient.photo.includes('pravatar') ? (
+                                    <img src={localClient.photo} alt={localClient.name} className="w-20 h-20 rounded-full object-cover ring-4 ring-primary" />
+                                ) : (
+                                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 ring-4 ring-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                )}
                                 <div>
                                     <h3 className="text-2xl font-bold text-white" id="modal-title">
                                         {localClient.name}

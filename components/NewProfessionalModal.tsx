@@ -320,9 +320,9 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         if (errors[name]) { const error = validateField(name, value); setErrors(prev => ({ ...prev, [name]: error })); }
         let formattedValue = value;
         if (name === 'cpf') formattedValue = formatCPF(value); else if (name === 'phone') formattedValue = formatPhone(value); else if (name === 'cep') formattedValue = formatCEP(value);
-        setFormData(prev => { const newState = { ...prev, [name]: formattedValue }; if (name === 'socialName' && useSocialName) { newState.name = value; } return newState; });
+        setFormData(prev => { const newState = { ...prev, [name]: formattedValue }; return newState; });
     };
-    const handleUseSocialNameChange = (e: React.ChangeEvent<HTMLInputElement>) => { const isChecked = e.target.checked; setUseSocialName(isChecked); setFormData(prev => ({ ...prev, name: isChecked ? prev.socialName : prev.name })); };
+    const handleUseSocialNameChange = (e: React.ChangeEvent<HTMLInputElement>) => { const isChecked = e.target.checked; setUseSocialName(isChecked); };
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) { const reader = new FileReader(); reader.onload = (event) => { setImageToEdit(event.target?.result as string); setIsEditorOpen(true); }; reader.readAsDataURL(e.target.files[0]); }
     };
@@ -426,7 +426,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
 
             const finalData = {
                 id: professionalToEdit?.id,
-                photo: photo || `https://i.pravatar.cc/150?u=${Date.now()}`,
+                photo: photo || '',
                 ...restOfData,
                 address: { cep, street, number, complement: addressComplement, neighborhood, city, state },
                 specialties: selectedSpecialties,
@@ -474,7 +474,17 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             <>
                 <CollapsibleSection title={t('identificationAndAccess')} defaultOpen={true}>
                     <div className="flex items-start space-x-6 pb-4">
-                        <div className="shrink-0 text-center"><img className="h-20 w-20 object-cover rounded-full mx-auto" src={photo || 'https://i.pravatar.cc/150?u=new-prof'} alt="Foto" /></div>
+                        <div className="shrink-0 text-center">
+                            {photo && !photo.includes('pravatar') ? (
+                                <img className="h-20 w-20 object-cover rounded-full mx-auto" src={photo} alt="Foto" />
+                            ) : (
+                                <div className="h-20 w-20 rounded-full mx-auto bg-gray-100 flex items-center justify-center text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
                         <div className="flex-grow self-start">
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <button type="button" onClick={handleTakePhotoClick} className="py-2 px-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">{t('capturePhoto')}</button>

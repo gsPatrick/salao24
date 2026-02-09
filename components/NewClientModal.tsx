@@ -477,9 +477,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     else if (name === 'cep') formattedValue = formatCEP(value);
     setFormData(prev => {
       const newState = { ...prev, [name]: formattedValue };
-      if (name === 'socialName' && useSocialName) {
-        newState.fullName = value;
-      }
       return newState;
     });
   };
@@ -496,7 +493,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const handleUseSocialNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     setUseSocialName(isChecked);
-    setFormData(prev => ({ ...prev, fullName: isChecked ? prev.socialName : prev.fullName }));
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -943,7 +939,17 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       <>
         <CollapsibleSection title={t('identificationAndAccess')} defaultOpen={true}>
           <div className="flex items-start space-x-6 pb-4">
-            <div className="shrink-0 text-center"><img className="h-20 w-20 object-cover rounded-full mx-auto" src={photo || 'https://i.pravatar.cc/150?u=new-client'} alt="Foto do Cliente" /></div>
+            <div className="shrink-0 text-center">
+              {photo ? (
+                <img className="h-20 w-20 object-cover rounded-full mx-auto" src={photo} alt="Foto do Cliente" />
+              ) : (
+                <div className="h-20 w-20 rounded-full mx-auto bg-gray-100 flex items-center justify-center text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
             <div className="flex-grow self-start">
               <div className="flex flex-col sm:flex-row gap-2">
                 <button type="button" onClick={handleTakePhotoClick} className="py-2 px-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">{t('capturePhoto')}</button>

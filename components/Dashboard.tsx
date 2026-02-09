@@ -4246,7 +4246,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 <span>{index + 1}.</span>
                                             )}
                                         </div>
-                                        <img src={prof.photo || 'https://i.pravatar.cc/150?u=default'} alt={prof.name} className="w-12 h-12 rounded-full object-cover" />
+                                        {prof.photo && !prof.photo.includes('pravatar') ? (
+                                            <img src={prof.photo} alt={prof.name} className="w-12 h-12 rounded-full object-cover" />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
+                                            </div>
+                                        )}
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <p className="font-semibold text-gray-800">{prof.name}</p>

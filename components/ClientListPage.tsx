@@ -141,7 +141,15 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
             {isBirthdayMonth && <Confetti />}
             <div className="flex items-start space-x-4 relative z-10">
                 <div className="relative flex-shrink-0">
-                    <img src={client.photo} alt={client.name} className="w-16 h-16 rounded-full object-cover" />
+                    {client.photo && !client.photo.includes('pravatar') ? (
+                        <img src={client.photo} alt={client.name} className="w-16 h-16 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    )}
                     {isBirthdayMonth && (
                         <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-3xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
                     )}
@@ -297,7 +305,7 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
                     const newClient = {
                         name: row['Nome Completo'] || row['Nome'] || '',
                         socialName: row['Nome Social'] || '',
-                        photo: row['Foto URL'] || `https://i.pravatar.cc/150?u=${Date.now() + Math.random()}`,
+                        photo: row['Foto URL'] || '',
                         phone: String(row['Telefone'] || ''),
                         email: row['E-mail'] || row['Email'] || '',
                         cpf: String(row['CPF'] || ''),

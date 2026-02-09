@@ -4,9 +4,11 @@ import { getSocket } from '../lib/socket';
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 
 interface Reminder {
-    id: string;
+    id: number | string;
+    subject?: string;
     text: string;
     date: string;
+    dateTime?: string; // Support both for robustness
     completed: boolean;
 }
 
@@ -200,9 +202,12 @@ const GlobalReminders: React.FC = () => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className={`text-sm mt-1 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
+                                                        <p className={`text-sm mt-1 font-bold ${isOverdue ? 'text-red-800' : 'text-gray-800'}`}>
+                                                            {reminder.subject || 'Lembrete'}
+                                                        </p>
+                                                        <p className={`text-sm mt-0.5 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
                                                         <p className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                                                            {new Date(reminder.date).toLocaleDateString()} - {new Date(reminder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {new Date(reminder.date || reminder.dateTime || '').toLocaleDateString()} - {new Date(reminder.date || reminder.dateTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </p>
                                                     </div>
                                                     <button
