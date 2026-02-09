@@ -26,6 +26,7 @@ import { useAuth } from './AuthContext';
 export interface Client {
     id: number;
     name: string;
+    legalName?: string; // distinct from display name if social name is used
     socialName?: string;
     photo?: string;
     phone: string;
@@ -439,6 +440,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // Map API response to frontend format
 export const mapClientFromAPI = (apiClient: any): Client => ({
     ...apiClient,
+    legalName: apiClient.legal_name || apiClient.name,
     socialName: apiClient.social_name,
     photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
     birthdate: apiClient.birth_date || apiClient.birthdate,
