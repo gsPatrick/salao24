@@ -440,7 +440,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const mapClientFromAPI = (apiClient: any): Client => ({
     ...apiClient,
     socialName: apiClient.social_name,
-    photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://i.pravatar.cc/150?u=default',
+    photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
     birthdate: apiClient.birth_date || apiClient.birthdate,
     howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
     indicatedBy: apiClient.indicated_by,
