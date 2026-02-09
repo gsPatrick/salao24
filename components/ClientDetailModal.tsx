@@ -1271,7 +1271,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
                                                                             {item.status}
                                                                         </span>
-                                                                        {['Agendado', 'Reagendado', 'a realizar'].includes(item.status || '') && (
+                                                                        {['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) && (
                                                                             <button
                                                                                 onClick={() => handleUpdateServiceStatus(item.id)}
                                                                                 className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
