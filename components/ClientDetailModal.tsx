@@ -801,7 +801,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const lastVisitDateFormatted = localClient.lastVisit && !isNaN(new Date(localClient.lastVisit).getTime())
         ? new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
         : 'N/A';
-    const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
+    const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''}${localClient.address.complement ? ' - ' + localClient.address.complement : ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
 
 
     const classificationBadges: { [key: string]: { text: string, icon: string, classes: string } } = {
@@ -833,7 +833,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                         <InfoItem icon={<UsersIcon />} label={t('fullName')} value={localClient.legalName} />
                         <InfoItem icon={<UsersIcon />} label={t('socialName')} value={localClient.socialName} />
-                        <InfoItem icon={<MailIcon />} label={t('email')} value={localClient.email} />
                         <InfoItem icon={<MailIcon />} label={t('email')} value={localClient.email} />
                         <InfoItem icon={<PhoneIcon />} label={t('phone')} value={localClient.phone} />
                         {localClient.additionalPhones?.map((phone: any, idx: number) => (

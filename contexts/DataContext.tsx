@@ -32,6 +32,7 @@ export interface Client {
     phone: string;
     email: string;
     cpf?: string;
+    rg?: string;
     birthdate?: string;
     // Mapped fields for frontend compatibility
     lastVisit?: string;
