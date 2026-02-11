@@ -239,14 +239,21 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
     const handleQuickSchedule = async (payload: {
         clientName: string;
         clientPhone: string;
-        serviceName: string;
-        professionalName: string;
+        serviceName?: string;
+        serviceId?: number;
+        packageId?: number;
+        salonPlanId?: number;
+        professionalName?: string;
+        professionalId?: number;
         date: string; // YYYY-MM-DD
         time: string; // HH:MM
+        endTime?: string;
+        is_complete_registration?: boolean;
     }) => {
-        // 1) Find the professional ID in the context using the professionalName from the payload
-        const selectedProfessional = contextProfessionals.find(p => p.name === payload.professionalName);
-        const targetProfessionalId = selectedProfessional ? selectedProfessional.id : professionalData?.id || 1;
+        // 1) Find the professional ID
+        const targetProfessionalId = payload.professionalId
+            || (payload.professionalName ? contextProfessionals.find(p => p.name === payload.professionalName)?.id : null)
+            || professionalData?.id || 1;
 
         // 2) Find or Create Client
         let client = contextClients.find(c => c.name === payload.clientName || c.phone === payload.clientPhone);
@@ -256,12 +263,13 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
                 phone: payload.clientPhone,
                 howTheyFoundUs: 'Agendamento Rápido',
                 registrationDate: new Date().toISOString(),
+                is_complete_registration: payload.is_complete_registration ?? false,
             }) as any;
         }
 
         if (client && client.id) {
-            // 3) Find the service ID
-            const selectedService = contextServices.find(s => s.name === payload.serviceName);
+            // 3) Resolve service ID if needed
+            const serviceId = payload.serviceId || (payload.serviceName ? contextServices.find(s => s.name === payload.serviceName)?.id : undefined);
 
             // 4) Create Appointment
             await saveAppointment({
@@ -269,7 +277,10 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
                 professionalId: targetProfessionalId,
                 date: payload.date,
                 time: payload.time,
-                service_id: selectedService ? selectedService.id : undefined,
+                endTime: payload.endTime,
+                service_id: serviceId,
+                package_id: payload.packageId,
+                salon_plan_id: payload.salonPlanId,
                 service: payload.serviceName, // Keep for UI compatibility
                 status: 'Agendado',
             });
