@@ -1442,8 +1442,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                     <button
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
-                                                                                            const sub = localClient?.packages?.find(p => (item.package_id && p.id === item.package_id) || (item.salon_plan_id && p.id === item.salon_plan_id));
-                                                                                            const remaining = sub ? (sub.total_sessions || sub.sessions || 0) - (sub.used_sessions || sub.clicks || 0) : 99;
+                                                                                            const sub = localClient?.packages?.find(p => (item.package_id && p.package_id === item.package_id) || (item.salon_plan_id && p.plan_id === item.salon_plan_id));
+                                                                                            const remaining = sub ? (Number(sub.total_sessions || sub.sessions || 0) - Number(sub.used_sessions || sub.clicks || 0)) : 99;
                                                                                             setConcludeQty(prev => Math.min(remaining, prev + 1));
                                                                                         }}
                                                                                         className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
