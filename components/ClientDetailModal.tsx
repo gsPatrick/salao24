@@ -1369,14 +1369,33 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{dateDisplay}</p>
                                                                         {item.sessionInfo && (
-                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                {item.type === 'Pacote' || item.type === 'Plano' ? 'Sessão ' : ''}{item.sessionInfo}
+                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                </svg>
+                                                                                {(item.type === 'Pacote' || item.type === 'Plano') && !item.sessionInfo.includes('Sessão') ? 'Sessão ' : ''}{item.sessionInfo}
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                {item.status === 'a realizar' ? (
-                                                                    <button onClick={() => handleUpdateServiceStatus(item.id)} className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</button>
+                                                                {['a realizar', 'agendado'].includes((item.status || '').toLowerCase().trim()) ? (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (item.package_id || item.salon_plan_id) {
+                                                                                setConcludingId(item.id);
+                                                                                setConcludeQty(1);
+                                                                            } else {
+                                                                                handleUpdateServiceStatus(item.id);
+                                                                            }
+                                                                        }}
+                                                                        className={`text-sm font-medium px-3 py-1 rounded-full capitalize flex items-center gap-1 transition-all ${statusBaseClass} hover:ring-2 hover:ring-green-300`}
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                        {item.status === 'agendado' ? 'Concluir' : item.status}
+                                                                    </button>
                                                                 ) : (
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</span>
                                                                 )}
