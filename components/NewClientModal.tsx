@@ -445,9 +445,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     }, 300);
   };
 
-  const formatCPF = (value: string) => value.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-  const formatPhone = (value: string) => value.replace(/\D/g, '').slice(0, 11).replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\s\d{5})(\d)/, '$1-$2');
-  const formatCEP = (value: string) => value.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
+  const formatCPF = (value: string) => (value || '').replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  const formatPhone = (value: string) => (value || '').replace(/\D/g, '').slice(0, 11).replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\s\d{5})(\d)/, '$1-$2');
+  const formatCEP = (value: string) => (value || '').replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
 
   const handleCepSearch = async () => {
     const cep = formData.cep.replace(/\D/g, '');

@@ -119,7 +119,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
             y += 10;
 
             pdf.setFontSize(10);
-            addText(doc.content.replace(/\[NOME DO CLIENTE\]/g, client.legalName || client.name).replace(/\[CPF DO CLIENTE\]/g, client.cpf), { fontSize: 10 });
+            addText((doc.content || '').replace(/\[NOME DO CLIENTE\]/g, client.legalName || client.name).replace(/\[CPF DO CLIENTE\]/g, client.cpf || ''), { fontSize: 10 });
             y += 20;
 
             if (doc.signed) {
@@ -129,7 +129,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
                 }
             }
 
-            const filename = `${doc.type}_${(client.legalName || client.name).replace(/ /g, '_')}.pdf`;
+            const filename = `${doc.type}_${(client.legalName || client.name || '').replace(/ /g, '_')}.pdf`;
             pdf.save(filename);
         } catch (error) {
             console.error("Error generating PDF:", error);
@@ -162,7 +162,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
                     </div>
                     <div className={`text-xs space-y-2 mt-2 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
                         <div className="flex items-center justify-between">
-                            <a href={`tel:${client.phone.replace(/\D/g, '')}`} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-current hover:text-primary transition-colors">
+                            <a href={`tel:${(client.phone || '').replace(/\D/g, '')}`} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-current hover:text-primary transition-colors">
                                 <PhoneIcon />
                                 <span>{client.phone}</span>
                             </a>
@@ -241,9 +241,9 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
 
         // Completeness Filter (based on CPF)
         if (completenessFilter === 'complete') {
-            filtered = filtered.filter(client => !!client.cpf && client.cpf.replace(/\D/g, '').length === 11);
+            filtered = filtered.filter(client => !!client.cpf && (client.cpf || '').replace(/\D/g, '').length === 11);
         } else if (completenessFilter === 'incomplete') {
-            filtered = filtered.filter(client => !client.cpf || client.cpf.replace(/\D/g, '').length !== 11);
+            filtered = filtered.filter(client => !client.cpf || (client.cpf || '').replace(/\D/g, '').length !== 11);
         }
 
 
@@ -253,8 +253,8 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
             const query = searchQuery.toLowerCase().replace(/[.\-/() ]/g, '');
             filtered = filtered.filter(client => {
                 const searchStr = (
-                    client.name +
-                    client.phone.replace(/[.\-/() ]/g, '') +
+                    (client.name || '') +
+                    (client.phone || '').replace(/[.\-/() ]/g, '') +
                     (client.cpf ? client.cpf.replace(/[.\-/() ]/g, '') : '') +
                     (client.planName || '') +
                     (client.packageNames ? client.packageNames.join(' ') : '')

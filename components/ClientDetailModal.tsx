@@ -518,7 +518,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             }
 
             // Save the PDF
-            doc.save(`perfil_${localClient.name.replace(/ /g, '_')}.pdf`);
+            doc.save(`perfil_${(localClient.name || '').replace(/ /g, '_')}.pdf`);
 
         } catch (error) {
             console.error("Error generating PDF:", error);
@@ -654,7 +654,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         if (doc.content && doc.content.startsWith('data:application/pdf;base64,')) {
             const link = document.createElement('a');
             link.href = doc.content;
-            link.download = doc.fileName || `${doc.name.replace(/ /g, '_')}.pdf`;
+            link.download = doc.fileName || `${(doc.name || '').replace(/ /g, '_')}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -671,7 +671,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 const splitText = pdf.splitTextToSize(doc.content, 180);
                 pdf.text(splitText, 10, 50);
             }
-            const filename = `${doc.name.replace(/ /g, '_')}_${localClient.name.replace(/ /g, '_')}.pdf`;
+            const filename = `${(doc.name || '').replace(/ /g, '_')}_${(localClient.name || '').replace(/ /g, '_')}.pdf`;
             pdf.save(filename);
         } catch (error) {
             console.error("Failed to generate PDF:", error);
