@@ -17,6 +17,8 @@ interface ClientHistory {
     status: 'Atendido' | 'Faltou' | 'Desmarcou' | 'Reagendado' | 'Agendado' | 'a realizar' | 'concluído';
     reviewed?: boolean;
     price: string;
+    package_id?: number | null;
+    salon_plan_id?: number | null;
 }
 
 interface ClientPackage {
@@ -1194,6 +1196,24 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         {activeTab === 'history' && (() => {
                             const completedServices = localClient.history.filter(item => ['atendido', 'concluído', 'concluido'].includes((item.status || '').toLowerCase()));
                             const pendingServices = localClient.history.filter(item => ['agendado', 'a realizar'].includes((item.status || '').toLowerCase()));
+
+                            const getSessionInfo = (item: ClientHistory) => {
+                                if (!item.package_id && !item.salon_plan_id) return null;
+                                const sub = localClient?.packages?.find(p =>
+                                    (item.package_id && p.id === item.package_id) ||
+                                    (item.salon_plan_id && p.id === item.salon_plan_id)
+                                );
+                                if (!sub) return null;
+                                const total = sub.total_sessions || sub.sessions || 0;
+                                const allSameType = localClient?.history.filter(h =>
+                                    (item.package_id && h.package_id === item.package_id) ||
+                                    (item.salon_plan_id && h.salon_plan_id === item.salon_plan_id)
+                                ).filter(h => ['atendido', 'concluido', 'concluído'].includes((h.status || '').toLowerCase()))
+                                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                                const index = allSameType.findIndex(h => h.id === item.id);
+                                if (index === -1) return null;
+                                return `Sessão ${index + 1} de ${total}`;
+                            };
                             return (
                                 <div>
                                     {/* Sub-tabs */}
@@ -1254,15 +1274,25 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('servicesPerformed')} ({completedServices.length})</h4>
                                             <div className="space-y-4 mb-6">
                                                 {completedServices.length > 0
-                                                    ? completedServices.map(item => (
-                                                        <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border">
-                                                            <div>
-                                                                <p className="font-semibold text-gray-800">{item.name}</p>
-                                                                <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                                                    ? completedServices.map(item => {
+                                                        const sessionInfo = getSessionInfo(item);
+                                                        return (
+                                                            <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border">
+                                                                <div>
+                                                                    <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                                                                        {sessionInfo && (
+                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                                {sessionInfo}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-sm font-medium px-2 py-1 rounded-full capitalize bg-green-100 text-green-800">{item.status}</span>
                                                             </div>
-                                                            <span className="text-sm font-medium px-2 py-1 rounded-full capitalize bg-green-100 text-green-800">{item.status}</span>
-                                                        </div>
-                                                    ))
+                                                        );
+                                                    })
                                                     : <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum serviço realizado.</p>
                                                 }
                                             </div>
