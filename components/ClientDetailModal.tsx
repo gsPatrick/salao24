@@ -545,26 +545,22 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         setBlockReason('');
     };
 
-    const handleUpdateServiceStatus = (serviceId: number) => {
+    const handleUpdateServiceStatus = async (serviceId: number) => {
         if (!localClient) return;
 
-        const today = new Date().toISOString().split('T')[0];
-
-        const updatedHistory = localClient.history.map(service => {
-            if (service.id === serviceId) {
-                return { ...service, status: 'concluído' as const, date: today };
+        try {
+            const response = await appointmentsAPI.updateStatus(serviceId, 'concluido');
+            if (response.success || response.id) {
+                setNotification('Atendimento concluído com sucesso');
+                // Refresh client data to get updated statistics
+                const updatedClientData = await clientsAPI.getById(localClient.id);
+                const mappedClient = mapClientFromAPI(updatedClientData.data || updatedClientData);
+                setLocalClient(mappedClient);
+                if (onSave) onSave(mappedClient);
             }
-            return service;
-        });
-
-        const updatedClient = {
-            ...localClient,
-            history: updatedHistory,
-        };
-
-        setLocalClient(updatedClient);
-        if (onSave) {
-            onSave(updatedClient);
+        } catch (error) {
+            console.error('Error updating appointment status:', error);
+            setNotification('Erro ao concluir atendimento');
         }
     };
 
