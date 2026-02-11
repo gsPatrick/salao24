@@ -992,43 +992,24 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 {(localClient.planId || localClient.packageId || localClient.packages?.length > 0) && (
                     <InfoSection title="Planos e Pacotes">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                            {localClient.planId && (
-                                <InfoItem
-                                    icon={<StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" />}
-                                    label="Plano"
-                                    value={(() => {
-                                        const planName = salonPlans.find(p => String(p.id) === String(localClient.planId))?.name || localClient.planName;
-                                        const pkg = localClient.packages?.find((p: any) => p.status === 'active' && (p.type === 'plan' || String(p.plan_id) === String(localClient.planId)));
-                                        if (pkg) {
-                                            const total = Number(pkg.total_sessions || pkg.sessions || 0);
-                                            const used = Number(pkg.used_sessions || 0);
-                                            const remaining = Math.max(0, total - used);
-                                            return `${planName || 'Plano'} (${used} sessões realizadas, faltam ${remaining})`;
+                            {localClient.packages?.map((pkg: any, idx: number) => {
+                                const isPlan = pkg.type === 'plan';
+                                const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                const used = Number(pkg.used_sessions || pkg.clicks || 0);
+                                const remaining = Math.max(0, total - used);
+
+                                return (
+                                    <InfoItem
+                                        key={idx}
+                                        icon={isPlan ?
+                                            <StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" /> :
+                                            <PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />
                                         }
-                                        return planName || (localClient.planId ? 'Carregando...' : null);
-                                    })()}
-                                />
-                            )}
-                            {localClient.packageId && (
-                                <InfoItem
-                                    icon={<PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />}
-                                    label="Pacote"
-                                    value={(() => {
-                                        const packageName = packages.find(p => String(p.id) === String(localClient.packageId))?.name || localClient.packageName;
-                                        const pkg = localClient.packages?.find((p: any) => p.status === 'active' && (p.type === 'package' || String(p.package_id) === String(localClient.packageId)));
-                                        if (pkg) {
-                                            const total = Number(pkg.total_sessions || pkg.sessions || 0);
-                                            const used = Number(pkg.used_sessions || 0);
-                                            if (total > 0) {
-                                                const remaining = Math.max(0, total - used);
-                                                return `${packageName || 'Pacote'} (${used} sessões realizadas, faltam ${remaining})`;
-                                            }
-                                            return `${packageName || 'Pacote'} (${used} sessões realizadas)`;
-                                        }
-                                        return packageName || (localClient.packageId ? 'Carregando...' : null);
-                                    })()}
-                                />
-                            )}
+                                        label={isPlan ? "Plano" : "Pacote"}
+                                        value={`${pkg.name} (${used} sessões realizadas${total > 0 ? `, faltam ${remaining}` : ''})`}
+                                    />
+                                );
+                            })}
                         </div>
                     </InfoSection>
                 )}
