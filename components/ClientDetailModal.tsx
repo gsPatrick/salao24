@@ -15,9 +15,8 @@ interface ClientHistory {
     date: string;
     time: string;
     professional: string;
-    status: 'Atendido' | 'Faltou' | 'Desmarcou' | 'Reagendado' | 'Agendado' | 'a realizar' | 'concluído';
-    reviewed?: boolean;
-    price: string;
+    type?: string;
+    sessionInfo?: string | null;
     package_id?: number | null;
     salon_plan_id?: number | null;
     cancellation_reason?: string | null;
@@ -25,9 +24,15 @@ interface ClientHistory {
 }
 
 interface ClientPackage {
+    id: number;
     name: string;
-    totalSessions: number;
-    completedSessions: number;
+    total_sessions: number;
+    used_sessions: number;
+    sessions?: number | string;
+    type: 'package' | 'plan';
+    package_id?: number;
+    plan_id?: number;
+    status: 'active' | 'expired' | 'archived';
 }
 
 interface ClientDocument {
@@ -56,6 +61,9 @@ type Client = DataContextClient & {
     documents: ClientDocument[];
     packages: ClientPackage[];
     reminders?: Reminder[];
+    totalSpent?: string | number;
+    averageTicket?: string | number;
+    mostFrequentService?: string;
 };
 
 interface ClientDetailModalProps {
@@ -990,7 +998,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     label="Plano"
                                     value={(() => {
                                         const planName = salonPlans.find(p => String(p.id) === String(localClient.planId))?.name || localClient.planName;
-                                        const pkg = localClient.packages?.find((p: any) => p.type === 'plan' || String(p.id) === String(localClient.planId));
+                                        const pkg = localClient.packages?.find((p: any) => p.status === 'active' && (p.type === 'plan' || String(p.plan_id) === String(localClient.planId)));
                                         if (pkg) {
                                             const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                             const used = Number(pkg.used_sessions || 0);
@@ -1007,7 +1015,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     label="Pacote"
                                     value={(() => {
                                         const packageName = packages.find(p => String(p.id) === String(localClient.packageId))?.name || localClient.packageName;
-                                        const pkg = localClient.packages?.find((p: any) => p.type === 'package' || String(p.id) === String(localClient.packageId));
+                                        const pkg = localClient.packages?.find((p: any) => p.status === 'active' && (p.type === 'package' || String(p.package_id) === String(localClient.packageId)));
                                         if (pkg) {
                                             const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                             const used = Number(pkg.used_sessions || 0);
@@ -1254,11 +1262,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             const getSessionInfo = (item: ClientHistory) => {
                                 if (!item.package_id && !item.salon_plan_id) return null;
                                 const sub = localClient?.packages?.find(p =>
-                                    (item.package_id && p.id === item.package_id) ||
-                                    (item.salon_plan_id && p.id === item.salon_plan_id)
+                                    (item.package_id && p.package_id === item.package_id) ||
+                                    (item.salon_plan_id && p.plan_id === item.salon_plan_id)
                                 );
                                 if (!sub) return null;
-                                const total = sub.total_sessions || sub.sessions || 0;
+                                const total = sub.total_sessions || 0;
                                 const allSameType = localClient?.history.filter(h =>
                                     (item.package_id && h.package_id === item.package_id) ||
                                     (item.salon_plan_id && h.salon_plan_id === item.salon_plan_id)
