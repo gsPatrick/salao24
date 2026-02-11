@@ -43,6 +43,7 @@ interface Reminder {
     dateTime: string; // Keep for legacy/UI compatibility
     status: 'pending' | 'completed';
     completed: boolean; // Unified field
+    unitId?: number;
 }
 
 type Client = DataContextClient & {
@@ -128,7 +129,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock }) => {
     const { t } = useLanguage();
-    const { saveClient, salonPlans, packages } = useData();
+    const { saveClient, salonPlans, packages, selectedUnitId } = useData();
     const [isExiting, setIsExiting] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [activeSubTab, setActiveSubTab] = useState('servicos');
@@ -237,6 +238,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             status: 'pending',
             completed: false,
             date: reminder.dateTime, // Ensure both are present
+            unitId: selectedUnitId || undefined,
             ...reminder,
         };
 

@@ -1,7 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext'; // Using AuthContext directly for socket if available, or just fetch
+import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
 import { getSocket } from '../lib/socket';
+import ClientDetailModal from './ClientDetailModal';
+import { clientsAPI } from '../lib/api';
+
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+
+// Wrapper component to fetch full client data and show modal
+const ClientDetailModalInstance: React.FC<{ clientId: number, onClose: () => void }> = ({ clientId, onClose }) => {
+    const [client, setClient] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const { clients } = useData();
+
+    useEffect(() => {
+        const fetchClient = async () => {
+            try {
+                const response = await clientsAPI.getById(clientId);
+                if (response.success) {
+                    setClient(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching client for modal:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchClient();
+    }, [clientId]);
+
+    if (loading) return null; // Or a small loader if preferred
+
+    return (
+        <ClientDetailModal
+            isOpen={true}
+            onClose={onClose}
+            client={client}
+            existingClients={clients as any}
+            navigate={() => { }} // Dummy navigate for now
+        />
+    );
+};
 
 interface Reminder {
     id: number | string;
@@ -20,10 +59,12 @@ interface ClientReminder {
 
 const GlobalReminders: React.FC = () => {
     const { token, user } = useAuth(); // Need token for fetch
+    const { selectedUnitId } = useData();
     const [reminders, setReminders] = useState<ClientReminder[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' } | null>(null);
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
 
     // Clear toast after 5s
     useEffect(() => {
@@ -39,7 +80,10 @@ const GlobalReminders: React.FC = () => {
         setIsLoading(true);
         try {
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${baseUrl}${baseUrl.endsWith('/api') ? '' : '/api'}/clients/reminders`, {
+            const url = new URL(`${baseUrl}${baseUrl.endsWith('/api') ? '' : '/api'}/clients/reminders`);
+            if (selectedUnitId) url.searchParams.append('unitId', String(selectedUnitId));
+
+            const response = await fetch(url.toString(), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -102,7 +146,7 @@ const GlobalReminders: React.FC = () => {
         }
 
         return () => clearInterval(pollingInterval);
-    }, [token]);
+    }, [token, selectedUnitId]);
 
     // Calculate pending reminders
     const pendingCount = reminders.reduce((acc, client) => {
@@ -153,6 +197,11 @@ const GlobalReminders: React.FC = () => {
         }
     };
 
+    const handleViewProfile = (clientId: number) => {
+        setSelectedClientId(clientId);
+        setIsOpen(false);
+    };
+
     return (
         <div className="relative">
             <button
@@ -177,7 +226,7 @@ const GlobalReminders: React.FC = () => {
                     <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 max-h-96 overflow-y-auto">
                         <div className="py-2 px-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                             <h3 className="text-sm font-medium text-gray-700">Lembretes de Clientes</h3>
-                            <button onClick={fetchReminders} className="text-xs text-blue-500 hover:text-blue-700">Atualizar</button>
+                            <button onClick={() => fetchReminders()} className="text-xs text-blue-500 hover:text-blue-700">Atualizar</button>
                         </div>
                         <div className="py-1">
                             {isLoading && reminders.length === 0 ? (
@@ -186,29 +235,50 @@ const GlobalReminders: React.FC = () => {
                                 <p className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum lembrete ativo.</p>
                             ) : (
                                 reminders.flatMap(client =>
-                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id }))
+                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id, clientPhoto: (client as any).photo_url }))
                                 ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                                     .map((reminder, idx) => {
                                         const isOverdue = new Date(reminder.date) < new Date();
                                         return (
                                             <div key={`${reminder.clientId}-${reminder.id}-${idx}`} className={`px-4 py-3 border-b border-gray-100 last:border-0 group ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                                 <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
-                                                            {isOverdue && (
-                                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-800">
-                                                                    ATRASADO
-                                                                </span>
+                                                    <div className="flex gap-3">
+                                                        <div className="flex-shrink-0">
+                                                            {reminder.clientPhoto ? (
+                                                                <img src={reminder.clientPhoto} alt={reminder.clientName} className="h-10 w-10 rounded-full object-cover border border-gray-200" />
+                                                            ) : (
+                                                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                                    <svg className="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                                                    </svg>
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        <p className={`text-sm mt-1 font-bold ${isOverdue ? 'text-red-800' : 'text-gray-800'}`}>
-                                                            {reminder.subject || 'Lembrete'}
-                                                        </p>
-                                                        <p className={`text-sm mt-0.5 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
-                                                        <p className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                                                            {new Date(reminder.date || reminder.dateTime || '').toLocaleDateString()} - {new Date(reminder.date || reminder.dateTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
+                                                                {isOverdue && (
+                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-800">
+                                                                        ATRASADO
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className={`text-sm mt-1 font-bold ${isOverdue ? 'text-red-800' : 'text-gray-800'}`}>
+                                                                {reminder.subject || 'Lembrete'}
+                                                            </p>
+                                                            <p className={`text-sm mt-0.5 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
+                                                            <div className="flex items-center justify-between mt-2">
+                                                                <p className={`text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                                                                    {new Date(reminder.date || reminder.dateTime || '').toLocaleDateString()} - {new Date(reminder.date || reminder.dateTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => handleViewProfile(reminder.clientId)}
+                                                                    className="text-xs font-semibold text-primary hover:underline"
+                                                                >
+                                                                    Ver Perfil
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     <button
                                                         onClick={() => handleMarkAsDone(reminder.clientId, reminder.id)}
@@ -227,6 +297,14 @@ const GlobalReminders: React.FC = () => {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Modal de Detalhes do Cliente */}
+            {selectedClientId && (
+                <ClientDetailModalInstance
+                    clientId={selectedClientId}
+                    onClose={() => setSelectedClientId(null)}
+                />
             )}
             {/* Local Toast Notification */}
             {toast && (
