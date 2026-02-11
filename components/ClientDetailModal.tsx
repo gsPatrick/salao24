@@ -1321,7 +1321,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
-                                                                    {isAdmin && !isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
+                                                                    {!isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
