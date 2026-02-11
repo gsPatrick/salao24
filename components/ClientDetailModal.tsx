@@ -1260,6 +1260,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             const pendingServices = localClient.history.filter(item => !completedStatuses.includes((item.status || '').toLowerCase()));
 
                             const getSessionInfo = (item: ClientHistory) => {
+                                // If the API already provided session info, use it
+                                if (item.sessionInfo) return item.sessionInfo;
+
                                 if (!item.package_id && !item.salon_plan_id) return null;
                                 const sub = localClient?.packages?.find(p =>
                                     (item.package_id && p.package_id === item.package_id) ||
