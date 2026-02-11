@@ -933,7 +933,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     </div>
                 </InfoSection>
 
-                {(localClient.planId || localClient.packageId) && (
+                {(localClient.planId || localClient.packageId || localClient.packages?.length > 0) && (
                     <InfoSection title="Planos e Pacotes">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             {localClient.planId && (
@@ -951,6 +951,27 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 />
                             )}
                         </div>
+
+                        {/* Session Summary */}
+                        {localClient.packages?.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resumo de Sessões</h4>
+                                {localClient.packages.map((pkg: any, idx: number) => {
+                                    const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                    const used = Number(pkg.used_sessions || 0);
+                                    const remaining = Math.max(0, total - used);
+
+                                    return (
+                                        <div key={idx} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                            <span className="text-sm font-medium text-gray-700">{pkg.name}</span>
+                                            <span className="text-sm text-gray-600">
+                                                <strong className="text-primary">{used}</strong> realizados, faltam <strong className="text-orange-600">{remaining}</strong>
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </InfoSection>
                 )}
                 <InfoSection title={t('financialSummary')}>
@@ -1200,10 +1221,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     <h4 className="text-lg font-semibold text-gray-800 mb-3">Controle de Sessões (Pacotes/Planos)</h4>
                                                     <div className="space-y-3">
                                                         {localClient.packages?.map((pkg: any, idx: number) => (
-                                                            <div key={idx} className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                                                            <div key={idx} className={`${pkg.type === 'plan' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'} border p-4 rounded-lg`}>
                                                                 <div className="flex justify-between items-center mb-2">
-                                                                    <p className="font-bold text-blue-900">{pkg.name || 'Pacote'}</p>
-                                                                    <span className="text-xs font-semibold bg-blue-200 text-blue-800 px-2 py-1 rounded">PACOTE</span>
+                                                                    <p className={`font-bold ${pkg.type === 'plan' ? 'text-purple-900' : 'text-blue-900'}`}>{pkg.name || (pkg.type === 'plan' ? 'Plano' : 'Pacote')}</p>
+                                                                    <span className={`text-xs font-semibold px-2 py-1 rounded ${pkg.type === 'plan' ? 'bg-purple-200 text-purple-800' : 'bg-blue-200 text-blue-800'}`}>
+                                                                        {pkg.type === 'plan' ? 'PLANO' : 'PACOTE'}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="grid grid-cols-3 gap-4 text-center">
                                                                     <div>
