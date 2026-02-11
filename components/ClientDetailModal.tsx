@@ -256,8 +256,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const financialSummary = useMemo(() => {
         if (!localClient) return { totalSpent: 0, averageTicket: 0, mostFrequentService: t('noServicesYet') };
 
+        // Prioritize backend calculated values if they exist
+        if (localClient.totalSpent !== undefined && localClient.totalSpent > 0) {
+            return {
+                totalSpent: parseFloat(localClient.totalSpent),
+                averageTicket: parseFloat(localClient.averageTicket) || 0,
+                mostFrequentService: localClient.mostFrequentService || t('noServicesYet')
+            };
+        }
+
         const completedServices = localClient.history.filter(
-            h => h.status === 'concluído' || h.status === 'Atendido'
+            h => ['atendido', 'concluido', 'concluído'].includes((h.status || '').toLowerCase())
         );
 
         if (completedServices.length === 0) {
@@ -265,7 +274,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         }
 
         const totalSpent = completedServices.reduce((sum, historyItem) => {
-            const price = historyItem.price ? parseFloat(historyItem.price.replace(',', '.')) : 0;
+            const priceStr = String(historyItem.price || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+            const price = parseFloat(priceStr) || 0;
             return sum + price;
         }, 0);
 
@@ -930,14 +940,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 <InfoItem
                                     icon={<StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" />}
                                     label="Plano"
-                                    value={salonPlans.find(p => p.id === localClient.planId)?.name || 'N/A'}
+                                    value={salonPlans.find(p => String(p.id) === String(localClient.planId))?.name || localClient.planName || (localClient.planId ? 'Carregando...' : null)}
                                 />
                             )}
                             {localClient.packageId && (
                                 <InfoItem
                                     icon={<PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />}
                                     label="Pacote"
-                                    value={packages.find(p => p.id === localClient.packageId)?.name || 'N/A'}
+                                    value={packages.find(p => String(p.id) === String(localClient.packageId))?.name || localClient.packageName || (localClient.packageId ? 'Carregando...' : null)}
                                 />
                             )}
                         </div>
@@ -1069,8 +1079,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="p-6 bg-secondary rounded-t-lg">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center space-x-4">
-                                {localClient.photo && !localClient.photo.includes('pravatar') ? (
-                                    <img src={localClient.photo} alt={localClient.name} className="w-20 h-20 rounded-full object-cover ring-4 ring-primary" />
+                                {(localClient.photo || localClient.photoUrl || localClient.photo_url) && !(localClient.photo || localClient.photoUrl || localClient.photo_url).includes('pravatar') ? (
+                                    <img src={localClient.photo || localClient.photoUrl || localClient.photo_url} alt={localClient.name} className="w-20 h-20 rounded-full object-cover ring-4 ring-primary" />
                                 ) : (
                                     <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 ring-4 ring-primary">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">

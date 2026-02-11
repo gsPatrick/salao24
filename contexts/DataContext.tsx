@@ -461,6 +461,11 @@ export const mapClientFromAPI = (apiClient: any): Client => {
         // Map snake_case to camelCase
         lastVisit: apiClient.last_visit || apiClient.last_visit_at,
         totalVisits: apiClient.total_visits || 0,
+        totalSpent: parseFloat(apiClient.total_spent) || 0,
+        averageTicket: parseFloat(apiClient.average_ticket) || 0,
+        mostFrequentService: apiClient.most_frequent_service,
+        packageName: apiClient.packageName,
+        planName: apiClient.planName,
         registrationDate: apiClient.created_at || apiClient.registration_at,
         maritalStatus: apiClient.marital_status,
         history: apiClient.history || [],

@@ -401,7 +401,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           packageId: clientToEdit.packageId || null,
         });
 
-        if (clientToEdit.photo) setPhoto(clientToEdit.photo);
+        const clientPhoto = clientToEdit.photo || clientToEdit.photoUrl || clientToEdit.photo_url;
+        if (clientPhoto) setPhoto(clientPhoto);
         if (clientToEdit.procedurePhotos) setProcedurePhotos(clientToEdit.procedurePhotos);
         if (clientToEdit.additionalPhones) setAdditionalPhones(clientToEdit.additionalPhones);
 

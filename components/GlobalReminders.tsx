@@ -235,7 +235,7 @@ const GlobalReminders: React.FC = () => {
                                 <p className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum lembrete ativo.</p>
                             ) : (
                                 reminders.flatMap(client =>
-                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id, clientPhoto: (client as any).photo_url }))
+                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id, clientPhoto: (client as any).photo || (client as any).photoUrl || (client as any).photo_url }))
                                 ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                                     .map((reminder, idx) => {
                                         const isOverdue = new Date(reminder.date) < new Date();
