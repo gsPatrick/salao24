@@ -21,6 +21,8 @@ interface ClientHistory {
     salon_plan_id?: number | null;
     cancellation_reason?: string | null;
     canceled_at?: string | null;
+    consumed_sessions?: number;
+    total_sessions?: number;
 }
 
 interface ClientPackage {
@@ -989,7 +991,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     </div>
                 </InfoSection>
 
-                {(localClient.planId || localClient.packageId || localClient.packages?.length > 0) && (
+                {(localClient.planId || localClient.packageId || localClient.packageName || localClient.planName || (localClient.packages && localClient.packages.length > 0)) && (
                     <InfoSection title="Planos e Pacotes">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             {localClient.packages?.map((pkg: any, idx: number) => {
@@ -1319,6 +1321,22 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
+                                                                    {isAdmin && !isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setConcludingId(item.id);
+                                                                                setConcludeQty(1);
+                                                                            }}
+                                                                            className="text-xs font-bold text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors shadow-sm"
+                                                                            title="Concluir mais uma sessão"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                            </svg>
+                                                                            Concluir Próxima
+                                                                        </button>
+                                                                    )}
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                                                                         }`}>
                                                                         {item.status}
