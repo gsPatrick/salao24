@@ -100,10 +100,13 @@ const FinancialDashboardPage: React.FC<FinancialDashboardPageProps> = ({ onBack,
 
         return transactions.filter(t => {
             if (t.status === 'cancelada') return false;
+            // Filter by Unit if unitName is provided
+            if (unitName && t.unit && t.unit !== unitName) return false;
+
             const transactionDate = new Date(t.date + 'T00:00:00');
             return transactionDate >= start && transactionDate <= end;
         });
-    }, [transactions, startDate, endDate]);
+    }, [transactions, startDate, endDate, unitName]);
 
     const upcomingBills = useMemo(() => {
         const today = new Date();
