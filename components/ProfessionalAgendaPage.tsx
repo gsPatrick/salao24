@@ -135,7 +135,7 @@ const NoAppointmentsCard: React.FC = () => (
 
 const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ currentUser, onBack, navigate, onComingSoon }) => {
     const { t } = useLanguage();
-    const { appointments: contextAppointments, clients: contextClients, professionals: contextProfessionals, services: contextServices, saveClient, saveAppointment, updateAppointmentStatus } = useData();
+    const { appointments: contextAppointments, clients: contextClients, professionals: contextProfessionals, services: contextServices, saveClient, saveAppointment, updateAppointmentStatus, refreshAppointments } = useData();
 
     const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -273,6 +273,7 @@ const ProfessionalAgendaPage: React.FC<ProfessionalAgendaPageProps> = ({ current
                 service: payload.serviceName, // Keep for UI compatibility
                 status: 'Agendado',
             });
+            await refreshAppointments();
         }
     };
 
