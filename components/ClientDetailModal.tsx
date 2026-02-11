@@ -163,6 +163,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [documentToSign, setDocumentToSign] = useState<ClientDocument | null>(null);
     const [viewingSignedDoc, setViewingSignedDoc] = useState<ClientDocument | null>(null);
+    const [concludingId, setConcludingId] = useState<number | null>(null);
+    const [concludeQty, setConcludeQty] = useState(1);
 
     // Moving functions out of useEffect
     const handleOpenRefundModal = (id: number) => {
@@ -987,7 +989,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                             const used = Number(pkg.used_sessions || 0);
                                             const remaining = Math.max(0, total - used);
-                                            return `${planName || 'Plano'} (${used} realizados, faltam ${remaining})`;
+                                            return `${planName || 'Plano'} (${used} sessões realizadas, faltam ${remaining})`;
                                         }
                                         return planName || (localClient.planId ? 'Carregando...' : null);
                                     })()}
@@ -1004,7 +1006,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                             const used = Number(pkg.used_sessions || 0);
                                             const remaining = Math.max(0, total - used);
-                                            return `${packageName || 'Pacote'} (${used} realizados, faltam ${remaining})`;
+                                            return `${packageName || 'Pacote'} (${used} sessões realizadas, faltam ${remaining})`;
                                         }
                                         return packageName || (localClient.packageId ? 'Carregando...' : null);
                                     })()}
@@ -1255,7 +1257,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                                 const index = allSameType.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
-                                return `Sessão ${index + 1} de ${total}`;
+                                return `Sessão ${index + 1} de ${total} sessões`;
                             };
                             return (
                                 <div>
@@ -1428,25 +1430,65 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             {item.status}
                                                                         </span>
                                                                         {['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) && (
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    if (item.package_id || item.salon_plan_id) {
-                                                                                        const qty = window.prompt("Quantas sessões foram consumidas?", "1");
-                                                                                        if (qty !== null) {
-                                                                                            handleUpdateServiceStatus(item.id, parseInt(qty) || 1);
+                                                                            concludingId === item.id ? (
+                                                                                <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
+                                                                                        className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                    >
+                                                                                        -
+                                                                                    </button>
+                                                                                    <span className="text-sm font-bold text-green-700 w-4 text-center">{concludeQty}</span>
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            const sub = localClient?.packages?.find(p => (item.package_id && p.id === item.package_id) || (item.salon_plan_id && p.id === item.salon_plan_id));
+                                                                                            const remaining = sub ? (sub.total_sessions || sub.sessions || 0) - (sub.used_sessions || sub.clicks || 0) : 99;
+                                                                                            setConcludeQty(prev => Math.min(remaining, prev + 1));
+                                                                                        }}
+                                                                                        className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                    >
+                                                                                        +
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleUpdateServiceStatus(item.id, concludeQty); setConcludingId(null); }}
+                                                                                        className="ml-1 p-1 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
+                                                                                        title="Confirmar"
+                                                                                    >
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); setConcludingId(null); }}
+                                                                                        className="p-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
+                                                                                        title="Cancelar"
+                                                                                    >
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        if (item.package_id || item.salon_plan_id) {
+                                                                                            setConcludingId(item.id);
+                                                                                            setConcludeQty(1);
+                                                                                        } else {
+                                                                                            handleUpdateServiceStatus(item.id);
                                                                                         }
-                                                                                    } else {
-                                                                                        handleUpdateServiceStatus(item.id);
-                                                                                    }
-                                                                                }}
-                                                                                className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
-                                                                                title="Marcar como Concluído"
-                                                                            >
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                                </svg>
-                                                                                Concluir
-                                                                            </button>
+                                                                                    }}
+                                                                                    className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
+                                                                                    title="Marcar como Concluído"
+                                                                                >
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                    </svg>
+                                                                                    Concluir
+                                                                                </button>
+                                                                            )
                                                                         )}
                                                                     </div>
                                                                 </div>
