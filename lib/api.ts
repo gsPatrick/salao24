@@ -24,8 +24,30 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// --- Helper to normalize time strings (remove seconds) globally ---
+const normalizeTimeStrings = (data: any): any => {
+    if (data === null || typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map(normalizeTimeStrings);
+
+    const newData: any = {};
+    for (const key in data) {
+        let value = data[key];
+        // Match HH:MM:SS format
+        if (typeof value === 'string' && /^\d{2}:\d{2}:\d{2}$/.test(value)) {
+            value = value.substring(0, 5);
+        } else if (value !== null && typeof value === 'object') {
+            value = normalizeTimeStrings(value);
+        }
+        newData[key] = value;
+    }
+    return newData;
+};
+
 // Response interceptor
 api.interceptors.response.use((response) => {
+    if (response.data && response.data.success !== false) {
+        response.data = normalizeTimeStrings(response.data);
+    }
     return response;
 }, (error) => {
     // Handle 402 Payment Required (subscription blocked)
@@ -200,8 +222,8 @@ export const appointmentsAPI = {
         const response = await api.put(`/appointments/${id}`, data);
         return response.data;
     },
-    updateStatus: async (id: number, status: string) => {
-        const response = await api.patch(`/appointments/${id}/status`, { status });
+    updateStatus: async (id: number, status: string, sessionsConsumed?: number) => {
+        const response = await api.patch(`/appointments/${id}/status`, { status, sessionsConsumed });
         return response.data;
     },
     cancel: async (id: number, reason?: string) => {

@@ -597,11 +597,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         setBlockReason('');
     };
 
-    const handleUpdateServiceStatus = async (serviceId: number) => {
+    const handleUpdateServiceStatus = async (serviceId: number, sessionsConsumed: number = 1) => {
         if (!localClient) return;
 
         try {
-            const response = await appointmentsAPI.updateStatus(serviceId, 'concluido');
+            const response = await appointmentsAPI.updateStatus(serviceId, 'concluido', sessionsConsumed);
             if (response.success || response.id) {
                 setNotification('Atendimento concluído com sucesso');
                 // Refresh client data to get updated statistics
@@ -980,38 +980,37 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 <InfoItem
                                     icon={<StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" />}
                                     label="Plano"
-                                    value={salonPlans.find(p => String(p.id) === String(localClient.planId))?.name || localClient.planName || (localClient.planId ? 'Carregando...' : null)}
+                                    value={(() => {
+                                        const planName = salonPlans.find(p => String(p.id) === String(localClient.planId))?.name || localClient.planName;
+                                        const pkg = localClient.packages?.find((p: any) => p.type === 'plan' || String(p.id) === String(localClient.planId));
+                                        if (pkg) {
+                                            const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                            const used = Number(pkg.used_sessions || 0);
+                                            const remaining = Math.max(0, total - used);
+                                            return `${planName || 'Plano'} (${used} realizados, faltam ${remaining})`;
+                                        }
+                                        return planName || (localClient.planId ? 'Carregando...' : null);
+                                    })()}
                                 />
                             )}
                             {localClient.packageId && (
                                 <InfoItem
                                     icon={<PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />}
                                     label="Pacote"
-                                    value={packages.find(p => String(p.id) === String(localClient.packageId))?.name || localClient.packageName || (localClient.packageId ? 'Carregando...' : null)}
+                                    value={(() => {
+                                        const packageName = packages.find(p => String(p.id) === String(localClient.packageId))?.name || localClient.packageName;
+                                        const pkg = localClient.packages?.find((p: any) => p.type === 'package' || String(p.id) === String(localClient.packageId));
+                                        if (pkg) {
+                                            const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                            const used = Number(pkg.used_sessions || 0);
+                                            const remaining = Math.max(0, total - used);
+                                            return `${packageName || 'Pacote'} (${used} realizados, faltam ${remaining})`;
+                                        }
+                                        return packageName || (localClient.packageId ? 'Carregando...' : null);
+                                    })()}
                                 />
                             )}
                         </div>
-
-                        {/* Session Summary */}
-                        {localClient.packages?.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resumo de Sessões</h4>
-                                {localClient.packages.map((pkg: any, idx: number) => {
-                                    const total = Number(pkg.total_sessions || pkg.sessions || 0);
-                                    const used = Number(pkg.used_sessions || 0);
-                                    const remaining = Math.max(0, total - used);
-
-                                    return (
-                                        <div key={idx} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                            <span className="text-sm font-medium text-gray-700">{pkg.name}</span>
-                                            <span className="text-sm text-gray-600">
-                                                <strong className="text-primary">{used}</strong> realizados, faltam <strong className="text-orange-600">{remaining}</strong>
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
                     </InfoSection>
                 )}
                 <InfoSection title={t('financialSummary')}>
@@ -1279,41 +1278,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     {/* Content based on sub-tab */}
                                     {activeSubTab === 'servicos' && (
                                         <>
-                                            {/* Sessions Tracking Section */}
-                                            {(localClient.packages?.length > 0 || localClient.packageId || localClient.planId) && (
-                                                <div className="mb-8">
-                                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Controle de Sessões (Pacotes/Planos)</h4>
-                                                    <div className="space-y-3">
-                                                        {localClient.packages?.map((pkg: any, idx: number) => (
-                                                            <div key={idx} className={`${pkg.type === 'plan' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'} border p-4 rounded-lg`}>
-                                                                <div className="flex justify-between items-center mb-2">
-                                                                    <p className={`font-bold ${pkg.type === 'plan' ? 'text-purple-900' : 'text-blue-900'}`}>{pkg.name || (pkg.type === 'plan' ? 'Plano' : 'Pacote')}</p>
-                                                                    <span className={`text-xs font-semibold px-2 py-1 rounded ${pkg.type === 'plan' ? 'bg-purple-200 text-purple-800' : 'bg-blue-200 text-blue-800'}`}>
-                                                                        {pkg.type === 'plan' ? 'PLANO' : 'PACOTE'}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="grid grid-cols-3 gap-4 text-center">
-                                                                    <div>
-                                                                        <p className="text-xs text-blue-700 uppercase">Realizados</p>
-                                                                        <p className="text-xl font-bold text-green-700">{pkg.used_sessions || 0}</p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-xs text-blue-700 uppercase">Pendentes</p>
-                                                                        <p className="text-xl font-bold text-orange-700">{(pkg.total_sessions || pkg.sessions || 0) - (pkg.used_sessions || 0)}</p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-xs text-blue-700 uppercase">Total</p>
-                                                                        <p className="text-xl font-bold text-blue-900">{pkg.total_sessions || pkg.sessions || '-'}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        {!localClient.packages?.length && (localClient.packageId || localClient.planId) && (
-                                                            <p className="text-sm text-gray-500 italic">Dados de sessões detalhados não disponíveis para o pacote/plano atual.</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
+                                            {/* Sessions Tracking Section REMOVED */}
 
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('servicesPerformed')} ({completedServices.length})</h4>
                                             <div className="space-y-4 mb-6">
@@ -1445,7 +1410,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             <div key={item.id} className="bg-white p-4 rounded-lg border">
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="flex-1">
-                                                                        <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                            {(item.package_id || item.salon_plan_id) && (
+                                                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                                    {item.sessionInfo || getSessionInfo(item)}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                         <p className="text-sm text-gray-500">Data: {dateDisplay}</p>
                                                                         <p className="text-sm text-gray-500">Hora: {item.time}</p>
                                                                         <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
@@ -1457,7 +1429,16 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         </span>
                                                                         {['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) && (
                                                                             <button
-                                                                                onClick={() => handleUpdateServiceStatus(item.id)}
+                                                                                onClick={() => {
+                                                                                    if (item.package_id || item.salon_plan_id) {
+                                                                                        const qty = window.prompt("Quantas sessões foram consumidas?", "1");
+                                                                                        if (qty !== null) {
+                                                                                            handleUpdateServiceStatus(item.id, parseInt(qty) || 1);
+                                                                                        }
+                                                                                    } else {
+                                                                                        handleUpdateServiceStatus(item.id);
+                                                                                    }
+                                                                                }}
                                                                                 className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
                                                                                 title="Marcar como Concluído"
                                                                             >
