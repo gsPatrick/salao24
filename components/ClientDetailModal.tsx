@@ -1232,8 +1232,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div id="print-section" className="p-6 flex-grow overflow-y-auto bg-gray-50">
                         {activeTab === 'info' && renderInfoTab()}
                         {activeTab === 'history' && (() => {
-                            const completedServices = localClient.history.filter(item => ['atendido', 'concluído', 'concluido', 'cancelado'].includes((item.status || '').toLowerCase()));
-                            const pendingServices = localClient.history.filter(item => ['agendado', 'a realizar'].includes((item.status || '').toLowerCase()));
+                            // Define explicitly what is considered "completed/historical"
+                            const completedStatuses = ['atendido', 'concluido', 'concluído', 'cancelado', 'faltou'];
+
+                            // Filter history:
+                            // Completed = matches the list above
+                            // Pending = everything else (Agendado, Confirmado, Em Atendimento, Reagendado, A Realizar, etc.)
+                            const completedServices = localClient.history.filter(item => completedStatuses.includes((item.status || '').toLowerCase()));
+                            const pendingServices = localClient.history.filter(item => !completedStatuses.includes((item.status || '').toLowerCase()));
 
                             const getSessionInfo = (item: ClientHistory) => {
                                 if (!item.package_id && !item.salon_plan_id) return null;
