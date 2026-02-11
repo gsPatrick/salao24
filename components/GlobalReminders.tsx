@@ -90,14 +90,21 @@ const GlobalReminders: React.FC = () => {
             });
             const data = await response.json();
             if (data.success) {
+                const now = new Date();
                 const newReminders = data.data;
-                const totalNewPending = newReminders.reduce((acc: number, c: any) => acc + (c.reminders?.filter((r: any) => !r.completed).length || 0), 0);
-                const currentPending = reminders.reduce((acc, c) => acc + (c.reminders?.filter(r => !r.completed).length || 0), 0);
 
-                // If showToast is true OR we detected a numeric increase in pending reminders
-                if (showToast || totalNewPending > currentPending) {
-                    setToast({ message: `Você tem ${totalNewPending} lembrete(s) pendente(s)`, type: 'info' });
-                    // Try to play a subtle sound if possible (optional)
+                // Only count pending reminders that are DUE (date <= now)
+                const dueRemindersCount = newReminders.reduce((acc: number, c: any) => {
+                    return acc + (c.reminders?.filter((r: any) => !r.completed && new Date(r.date || r.dateTime || '') <= now).length || 0);
+                }, 0);
+
+                const currentPendingCount = reminders.reduce((acc, c) => {
+                    return acc + (c.reminders?.filter(r => !r.completed && new Date(r.date || r.dateTime || '') <= now).length || 0);
+                }, 0);
+
+                // If showToast is true OR we detected an increase in DUE reminders
+                if (showToast && dueRemindersCount > currentPendingCount) {
+                    setToast({ message: `Você tem ${dueRemindersCount} lembrete(s) pendente(s)`, type: 'info' });
                 }
 
                 setReminders(newReminders);
@@ -115,8 +122,8 @@ const GlobalReminders: React.FC = () => {
 
         // 60s polling fallback (requested by user)
         const pollingInterval = setInterval(() => {
-            console.log('GlobalReminders: Polling check...');
-            fetchReminders();
+            // console.log('GlobalReminders: Polling check...');
+            fetchReminders(true); // Helper to check for new due items
         }, 60000);
 
         const socket = getSocket();
@@ -126,12 +133,12 @@ const GlobalReminders: React.FC = () => {
         };
 
         if (socket) {
-            console.log('GlobalReminders: Setting up socket listeners...');
+            // console.log('GlobalReminders: Setting up socket listeners...');
             socket.on('connect', onConnect);
 
             const handleReminderUpdate = (data: any) => {
-                console.log('GlobalReminders: Received update', data);
-                fetchReminders(true);
+                // console.log('GlobalReminders: Received update', data);
+                fetchReminders(false); // Do NOT toast immediately on create, let polling or due-check handle it
             };
 
             socket.on('reminder:update', handleReminderUpdate);
@@ -148,9 +155,9 @@ const GlobalReminders: React.FC = () => {
         return () => clearInterval(pollingInterval);
     }, [token, selectedUnitId]);
 
-    // Calculate pending reminders
+    // Calculate pending reminders that are DUE
     const pendingCount = reminders.reduce((acc, client) => {
-        return acc + (client.reminders?.filter(r => !r.completed).length || 0);
+        return acc + (client.reminders?.filter(r => !r.completed && new Date(r.date || r.dateTime || '') <= new Date()).length || 0);
     }, 0);
 
     if (!user) return null;
@@ -202,6 +209,12 @@ const GlobalReminders: React.FC = () => {
         setIsOpen(false);
     };
 
+    // Filter for display: Only show DUE reminders
+    const dueReminders = reminders.flatMap(client =>
+        client.reminders.filter(r => !r.completed && new Date(r.date || r.dateTime || '') <= new Date()).map(r => ({ ...r, clientName: client.name, clientId: client.id, clientPhoto: (client as any).photo || (client as any).photoUrl || (client as any).photo_url }))
+    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+
     return (
         <div className="relative">
             <button
@@ -231,68 +244,65 @@ const GlobalReminders: React.FC = () => {
                         <div className="py-1">
                             {isLoading && reminders.length === 0 ? (
                                 <p className="px-4 py-3 text-sm text-gray-500 text-center">Carregando...</p>
-                            ) : reminders.length === 0 ? (
-                                <p className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum lembrete ativo.</p>
+                            ) : dueReminders.length === 0 ? (
+                                <p className="px-4 py-3 text-sm text-gray-500 text-center">Nenhum lembrete pendente.</p>
                             ) : (
-                                reminders.flatMap(client =>
-                                    client.reminders.filter(r => !r.completed).map(r => ({ ...r, clientName: client.name, clientId: client.id, clientPhoto: (client as any).photo || (client as any).photoUrl || (client as any).photo_url }))
-                                ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                    .map((reminder, idx) => {
-                                        const isOverdue = new Date(reminder.date) < new Date();
-                                        return (
-                                            <div key={`${reminder.clientId}-${reminder.id}-${idx}`} className={`px-4 py-3 border-b border-gray-100 last:border-0 group ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex gap-3">
-                                                        <div className="flex-shrink-0">
-                                                            {reminder.clientPhoto ? (
-                                                                <img src={reminder.clientPhoto} alt={reminder.clientName} className="h-10 w-10 rounded-full object-cover border border-gray-200" />
-                                                            ) : (
-                                                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                                    <svg className="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                                                                    </svg>
-                                                                </div>
+                                dueReminders.map((reminder, idx) => {
+                                    const isOverdue = new Date(reminder.date) < new Date();
+                                    return (
+                                        <div key={`${reminder.clientId}-${reminder.id}-${idx}`} className={`px-4 py-3 border-b border-gray-100 last:border-0 group ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex gap-3">
+                                                    <div className="flex-shrink-0">
+                                                        {reminder.clientPhoto ? (
+                                                            <img src={reminder.clientPhoto} alt={reminder.clientName} className="h-10 w-10 rounded-full object-cover border border-gray-200" />
+                                                        ) : (
+                                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                                <svg className="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
+                                                            {isOverdue && (
+                                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-800">
+                                                                    ATRASADO
+                                                                </span>
                                                             )}
                                                         </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <p className="text-sm font-medium text-gray-900">{reminder.clientName}</p>
-                                                                {isOverdue && (
-                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-800">
-                                                                        ATRASADO
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className={`text-sm mt-1 font-bold ${isOverdue ? 'text-red-800' : 'text-gray-800'}`}>
-                                                                {reminder.subject || 'Lembrete'}
+                                                        <p className={`text-sm mt-1 font-bold ${isOverdue ? 'text-red-800' : 'text-gray-800'}`}>
+                                                            {reminder.subject || 'Lembrete'}
+                                                        </p>
+                                                        <p className={`text-sm mt-0.5 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
+                                                        <div className="flex items-center justify-between mt-2">
+                                                            <p className={`text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                                                                {new Date(reminder.date || reminder.dateTime || '').toLocaleDateString()} - {new Date(reminder.date || reminder.dateTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </p>
-                                                            <p className={`text-sm mt-0.5 ${isOverdue ? 'text-red-700' : 'text-gray-600'}`}>{reminder.text}</p>
-                                                            <div className="flex items-center justify-between mt-2">
-                                                                <p className={`text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                                                                    {new Date(reminder.date || reminder.dateTime || '').toLocaleDateString()} - {new Date(reminder.date || reminder.dateTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </p>
-                                                                <button
-                                                                    onClick={() => handleViewProfile(reminder.clientId)}
-                                                                    className="text-xs font-semibold text-primary hover:underline"
-                                                                >
-                                                                    Ver Perfil
-                                                                </button>
-                                                            </div>
+                                                            <button
+                                                                onClick={() => handleViewProfile(reminder.clientId)}
+                                                                className="text-xs font-semibold text-primary hover:underline"
+                                                            >
+                                                                Ver Perfil
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleMarkAsDone(reminder.clientId, reminder.id)}
-                                                        className={`opacity-0 group-hover:opacity-100 p-1 transition-opacity ${isOverdue ? 'text-red-600 hover:text-red-800' : 'text-green-500 hover:text-green-700'}`}
-                                                        title="Marcar como concluído"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </button>
                                                 </div>
+                                                <button
+                                                    onClick={() => handleMarkAsDone(reminder.clientId, reminder.id)}
+                                                    className={`opacity-0 group-hover:opacity-100 p-1 transition-opacity ${isOverdue ? 'text-red-600 hover:text-red-800' : 'text-green-500 hover:text-green-700'}`}
+                                                    title="Marcar como concluído"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
                                             </div>
-                                        );
-                                    })
+                                        </div>
+                                    );
+                                })
                             )}
                         </div>
                     </div>
