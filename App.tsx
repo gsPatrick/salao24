@@ -311,7 +311,9 @@ const App: React.FC = () => {
   }, [page]);
 
 
-  const navigate = (pageName: string) => {
+  const [navigationParams, setNavigationParams] = useState<any>(null);
+
+  const navigate = (pageName: string, params?: any) => {
     if (pageName === 'upgrade_to_empresa') {
       setSelectedPlan({ name: 'Empresa Pro', price: 'R$ 349,90' });
       pageName = 'payment';
@@ -322,6 +324,7 @@ const App: React.FC = () => {
     if (page !== pageName) {
       setHistory(prev => [...prev, page]);
       setPage(pageName);
+      setNavigationParams(params || null);
       // Sempre voltar para o topo ao trocar de "página" interna
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
@@ -615,6 +618,7 @@ const App: React.FC = () => {
             plans={salonPlans}
             professionals={professionals}
             onCreateAppointment={(appointment) => handleSaveAppointment(appointment as any)}
+            currentClientId={navigationParams?.clientId}
           />
         </div>
       );

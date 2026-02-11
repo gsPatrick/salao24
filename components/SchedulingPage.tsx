@@ -495,6 +495,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                     if (selectedItem && selection.date && selection.time) {
                                         onCreateAppointment?.({
                                             clientId: currentClientId,
+                                            professionalId: selection.professional?.id,
                                             date: selectedDate.toISOString().split('T')[0],
                                             time: selection.time,
                                             service_id: selection.service?.id,

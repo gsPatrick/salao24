@@ -1596,7 +1596,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 </button>
                             )}
                             <button
-                                onClick={() => navigate('scheduling')}
+                                onClick={() => navigate('scheduling', { clientId: client.id })}
                                 disabled={isBlocked}
                                 className="py-2 px-4 text-sm font-semibold rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
                                 {t('schedule')}
