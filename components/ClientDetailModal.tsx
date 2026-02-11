@@ -1011,8 +1011,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                         if (pkg) {
                                             const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                             const used = Number(pkg.used_sessions || 0);
-                                            const remaining = Math.max(0, total - used);
-                                            return `${packageName || 'Pacote'} (${used} sessões realizadas, faltam ${remaining})`;
+                                            if (total > 0) {
+                                                const remaining = Math.max(0, total - used);
+                                                return `${packageName || 'Pacote'} (${used} sessões realizadas, faltam ${remaining})`;
+                                            }
+                                            return `${packageName || 'Pacote'} (${used} sessões realizadas)`;
                                         }
                                         return packageName || (localClient.packageId ? 'Carregando...' : null);
                                     })()}
@@ -1263,7 +1266,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                                 const index = allSameType.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
-                                return `Sessão ${index + 1} de ${total} sessões`;
+
+                                if (total > 0) {
+                                    return `Sessão ${index + 1} de ${total} sessões`;
+                                }
+                                return `Sessão ${index + 1}`;
                             };
                             return (
                                 <div>
