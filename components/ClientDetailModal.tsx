@@ -791,14 +791,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const animationClass = isOpen && !isExiting ? 'animate-bounce-in' : 'opacity-0 scale-95';
 
     const howTheyFoundUsValue = localClient.howTheyFoundUs + (localClient.howTheyFoundUs === 'Indicação' && localClient.indicatedBy ? ` (${localClient.indicatedBy})` : '');
-    const registrationDateFormatted = localClient.registrationDate
-        ? (() => {
-            const datePart = localClient.registrationDate.split('T')[0];
-            const [year, month, day] = datePart.split('-');
-            return `${day}/${month}/${year}`;
-        })()
+    const clientSince = localClient.createdAt || localClient.registrationDate
+        ? new Date(localClient.createdAt || localClient.registrationDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
         : 'Pendente';
-    const lastVisitDateFormatted = localClient.lastVisit && !isNaN(new Date(localClient.lastVisit).getTime())
+
+    const lastVisitDateFormatted = localClient.lastVisit
         ? new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
         : 'N/A';
     const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''}${localClient.address.complement ? ' - ' + localClient.address.complement : ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
@@ -1132,9 +1129,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             </div>
                         </div>
                         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <HeaderStat icon={<VisitsIcon />} label={t('totalVisits')} value={localClient.totalVisits} />
+                            <HeaderStat icon={<VisitsIcon />} label={t('totalVisits')} value={localClient.totalVisits || 0} />
                             <HeaderStat icon={<CalendarIcon />} label={t('lastVisit')} value={lastVisitDateFormatted} />
-                            <HeaderStat icon={<UserPlusIcon />} label={t('clientSince')} value={registrationDateFormatted} />
+                            <HeaderStat icon={<UserPlusIcon />} label={t('clientSince')} value={clientSince} />
                         </div>
                     </div>
 
