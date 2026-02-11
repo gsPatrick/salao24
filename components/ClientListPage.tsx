@@ -1,10 +1,11 @@
 
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 // FIX: Changed to a named import to resolve module resolution error.
 import { NewClientModal } from './NewClientModal';
 import ClientDetailModal from './ClientDetailModal'; // Import the new component
-import { Client, useData } from '../contexts/DataContext';
+import { Client, useData, mapClientFromAPI } from '../contexts/DataContext';
+import { clientsAPI } from '../lib/api';
 
 declare var jspdf: any;
 declare var XLSX: any;
@@ -211,9 +212,32 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [completenessFilter, setCompletenessFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
+    const [displayClients, setDisplayClients] = useState<Client[]>(clients);
+    const [isFiltering, setIsFiltering] = useState(false);
+
+    useEffect(() => {
+        if (startDate || endDate) {
+            const fetchFiltered = async () => {
+                setIsFiltering(true);
+                try {
+                    const response = await clientsAPI.getAll({ startDate, endDate });
+                    if (response.success && response.data) {
+                        setDisplayClients(response.data.map(mapClientFromAPI));
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar clientes filtrados:", error);
+                } finally {
+                    setIsFiltering(false);
+                }
+            };
+            fetchFiltered();
+        } else {
+            setDisplayClients(clients);
+        }
+    }, [startDate, endDate, clients]);
 
     const filteredClients = useMemo(() => {
-        let filtered = clients;
+        let filtered = displayClients;
 
         // Completeness Filter (based on CPF)
         if (completenessFilter === 'complete') {
@@ -222,23 +246,7 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
             filtered = filtered.filter(client => !client.cpf || client.cpf.replace(/\D/g, '').length !== 11);
         }
 
-        // Date Filter (by last visit)
-        if (startDate || endDate) {
-            filtered = filtered.filter(client => {
-                if (!client.lastVisit) return false;
 
-                // Extract date part only (assuming lastVisit is YYYY-MM-DD or ISO)
-                const lastVisitStr = client.lastVisit.substring(0, 10);
-
-                let matchesStart = true;
-                let matchesEnd = true;
-
-                if (startDate) matchesStart = lastVisitStr >= startDate;
-                if (endDate) matchesEnd = lastVisitStr <= endDate;
-
-                return matchesStart && matchesEnd;
-            });
-        }
 
         // Search Query Filter
         if (searchQuery) {
@@ -256,7 +264,7 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
         }
 
         return filtered;
-    }, [clients, startDate, endDate, searchQuery, completenessFilter]);
+    }, [displayClients, searchQuery, completenessFilter]);
 
 
     const handleOpenDetailModal = (client: Client) => {
@@ -497,7 +505,12 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredClients.length > 0 ? (
+                    {isFiltering ? (
+                        <div className="col-span-full flex flex-col items-center justify-center py-12">
+                            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="mt-4 text-gray-500 font-medium font-sans">Aplicando filtros de data...</p>
+                        </div>
+                    ) : filteredClients.length > 0 ? (
                         filteredClients.map(client => (
                             <ClientCard key={client.id} client={client} onClick={() => handleOpenDetailModal(client)} onOpenChat={onOpenChat} />
                         ))

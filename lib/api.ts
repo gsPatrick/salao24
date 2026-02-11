@@ -113,8 +113,8 @@ export const uploadAPI = {
 };
 
 export const clientsAPI = {
-    getAll: async () => {
-        const response = await api.get('/clients');
+    getAll: async (params?: { startDate?: string; endDate?: string; unitId?: number }) => {
+        const response = await api.get('/clients', { params });
         return response.data;
     },
     getById: async (id: number) => {
