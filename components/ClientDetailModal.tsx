@@ -605,7 +605,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         try {
             const response = await appointmentsAPI.updateStatus(serviceId, 'concluido', sessionsConsumed);
             if (response.success || response.id) {
-                setNotification('Atendimento concluído com sucesso');
+                // Check if it was kept as agendado (partial conclusion)
+                const returnedStatus = response.data?.status || response.status;
+                if (returnedStatus === 'agendado') {
+                    setNotification(`${sessionsConsumed} sessão(ões) registrada(s) com sucesso! O agendamento continua ativo para as sessões restantes.`);
+                } else {
+                    setNotification('Atendimento concluído com sucesso! Todas as sessões foram realizadas.');
+                }
                 // Refresh client data to get updated statistics
                 const updatedClientData = await clientsAPI.getById(localClient.id);
                 const mappedClient = mapClientFromAPI(updatedClientData.data || updatedClientData);
