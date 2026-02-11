@@ -1449,9 +1449,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const apiData = {
                 ...appointment,
                 status: appointment.status ? appointment.status.toLowerCase() : 'agendado',
-                professional_id: appointment.professionalId,
-                client_id: appointment.clientId,
-                service_id: appointment.service_id || (appointment as any).serviceId,
+                professional_id: appointment.professionalId || (appointment as any).professional_id,
+                client_id: appointment.clientId || (appointment as any).client_id,
+                service_id: appointment.service_id || (appointment as any).serviceId || (appointment as any).service_id,
+                package_id: (appointment as any).package_id || (appointment as any).packageId,
+                salon_plan_id: (appointment as any).salon_plan_id || (appointment as any).salonPlanId,
                 end_time: appointment.endTime || appointment.end_time,
             };
 
