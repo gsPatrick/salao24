@@ -1319,19 +1319,26 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <div className="space-y-4 mb-6">
                                                 {completedServices.length > 0
                                                     ? completedServices.map(item => {
-                                                        const sessionInfo = getSessionInfo(item);
+                                                        const sessionInfo = item.sessionInfo || getSessionInfo(item);
                                                         const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
                                                         return (
                                                             <div key={item.id} className={`flex justify-between items-center bg-white p-3 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
                                                                 <div className="flex-1">
-                                                                    <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
-                                                                        {item.name}
-                                                                    </p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                                                            {item.name}
+                                                                        </p>
+                                                                        {item.type && item.type !== 'Serviço' && !item.name.includes(item.type) && (
+                                                                            <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+                                                                                {item.type}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
                                                                         {sessionInfo && (
                                                                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                {sessionInfo}
+                                                                                {item.type === 'Pacote' || item.type === 'Plano' ? 'Sessão ' : ''}{sessionInfo}
                                                                             </span>
                                                                         )}
                                                                     </div>
@@ -1378,8 +1385,22 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                         return (
                                                             <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border">
                                                                 <div>
-                                                                    <p className="font-semibold text-gray-800">{item.name}</p>
-                                                                    <p className="text-sm text-gray-500">{dateDisplay}</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                        {item.type && item.type !== 'Serviço' && !item.name.includes(item.type) && (
+                                                                            <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+                                                                                {item.type}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-sm text-gray-500">{dateDisplay}</p>
+                                                                        {item.sessionInfo && (
+                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                                {item.type === 'Pacote' || item.type === 'Plano' ? 'Sessão ' : ''}{item.sessionInfo}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                                 {item.status === 'a realizar' ? (
                                                                     <button onClick={() => handleUpdateServiceStatus(item.id)} className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</button>
