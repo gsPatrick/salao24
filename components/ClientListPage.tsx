@@ -228,15 +228,20 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
                 if (!client.history || client.history.length === 0) {
                     return false;
                 }
-                const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-                const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
 
+                // Compare using string format YYYY-MM-DD to avoid timezone issues
                 return client.history.some(h => {
-                    const historyDate = new Date(`${h.date}T00:00:00`);
-                    if (start && end) return historyDate >= start && historyDate <= end;
-                    if (start) return historyDate >= start;
-                    if (end) return historyDate <= end;
-                    return false;
+                    // Extract date part only (assuming h.date is YYYY-MM-DD or ISO)
+                    const historyDateStr = h.date ? h.date.substring(0, 10) : '';
+                    if (!historyDateStr) return false;
+
+                    let matchesStart = true;
+                    let matchesEnd = true;
+
+                    if (startDate) matchesStart = historyDateStr >= startDate;
+                    if (endDate) matchesEnd = historyDateStr <= endDate;
+
+                    return matchesStart && matchesEnd;
                 });
             });
         }
