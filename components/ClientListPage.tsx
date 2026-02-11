@@ -222,27 +222,21 @@ const ClientListPage: React.FC<ClientListPageProps> = ({ onBack, navigate, clien
             filtered = filtered.filter(client => !client.cpf || client.cpf.replace(/\D/g, '').length !== 11);
         }
 
-        // Date Filter (by visit history)
+        // Date Filter (by last visit)
         if (startDate || endDate) {
             filtered = filtered.filter(client => {
-                if (!client.history || client.history.length === 0) {
-                    return false;
-                }
+                if (!client.lastVisit) return false;
 
-                // Compare using string format YYYY-MM-DD to avoid timezone issues
-                return client.history.some(h => {
-                    // Extract date part only (assuming h.date is YYYY-MM-DD or ISO)
-                    const historyDateStr = h.date ? h.date.substring(0, 10) : '';
-                    if (!historyDateStr) return false;
+                // Extract date part only (assuming lastVisit is YYYY-MM-DD or ISO)
+                const lastVisitStr = client.lastVisit.substring(0, 10);
 
-                    let matchesStart = true;
-                    let matchesEnd = true;
+                let matchesStart = true;
+                let matchesEnd = true;
 
-                    if (startDate) matchesStart = historyDateStr >= startDate;
-                    if (endDate) matchesEnd = historyDateStr <= endDate;
+                if (startDate) matchesStart = lastVisitStr >= startDate;
+                if (endDate) matchesEnd = lastVisitStr <= endDate;
 
-                    return matchesStart && matchesEnd;
-                });
+                return matchesStart && matchesEnd;
             });
         }
 
