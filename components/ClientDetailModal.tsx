@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { clientsAPI, appointmentsAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, Client as DataContextClient, mapClientFromAPI } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
@@ -19,6 +20,8 @@ interface ClientHistory {
     price: string;
     package_id?: number | null;
     salon_plan_id?: number | null;
+    cancellation_reason?: string | null;
+    canceled_at?: string | null;
 }
 
 interface ClientPackage {
@@ -135,6 +138,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [isExiting, setIsExiting] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [activeSubTab, setActiveSubTab] = useState('servicos');
+    const { user } = useAuth();
+    const isAdmin = ['admin', 'gerente', 'Administrador', 'Gerente'].includes(user?.role || '');
+
+    const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+    const [refundReason, setRefundReason] = useState('');
+    const [appointmentToRefund, setAppointmentToRefund] = useState<number | null>(null);
+
     const [localClient, setLocalClient] = useState<Client | null>(client);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -153,6 +163,34 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [documentToSign, setDocumentToSign] = useState<ClientDocument | null>(null);
     const [viewingSignedDoc, setViewingSignedDoc] = useState<ClientDocument | null>(null);
+
+    // Moving functions out of useEffect
+    const handleOpenRefundModal = (id: number) => {
+        setAppointmentToRefund(id);
+        setRefundReason('');
+        setIsRefundModalOpen(true);
+    };
+
+    const handleConfirmRefund = async () => {
+        if (!appointmentToRefund || !refundReason.trim() || !localClient) return;
+
+        try {
+            const response = await appointmentsAPI.refund(appointmentToRefund, refundReason);
+            if (response.success) {
+                // Refresh client data
+                const updatedClient = await clientsAPI.getById(localClient.id);
+                if (updatedClient.success) {
+                    setLocalClient(mapClientFromAPI(updatedClient.data));
+                }
+                setIsRefundModalOpen(false);
+                setAppointmentToRefund(null);
+                setRefundReason('');
+            }
+        } catch (error) {
+            console.error('Error processing refund:', error);
+            alert('Erro ao processar estorno.');
+        }
+    };
 
     // Fetch full client details when modal opens
     useEffect(() => {
@@ -346,7 +384,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             y += 10;
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            const fullAddress = localClient.address ? `${localClient.address.street}, ${localClient.address.number}${localClient.address.complement ? ` (${localClient.address.complement})` : ''}\n${localClient.address.neighborhood} - ${localClient.address.city}/${localClient.address.state}\nCEP: ${localClient.address.cep}` : 'Endereço não fornecido';
+            const fullAddress = localClient.address ? `${localClient.address.street}, ${localClient.address.number}${localClient.address.complement ? ` (${localClient.address.complement})` : ''} \n${localClient.address.neighborhood} - ${localClient.address.city}/${localClient.address.state}\nCEP: ${localClient.address.cep}` : 'Endereço não fornecido';
             const addressLines = doc.splitTextToSize(fullAddress, usableWidth);
             doc.text(addressLines, margin, y);
             y += (addressLines.length * 5) + 10;
@@ -1194,7 +1232,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div id="print-section" className="p-6 flex-grow overflow-y-auto bg-gray-50">
                         {activeTab === 'info' && renderInfoTab()}
                         {activeTab === 'history' && (() => {
-                            const completedServices = localClient.history.filter(item => ['atendido', 'concluído', 'concluido'].includes((item.status || '').toLowerCase()));
+                            const completedServices = localClient.history.filter(item => ['atendido', 'concluído', 'concluido', 'cancelado'].includes((item.status || '').toLowerCase()));
                             const pendingServices = localClient.history.filter(item => ['agendado', 'a realizar'].includes((item.status || '').toLowerCase()));
 
                             const getSessionInfo = (item: ClientHistory) => {
@@ -1276,10 +1314,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 {completedServices.length > 0
                                                     ? completedServices.map(item => {
                                                         const sessionInfo = getSessionInfo(item);
+                                                        const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
                                                         return (
-                                                            <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border">
-                                                                <div>
-                                                                    <p className="font-semibold text-gray-800">{item.name}</p>
+                                                            <div key={item.id} className={`flex justify-between items-center bg-white p-3 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
+                                                                <div className="flex-1">
+                                                                    <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                                                        {item.name}
+                                                                    </p>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
                                                                         {sessionInfo && (
@@ -1288,8 +1329,27 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </span>
                                                                         )}
                                                                     </div>
+                                                                    {isCanceled && item.cancellation_reason && (
+                                                                        <p className="text-xs text-red-500 mt-1 italic">Motivo: {item.cancellation_reason}</p>
+                                                                    )}
                                                                 </div>
-                                                                <span className="text-sm font-medium px-2 py-1 rounded-full capitalize bg-green-100 text-green-800">{item.status}</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                                        }`}>
+                                                                        {item.status}
+                                                                    </span>
+                                                                    {isAdmin && !isCanceled && (
+                                                                        <button
+                                                                            onClick={() => handleOpenRefundModal(item.id)}
+                                                                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+                                                                            title="Estornar Serviço"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         );
                                                     })
@@ -1567,6 +1627,44 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
                             >
                                 Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isRefundModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-60 animate-fade-in">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-bounce-in">
+                        <div className="p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Estornar Atendimento</h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                                Esta ação irá cancelar o serviço, estornar o valor no financeiro e devolver a sessão ao cliente (se aplicável).
+                            </p>
+
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Motivo do Estorno
+                            </label>
+                            <textarea
+                                value={refundReason}
+                                onChange={(e) => setRefundReason(e.target.value)}
+                                placeholder="Descreva o motivo..."
+                                className="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary text-gray-800"
+                                rows={3}
+                            />
+                        </div>
+                        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                            <button
+                                onClick={() => setIsRefundModalOpen(false)}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmRefund}
+                                disabled={!refundReason.trim()}
+                                className="px-5 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                            >
+                                Confirmar Estorno
                             </button>
                         </div>
                     </div>

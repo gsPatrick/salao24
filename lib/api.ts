@@ -204,8 +204,12 @@ export const appointmentsAPI = {
         const response = await api.patch(`/appointments/${id}/status`, { status });
         return response.data;
     },
-    cancel: async (id: number) => {
-        const response = await api.patch(`/appointments/${id}/cancel`);
+    cancel: async (id: number, reason?: string) => {
+        const response = await api.patch(`/appointments/${id}/cancel`, { reason });
+        return response.data;
+    },
+    refund: async (id: number, reason: string) => {
+        const response = await api.patch(`/appointments/${id}/refund`, { reason });
         return response.data;
     },
     delete: async (id: number) => {
