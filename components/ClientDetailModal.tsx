@@ -1535,7 +1535,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                                                 </svg>
-                                                                                Agendar Próxima
+                                                                                Agendar
                                                                             </button>
                                                                         )}
                                                                     </div>
@@ -1598,7 +1598,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             {item.status}
                                                                         </span>
                                                                         {(['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) ||
-                                                                            ((item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && ['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()))) && (
+                                                                            ((item.package_id || item.salon_plan_id) && ['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()))) && (
                                                                                 String(concludingId) === String(item.id) ? (
                                                                                     <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
                                                                                         <button
@@ -1647,7 +1647,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                                     setInternalScheduleModal({ isOpen: true, historyItem: item });
                                                                                                 }}
                                                                                                 className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-100 flex items-center gap-1 text-xs font-bold"
-                                                                                                title="Agendar Próxima"
+                                                                                                title="Agendar"
                                                                                             >
                                                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
