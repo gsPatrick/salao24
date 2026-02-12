@@ -991,10 +991,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     </div>
                 </InfoSection>
 
-                {(localClient.planId || localClient.packageId || localClient.packageName || localClient.planName || (localClient.packages && localClient.packages.length > 0)) && (
-                    <InfoSection title="Planos e Pacotes">
+                <InfoSection title="Planos e Pacotes">
+                    {localClient.packages && localClient.packages.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                            {localClient.packages?.map((pkg: any, idx: number) => {
+                            {localClient.packages.map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                 const used = Number(pkg.used_sessions || pkg.clicks || 0);
@@ -1013,8 +1013,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 );
                             })}
                         </div>
-                    </InfoSection>
-                )}
+                    ) : (
+                        <p className="text-sm text-gray-500">Nenhum plano ou pacote vinculado.</p>
+                    )}
+                </InfoSection>
                 <InfoSection title={t('financialSummary')}>
                     <div className="space-y-3">
                         <p className="flex justify-between text-sm"><span className="text-black">{t('totalSpent')}:</span> <span className="font-bold text-black">{financialSummary.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
