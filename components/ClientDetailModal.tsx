@@ -1322,20 +1322,61 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
                                                                     {!isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setConcludingId(item.id);
-                                                                                setConcludeQty(1);
-                                                                            }}
-                                                                            className="text-xs font-bold text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors shadow-sm"
-                                                                            title="Concluir mais uma sessão"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                            </svg>
-                                                                            Concluir Próxima
-                                                                        </button>
+                                                                        concludingId === item.id ? (
+                                                                            <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
+                                                                                    className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                >
+                                                                                    -
+                                                                                </button>
+                                                                                <span className="text-sm font-bold text-green-700 w-4 text-center">{concludeQty}</span>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        const sub = localClient?.packages?.find(p => (item.package_id && p.package_id === item.package_id) || (item.salon_plan_id && p.plan_id === item.salon_plan_id));
+                                                                                        const remaining = sub ? (Number(sub.total_sessions || sub.sessions || 0) - Number(sub.used_sessions || sub.clicks || 0)) : 99;
+                                                                                        setConcludeQty(prev => Math.min(remaining, prev + 1));
+                                                                                    }}
+                                                                                    className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                >
+                                                                                    +
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleUpdateServiceStatus(item.id, concludeQty); setConcludingId(null); }}
+                                                                                    className="ml-1 p-1 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
+                                                                                    title="Confirmar"
+                                                                                >
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setConcludingId(null); }}
+                                                                                    className="p-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
+                                                                                    title="Cancelar"
+                                                                                >
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setConcludingId(item.id);
+                                                                                    setConcludeQty(1);
+                                                                                }}
+                                                                                className="text-xs font-bold text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors shadow-sm"
+                                                                                title="Concluir mais uma sessão"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                </svg>
+                                                                                Concluir Próxima
+                                                                            </button>
+                                                                        )
                                                                     )}
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                                                                         }`}>
@@ -1471,67 +1512,68 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
                                                                             {item.status}
                                                                         </span>
-                                                                        {['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) && (
-                                                                            concludingId === item.id ? (
-                                                                                <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
-                                                                                        className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
-                                                                                    >
-                                                                                        -
-                                                                                    </button>
-                                                                                    <span className="text-sm font-bold text-green-700 w-4 text-center">{concludeQty}</span>
+                                                                        {(['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) ||
+                                                                            ((item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && ['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()))) && (
+                                                                                concludingId === item.id ? (
+                                                                                    <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
+                                                                                            className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                        >
+                                                                                            -
+                                                                                        </button>
+                                                                                        <span className="text-sm font-bold text-green-700 w-4 text-center">{concludeQty}</span>
+                                                                                        <button
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                const sub = localClient?.packages?.find(p => (item.package_id && p.package_id === item.package_id) || (item.salon_plan_id && p.plan_id === item.salon_plan_id));
+                                                                                                const remaining = sub ? (Number(sub.total_sessions || sub.sessions || 0) - Number(sub.used_sessions || sub.clicks || 0)) : 99;
+                                                                                                setConcludeQty(prev => Math.min(remaining, prev + 1));
+                                                                                            }}
+                                                                                            className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
+                                                                                        >
+                                                                                            +
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleUpdateServiceStatus(item.id, concludeQty); setConcludingId(null); }}
+                                                                                            className="ml-1 p-1 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
+                                                                                            title="Confirmar"
+                                                                                        >
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); setConcludingId(null); }}
+                                                                                            className="p-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
+                                                                                            title="Cancelar"
+                                                                                        >
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ) : (
                                                                                     <button
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
-                                                                                            const sub = localClient?.packages?.find(p => (item.package_id && p.package_id === item.package_id) || (item.salon_plan_id && p.plan_id === item.salon_plan_id));
-                                                                                            const remaining = sub ? (Number(sub.total_sessions || sub.sessions || 0) - Number(sub.used_sessions || sub.clicks || 0)) : 99;
-                                                                                            setConcludeQty(prev => Math.min(remaining, prev + 1));
+                                                                                            if (item.package_id || item.salon_plan_id) {
+                                                                                                setConcludingId(item.id);
+                                                                                                setConcludeQty(1);
+                                                                                            } else {
+                                                                                                handleUpdateServiceStatus(item.id);
+                                                                                            }
                                                                                         }}
-                                                                                        className="w-6 h-6 flex items-center justify-center bg-white border border-green-300 text-green-600 rounded hover:bg-green-100 font-bold"
-                                                                                    >
-                                                                                        +
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); handleUpdateServiceStatus(item.id, concludeQty); setConcludingId(null); }}
-                                                                                        className="ml-1 p-1 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
-                                                                                        title="Confirmar"
+                                                                                        className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
+                                                                                        title="Marcar como Concluído"
                                                                                     >
                                                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                                                         </svg>
+                                                                                        Concluir
                                                                                     </button>
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); setConcludingId(null); }}
-                                                                                        className="p-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
-                                                                                        title="Cancelar"
-                                                                                    >
-                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                </div>
-                                                                            ) : (
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        if (item.package_id || item.salon_plan_id) {
-                                                                                            setConcludingId(item.id);
-                                                                                            setConcludeQty(1);
-                                                                                        } else {
-                                                                                            handleUpdateServiceStatus(item.id);
-                                                                                        }
-                                                                                    }}
-                                                                                    className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
-                                                                                    title="Marcar como Concluído"
-                                                                                >
-                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                                    </svg>
-                                                                                    Concluir
-                                                                                </button>
-                                                                            )
-                                                                        )}
+                                                                                )
+                                                                            )}
                                                                     </div>
                                                                 </div>
                                                             </div>
