@@ -977,23 +977,41 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             <span>Carregando planos e pacotes...</span>
                         </div>
                     ) : localClient.packages && localClient.packages.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                        <div className="space-y-3">
                             {localClient.packages.map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
                                 const used = Number(pkg.used_sessions || pkg.clicks || 0);
-                                const remaining = Math.max(0, total - used);
+                                const status = (pkg.status || 'active').toLowerCase();
+
+                                let statusClasses = 'bg-green-100 text-green-800';
+                                if (status === 'expired') statusClasses = 'bg-red-100 text-red-800';
+                                else if (status === 'archived') statusClasses = 'bg-gray-100 text-gray-800';
 
                                 return (
-                                    <InfoItem
-                                        key={idx}
-                                        icon={isPlan ?
-                                            <StarIcon className="text-yellow-500 w-5 h-5 flex-shrink-0" /> :
-                                            <PackageIcon className="text-blue-500 w-5 h-5 flex-shrink-0" />
-                                        }
-                                        label={isPlan ? "Plano" : "Pacote"}
-                                        value={`${pkg.name} (${used} sessões realizadas${total > 0 ? `, faltam ${remaining}` : ''})`}
-                                    />
+                                    <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg border">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-gray-800">{pkg.name}</p>
+                                                <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+                                                    {isPlan ? 'Plano' : 'Pacote'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                    {used}/{total} sessões
+                                                </span>
+                                                {pkg.start_date && (
+                                                    <p className="text-[10px] text-gray-500">Início: {new Date(pkg.start_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${statusClasses}`}>
+                                                {status === 'active' ? 'Ativo' : status === 'expired' ? 'Expirado' : 'Arquivado'}
+                                            </span>
+                                        </div>
+                                    </div>
                                 );
                             })}
                         </div>
