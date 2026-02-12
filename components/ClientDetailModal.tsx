@@ -157,7 +157,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const [localClient, setLocalClient] = useState<Client | null>(client);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
-    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(isOpen && !!client);
 
     // State for confirmation modal
     const [isConfirmingAction, setIsConfirmingAction] = useState<'block' | 'unblock' | 'delete' | null>(null);
@@ -176,49 +176,24 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [concludingId, setConcludingId] = useState<number | null>(null);
     const [concludeQty, setConcludeQty] = useState(1);
 
-    // Moving functions out of useEffect
-    const handleOpenRefundModal = (id: number) => {
-        setAppointmentToRefund(id);
-        setRefundReason('');
-        setIsRefundModalOpen(true);
-    };
-
-    const handleConfirmRefund = async () => {
-        if (!appointmentToRefund || !refundReason.trim() || !localClient) return;
-
-        try {
-            const response = await appointmentsAPI.refund(appointmentToRefund, refundReason);
-            if (response.success) {
-                // Refresh client data
-                const updatedClient = await clientsAPI.getById(localClient.id);
-                if (updatedClient.success) {
-                    setLocalClient(mapClientFromAPI(updatedClient.data));
-                }
-                setIsRefundModalOpen(false);
-                setAppointmentToRefund(null);
-                setRefundReason('');
-            }
-        } catch (error) {
-            console.error('Error processing refund:', error);
-            alert('Erro ao processar estorno.');
-        }
-    };
-
     // Fetch full client details when modal opens
     const clientId = client?.id;
     useEffect(() => {
-        if (isOpen && clientId && client) {
+        if (isOpen && clientId) {
             let canceled = false;
-            // Only set if we don't have this client's data yet or if it's a different client
+
+            // Re-sync with props if clientId changed or localClient is missing
             if (!localClient || localClient.id !== clientId) {
                 setLocalClient(client);
+                setIsLoadingDetails(true);
             }
 
             const fetchDetails = async () => {
-                setIsLoadingDetails(true);
+                // We only setIsLoadingDetails(true) if we don't have enough data
+                // In this case, we always want the "full" data from getById
                 try {
                     const response = await clientsAPI.getById(clientId);
-                    if (!canceled && (response.success !== false)) {
+                    if (!canceled) {
                         const clientData = response.data || response;
                         const fullClient = mapClientFromAPI(clientData);
                         setLocalClient(fullClient);
@@ -232,6 +207,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
             fetchDetails();
             return () => { canceled = true; };
+        } else if (!isOpen) {
+            // Reset loading state when closed
+            setIsLoadingDetails(false);
         }
     }, [clientId, isOpen]);
 
