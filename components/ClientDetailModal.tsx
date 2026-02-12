@@ -205,28 +205,35 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     };
 
     // Fetch full client details when modal opens
+    const clientId = client?.id;
     useEffect(() => {
-        if (isOpen && client) {
-            setLocalClient(client); // Set initial data immediately
+        if (isOpen && clientId && client) {
+            let canceled = false;
+            // Only set if we don't have this client's data yet or if it's a different client
+            if (!localClient || localClient.id !== clientId) {
+                setLocalClient(client);
+            }
 
             const fetchDetails = async () => {
                 setIsLoadingDetails(true);
                 try {
-                    const response = await clientsAPI.getById(client.id);
-                    if (response.success && response.data) {
-                        const fullClient = mapClientFromAPI(response.data);
+                    const response = await clientsAPI.getById(clientId);
+                    if (!canceled && (response.success !== false)) {
+                        const clientData = response.data || response;
+                        const fullClient = mapClientFromAPI(clientData);
                         setLocalClient(fullClient);
                     }
                 } catch (error) {
                     console.error("Error fetching client details:", error);
                 } finally {
-                    setIsLoadingDetails(false);
+                    if (!canceled) setIsLoadingDetails(false);
                 }
             };
 
             fetchDetails();
+            return () => { canceled = true; };
         }
-    }, [client, isOpen]);
+    }, [clientId, isOpen]);
 
     // Controla lembretes enquanto o modal está aberto
     useEffect(() => {
@@ -564,12 +571,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         if (!localClient) return { isBirthdayMonth: false, classification: '' };
         return getClientStatus(localClient.birthdate, localClient.lastVisit, localClient.totalVisits);
     }, [localClient]);
-
-    useEffect(() => {
-        if (isOpen) {
-            setLocalClient(client);
-        }
-    }, [client, isOpen]);
 
     const handleClose = () => {
         setIsExiting(true);
@@ -992,7 +993,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 </InfoSection>
 
                 <InfoSection title="Planos e Pacotes">
-                    {localClient.packages && localClient.packages.length > 0 ? (
+                    {isLoadingDetails ? (
+                        <div className="flex items-center space-x-2 text-sm text-gray-500 py-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            <span>Carregando planos e pacotes...</span>
+                        </div>
+                    ) : localClient.packages && localClient.packages.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             {localClient.packages.map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
