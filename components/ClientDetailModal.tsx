@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useData, Client as DataContextClient, mapClientFromAPI } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
+import ScheduleInternalModal from './ScheduleInternalModal';
 
 declare var jspdf: any;
 
@@ -23,6 +24,12 @@ interface ClientHistory {
     canceled_at?: string | null;
     consumed_sessions?: number;
     total_sessions?: number;
+    professionalId?: number; // From API map
+    service_id?: number; // From API map
+    professional_name?: string;
+    service_name?: string;
+    price?: string; // Ensure price is available for refund logic
+    status?: string; // Ensure status is available for refund logic
 }
 
 interface ClientPackage {
@@ -72,7 +79,7 @@ interface ClientDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     client: Client | null;
-    navigate: (page: string) => void;
+    navigate: (page: string, params?: any) => void;
     onEdit?: (client: Client) => void;
     onSave?: (client: Client) => void;
     existingClients: Client[];
@@ -80,6 +87,7 @@ interface ClientDetailModalProps {
     onBlock?: (clientId: number, reason: string) => void;
     onUnblock?: (clientId: number) => void;
     onDeleteAppointment?: (appointmentId: number) => void;
+    onRefresh?: () => void; // Added for refreshing client data after internal schedule
 }
 
 // --- Icons ---
@@ -142,7 +150,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
     );
 };
 
-const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock }) => {
+const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock, onRefresh }) => {
     const { t } = useLanguage();
     const { saveClient, salonPlans, packages, selectedUnitId } = useData();
     const [isExiting, setIsExiting] = useState(false);
@@ -170,7 +178,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [dismissedReminders, setDismissedReminders] = useState<number[]>([]);
 
     // State for signature
-    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [signatureModal, setSignatureModal] = useState({ isOpen: false, item: null as any });
+    const [internalScheduleModal, setInternalScheduleModal] = useState<{
+        isOpen: boolean;
+        historyItem: ClientHistory | null;
+    }>({
+        isOpen: false,
+        historyItem: null,
+    });
     const [documentToSign, setDocumentToSign] = useState<ClientDocument | null>(null);
     const [viewingSignedDoc, setViewingSignedDoc] = useState<ClientDocument | null>(null);
     const [concludingId, setConcludingId] = useState<number | null>(null);
@@ -731,10 +746,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const handleOpenSignatureModal = (doc: ClientDocument) => {
         setDocumentToSign(doc);
-        setIsSignatureModalOpen(true);
+        setSignatureModal({ isOpen: true, item: doc });
     };
 
-    const handleSign = (signatureData: { photo: string; signature: string }) => {
+    const handleSaveSignature = (signatureData: { photo: string; signature: string }) => {
         if (!localClient || !documentToSign) return;
 
         const updatedDocuments = localClient.documents.map(doc =>
@@ -754,8 +769,55 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             onSave(updatedClient);
         }
 
-        setIsSignatureModalOpen(false);
+        setSignatureModal({ isOpen: false, item: null });
         setDocumentToSign(null);
+    };
+
+    const handleOpenRefundModal = (appointmentId: number) => {
+        setAppointmentToRefund(appointmentId);
+        setIsRefundModalOpen(true);
+    };
+
+    const handleConfirmRefund = async () => {
+        if (!appointmentToRefund || !refundReason.trim() || !localClient) return;
+
+        try {
+            const response = await appointmentsAPI.refund(appointmentToRefund, refundReason);
+            if (response.success) {
+                setNotification('Atendimento estornado com sucesso!');
+                fetchClientData();
+            } else {
+                setNotification('Erro ao estornar atendimento.');
+            }
+        } catch (error) {
+            console.error('Error refunding appointment:', error);
+            setNotification('Erro ao estornar atendimento.');
+        } finally {
+            setIsRefundModalOpen(false);
+            setRefundReason('');
+            setAppointmentToRefund(null);
+        }
+    };
+
+    const fetchClientData = async () => {
+        if (!localClient?.id) return;
+        try {
+            const response = await clientsAPI.getById(localClient.id);
+            if (response.success) {
+                const mappedClient = mapClientFromAPI(response.data || response);
+                setLocalClient(mappedClient);
+                if (onSave) onSave(mappedClient);
+                if (onRefresh) onRefresh();
+            }
+        } catch (error) {
+            console.error('Error fetching client data:', error);
+        }
+    };
+
+    const handleReassign = (item: ClientHistory) => {
+        // Placeholder for reassign logic, e.g., open a modal to reassign a photo
+        console.log("Reassigning photo for item:", item);
+        setNotification("Funcionalidade 'Treinar Foto' em desenvolvimento.");
     };
 
     const renderConfirmationModal = () => {
@@ -1247,9 +1309,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             const pendingServices = localClient.history.filter(item => !completedStatuses.includes((item.status || '').toLowerCase()));
 
                             const getSessionInfo = (item: ClientHistory) => {
-                                // If the API already provided session info, use it
-                                if (item.sessionInfo) return item.sessionInfo;
-
                                 if (!item.package_id && !item.salon_plan_id) return null;
                                 const sub = localClient?.packages?.find(p =>
                                     (item.package_id && p.package_id === item.package_id) ||
@@ -1257,18 +1316,27 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 );
                                 if (!sub) return null;
                                 const total = sub.total_sessions || 0;
-                                const allSameType = localClient?.history.filter(h =>
+                                const allRelevantItems = localClient?.history.filter(h =>
                                     (item.package_id && h.package_id === item.package_id) ||
                                     (item.salon_plan_id && h.salon_plan_id === item.salon_plan_id)
-                                ).filter(h => ['atendido', 'concluido', 'concluído'].includes((h.status || '').toLowerCase()))
-                                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                                const index = allSameType.findIndex(h => h.id === item.id);
+                                ).filter(h => !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase()))
+                                    .sort((a, b) => {
+                                        const dateA = new Date(a.date).getTime();
+                                        const dateB = new Date(b.date).getTime();
+                                        if (dateA !== dateB) return dateA - dateB;
+                                        return (a.time || '').localeCompare(b.time || '');
+                                    });
+                                const index = allRelevantItems.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
 
                                 if (total > 0) {
-                                    return `Sessão ${index + 1} de ${total} sessões`;
+                                    if (item.salon_plan_id) { // Plan nomenclature
+                                        if (index === 0) return `1ª Vez de ${total}`;
+                                        return `${index + 1} de ${total} Vezes`;
+                                    }
+                                    return `Sessão ${index + 1} de ${total}`; // Package nomenclature
                                 }
-                                return `Sessão ${index + 1}`;
+                                return `Sessão ${index + 1}`; // Fallback
                             };
                             return (
                                 <div>
@@ -1314,9 +1382,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-                                                                        {sessionInfo && (
+                                                                        {(item.package_id || item.salon_plan_id) && (
                                                                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                {item.type === 'Pacote' || item.type === 'Plano' ? 'Sessão ' : ''}{sessionInfo}
+                                                                                {getSessionInfo(item)}
                                                                             </span>
                                                                         )}
                                                                     </div>
@@ -1430,34 +1498,47 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{dateDisplay}</p>
-                                                                        {item.sessionInfo && (
+                                                                        {(item.package_id || item.salon_plan_id) && (
                                                                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                                 </svg>
-                                                                                {(item.type === 'Pacote' || item.type === 'Plano') && !item.sessionInfo.includes('Sessão') ? 'Sessão ' : ''}{item.sessionInfo}
+                                                                                {getSessionInfo(item)}
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                                 {['a realizar', 'agendado'].includes((item.status || '').toLowerCase().trim()) ? (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (item.package_id || item.salon_plan_id) {
-                                                                                setConcludingId(item.id);
-                                                                                setConcludeQty(1);
-                                                                            } else {
-                                                                                handleUpdateServiceStatus(item.id);
-                                                                            }
-                                                                        }}
-                                                                        className={`text-sm font-medium px-3 py-1 rounded-full capitalize flex items-center gap-1 transition-all ${statusBaseClass} hover:ring-2 hover:ring-green-300`}
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                        </svg>
-                                                                        {item.status === 'agendado' ? 'Concluir' : item.status}
-                                                                    </button>
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (item.package_id || item.salon_plan_id) {
+                                                                                    setConcludingId(item.id);
+                                                                                    setConcludeQty(1);
+                                                                                } else {
+                                                                                    handleUpdateServiceStatus(item.id);
+                                                                                }
+                                                                            }}
+                                                                            className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+                                                                        >
+                                                                            Concluir Próxima
+                                                                        </button>
+                                                                        {(item.package_id || item.salon_plan_id) && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setInternalScheduleModal({ isOpen: true, historyItem: item });
+                                                                                }}
+                                                                                className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                </svg>
+                                                                                Agendar Próxima
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 ) : (
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</span>
                                                                 )}
@@ -1503,7 +1584,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             <p className="font-semibold text-gray-800">{item.name}</p>
                                                                             {(item.package_id || item.salon_plan_id) && (
                                                                                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                    {item.sessionInfo || getSessionInfo(item)}
+                                                                                    {getSessionInfo(item)}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -1558,24 +1639,36 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                         </button>
                                                                                     </div>
                                                                                 ) : (
-                                                                                    <button
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            if (item.package_id || item.salon_plan_id) {
-                                                                                                setConcludingId(item.id);
-                                                                                                setConcludeQty(1);
-                                                                                            } else {
-                                                                                                handleUpdateServiceStatus(item.id);
-                                                                                            }
-                                                                                        }}
-                                                                                        className="text-xs font-semibold text-green-600 hover:text-green-800 hover:underline flex items-center gap-1"
-                                                                                        title="Marcar como Concluído"
-                                                                                    >
-                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                                        </svg>
-                                                                                        {['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()) ? 'Concluir Próxima' : 'Concluir'}
-                                                                                    </button>
+                                                                                    <div className="flex gap-2">
+                                                                                        {(item.package_id || item.salon_plan_id) && (
+                                                                                            <button
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    setInternalScheduleModal({ isOpen: true, historyItem: item });
+                                                                                                }}
+                                                                                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-100 flex items-center gap-1 text-xs font-bold"
+                                                                                                title="Agendar Próxima"
+                                                                                            >
+                                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                                </svg>
+                                                                                                Agendar
+                                                                                            </button>
+                                                                                        )}
+                                                                                        <button
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleReassign(item);
+                                                                                            }}
+                                                                                            className="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
+                                                                                            title="Treinar Foto"
+                                                                                        >
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                    </div>
                                                                                 )
                                                                             )}
                                                                     </div>
@@ -1809,11 +1902,41 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 </div>
             )}
             <SignatureModal
-                isOpen={isSignatureModalOpen}
-                onClose={() => setIsSignatureModalOpen(false)}
-                onSign={handleSign}
-                contractText={documentToSign?.content || ''}
+                isOpen={signatureModal.isOpen}
+                onClose={() => setSignatureModal({ isOpen: false, item: null })}
+                onSign={handleSaveSignature}
+                contractText={signatureModal.item?.content || ''}
             />
+
+            {internalScheduleModal.historyItem && (
+                <ScheduleInternalModal
+                    isOpen={internalScheduleModal.isOpen}
+                    onClose={() => setInternalScheduleModal({ isOpen: false, historyItem: null })}
+                    client={{
+                        id: localClient?.id || 0,
+                        name: localClient?.name || '',
+                        photo: localClient?.photo,
+                        avatar: localClient?.avatar
+                    }}
+                    professional={{
+                        id: internalScheduleModal.historyItem.professionalId || 0,
+                        name: internalScheduleModal.historyItem.professional || 'Profissional'
+                    }}
+                    service={{
+                        id: internalScheduleModal.historyItem.service_id || 0,
+                        name: internalScheduleModal.historyItem.name || 'Serviço'
+                    }}
+                    contractInfo={{
+                        package_subscription_id: localClient?.packages?.find(p => p.package_id === internalScheduleModal.historyItem?.package_id)?.id,
+                        salon_plan_subscription_id: localClient?.packages?.find(p => p.plan_id === internalScheduleModal.historyItem?.salon_plan_id)?.id,
+                        label: internalScheduleModal.historyItem.package_id ? 'Pacote' : 'Plano'
+                    }}
+                    onScheduleSuccess={() => {
+                        // Refresh client data to show the new appointment
+                        fetchClientData();
+                    }}
+                />
+            )}
         </>
     );
 };
