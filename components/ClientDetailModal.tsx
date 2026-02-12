@@ -1322,7 +1322,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
                                                                     {!isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
-                                                                        concludingId === item.id ? (
+                                                                        String(concludingId) === String(item.id) ? (
                                                                             <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
@@ -1514,7 +1514,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         </span>
                                                                         {(['agendado', 'reagendado', 'a realizar'].includes((item.status || '').toLowerCase().trim()) ||
                                                                             ((item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && ['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()))) && (
-                                                                                concludingId === item.id ? (
+                                                                                String(concludingId) === String(item.id) ? (
                                                                                     <div className="flex items-center gap-2 bg-green-50 p-1 rounded-lg border border-green-200">
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); setConcludeQty(prev => Math.max(1, prev - 1)); }}
@@ -1570,7 +1570,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                                                         </svg>
-                                                                                        Concluir
+                                                                                        {['atendido', 'concluido', 'concluído'].includes((item.status || '').toLowerCase().trim()) ? 'Concluir Próxima' : 'Concluir'}
                                                                                     </button>
                                                                                 )
                                                                             )}
