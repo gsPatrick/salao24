@@ -108,6 +108,7 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
                 time: selectedTime,
                 status: 'agendado',
                 price: '0.00', // Already paid via package/plan
+                payment_status: 'linked_to_package',
                 package_subscription_id: contractInfo?.package_subscription_id,
                 salon_plan_subscription_id: contractInfo?.salon_plan_subscription_id,
                 notes: `Agendado via ${contractInfo?.label || 'Contrato'}`
