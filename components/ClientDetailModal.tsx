@@ -1746,12 +1746,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             ? 'Em Andamento'
                                                             : item.status;
 
+                                                        const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
+
                                                         return (
-                                                            <div key={item.id} className="bg-white p-4 rounded-lg border">
+                                                            <div key={item.id} className={`bg-white p-4 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center gap-2">
-                                                                            <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                            <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{item.name}</p>
                                                                             {consumptionState && (
                                                                                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
                                                                                     {consumptionState.label}
@@ -1762,11 +1764,25 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         <p className="text-sm text-gray-500">Hora: {item.time}</p>
                                                                         <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
                                                                         {item.price && <p className="text-sm text-gray-500">Valor: R$ {item.price}</p>}
+                                                                        {isCanceled && item.cancellation_reason && (
+                                                                            <p className="text-xs text-red-500 mt-1 italic">Motivo: {item.cancellation_reason}</p>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex flex-col items-end gap-2">
+                                                                    <div className="flex items-center gap-2">
                                                                         <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
                                                                             {displayStatus}
                                                                         </span>
+                                                                        {isAdmin && !isCanceled && (
+                                                                            <button
+                                                                                onClick={() => handleOpenRefundModal(item.id)}
+                                                                                className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+                                                                                title="Estornar Serviço"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
