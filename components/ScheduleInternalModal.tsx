@@ -125,9 +125,10 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
             } else {
                 alert('Erro ao agendar: ' + (response.message || 'Erro desconhecido'));
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating appointment:', error);
-            alert('Erro ao realizar o agendamento.');
+            const msg = error.response?.data?.error || error.response?.data?.message || error.message || 'Erro desconhecido ao agendar.';
+            alert(`Erro ao realizar o agendamento: ${msg}`);
         } finally {
             setIsSubmitting(false);
         }

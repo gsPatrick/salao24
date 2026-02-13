@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { clientsAPI, appointmentsAPI } from '../lib/api';
+import { clientsAPI, appointmentsAPI, packagesAPI, salonPlansAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, Client as DataContextClient, mapClientFromAPI } from '../contexts/DataContext';
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
 import ScheduleInternalModal from './ScheduleInternalModal';
+
+// ... existing icons ...
+const CheckCircleIcon = ({ className = "h-5 w-5" }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+
+declare var jspdf: any;
 
 declare var jspdf: any;
 
@@ -252,6 +257,50 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         if (!activeReminder) return;
         setDismissedReminders(prev => [...prev, activeReminder.id]);
         setActiveReminder(null);
+    };
+
+    // Handlers for subscription management
+    const refetchClient = async () => {
+        if (!clientId) return;
+        try {
+            const response = await clientsAPI.getById(clientId);
+            const clientData = response.data || response;
+            const fullClient = mapClientFromAPI(clientData);
+            setLocalClient(fullClient);
+            if (onRefresh) onRefresh();
+        } catch (error) {
+            console.error("Error refreshing client:", error);
+        }
+    };
+
+    const handleArchiveSubscription = async (id: number, type: 'package' | 'plan') => {
+        if (!window.confirm('Deseja marcar este contrato como Concluído/Cancelado?')) return;
+        try {
+            if (type === 'package') {
+                await packagesAPI.archiveSubscription(id);
+            } else {
+                await salonPlansAPI.archiveSubscription(id);
+            }
+            await refetchClient();
+        } catch (error) {
+            alert('Erro ao atualizar status do contrato.');
+            console.error(error);
+        }
+    };
+
+    const handleDeleteSubscription = async (id: number, type: 'package' | 'plan') => {
+        if (!window.confirm('Tem certeza que deseja excluir este contrato? Esta ação é irreversível e removerá o histórico associado se não houver vínculos.')) return;
+        try {
+            if (type === 'package') {
+                await packagesAPI.deleteSubscription(id);
+            } else {
+                await salonPlansAPI.deleteSubscription(id);
+            }
+            await refetchClient();
+        } catch (error) {
+            alert('Erro ao excluir contrato.');
+            console.error(error);
+        }
     };
 
     const handleMarkAsComplete = () => {
@@ -1388,7 +1437,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
                                                         const consumed = relatedAppointments.length;
                                                         const total = contract.total_sessions || 0;
-                                                        const isCompleted = total > 0 && consumed >= total;
+                                                        const isCompleted = (total > 0 && consumed >= total) || contract.status === 'archived' || contract.status === 'expired' || contract.status === 'cancelado';
+                                                        const isActive = contract.status === 'active' || !contract.status;
 
                                                         // Nomenclature
                                                         const sessionLabel = total > 0
@@ -1421,36 +1471,60 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                         };
 
                                                         return (
-                                                            <div key={`contract-${contract.type}-${contract.package_id || contract.plan_id}`} className={`flex justify-between items-center bg-white p-4 rounded-xl border ${isCompleted ? 'border-green-200 bg-green-50/30' : 'border-blue-200 bg-blue-50/20'}`}>
+                                                            <div key={contract.id} className={`flex justify-between items-center bg-white p-4 rounded-xl border ${isCompleted ? 'border-gray-200 bg-gray-50' : 'border-blue-200 bg-blue-50/20'}`}>
                                                                 <div className="flex-1">
                                                                     <div className="flex items-center gap-2 mb-1">
-                                                                        <p className="font-bold text-gray-800">{contract.name}</p>
+                                                                        <p className={`font-bold ${isCompleted ? 'text-gray-500' : 'text-gray-800'}`}>{contract.name}</p>
                                                                         <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-teal-50 text-teal-600 border-teal-200'}`}>
                                                                             {contract.type === 'package' ? 'Pacote' : 'Plano'}
                                                                         </span>
+                                                                        {!isActive && (
+                                                                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-gray-100 text-gray-500 border-gray-200">
+                                                                                {contract.status === 'archived' ? 'Arquivado' : (contract.status === 'expired' ? 'Expirado' : contract.status)}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${isCompleted ? 'text-green-700 bg-green-100 border-green-200' : 'text-blue-700 bg-blue-100 border-blue-200'}`}>
+                                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${isCompleted ? 'text-gray-600 bg-gray-100 border-gray-200' : 'text-blue-700 bg-blue-100 border-blue-200'}`}>
                                                                             {sessionLabel}
                                                                         </span>
                                                                         {total > 0 && (
                                                                             <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
                                                                                 <div
-                                                                                    className={`h-full rounded-full transition-all ${isCompleted ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                                                    className={`h-full rounded-full transition-all ${isCompleted ? 'bg-gray-400' : 'bg-blue-500'}`}
                                                                                     style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
                                                                                 />
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    {!isCompleted ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    {/* Archive / Reactivate */}
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
+                                                                        className={`p-2 transition-colors rounded-full ${contract.status === 'archived' ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+                                                                        title={contract.status === 'archived' ? "Reativar" : "Arquivar/Concluir"}
+                                                                    >
+                                                                        <CheckCircleIcon className="h-5 w-5" />
+                                                                    </button>
+
+                                                                    {/* Delete */}
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
+                                                                        className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
+                                                                        title="Excluir"
+                                                                    >
+                                                                        <TrashIcon className="h-5 w-5" />
+                                                                    </button>
+
+                                                                    {/* Schedule - Only if active and not fully consumed */}
+                                                                    {!isCompleted && isActive ? (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
                                                                                 setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
                                                                             }}
-                                                                            className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1"
+                                                                            className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1 ml-2"
                                                                             title="Agendar Próxima"
                                                                         >
                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1458,11 +1532,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </svg>
                                                                             Agendar
                                                                         </button>
-                                                                    ) : (
-                                                                        <span className="text-sm font-medium px-3 py-1 rounded-full bg-green-100 text-green-800">
-                                                                            ✓ Concluído
-                                                                        </span>
-                                                                    )}
+                                                                    ) : null}
                                                                 </div>
                                                             </div>
                                                         );

@@ -780,6 +780,27 @@ export const salonPlansAPI = {
         const response = await api.patch(`/salon-plans/${id}/favorite`);
         return response.data;
     },
+    // Subscriptions
+    listSubscriptions: async () => {
+        const response = await api.get('/salon-plans/subscriptions');
+        return response.data;
+    },
+    createSubscription: async (data: any) => {
+        const response = await api.post('/salon-plans/subscriptions', data);
+        return response.data;
+    },
+    updateSubscription: async (id: number, data: any) => {
+        const response = await api.put(`/salon-plans/subscriptions/${id}`, data);
+        return response.data;
+    },
+    deleteSubscription: async (id: number) => {
+        const response = await api.delete(`/salon-plans/subscriptions/${id}`);
+        return response.data;
+    },
+    archiveSubscription: async (id: number) => {
+        const response = await api.patch(`/salon-plans/subscriptions/${id}/archive`);
+        return response.data;
+    },
 };
 
 export const supportAPI = {
