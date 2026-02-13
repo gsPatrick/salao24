@@ -1364,45 +1364,91 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     </div>
 
                                     {/* Content based on sub-tab */}
-                                    {activeSubTab === 'servicos' && (
-                                        <>
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('servicesPerformed')} ({completedServices.length})</h4>
-                                            <div className="space-y-4 mb-6">
-                                                {completedServices.length > 0
-                                                    ? completedServices.map(item => {
-                                                        const consumptionState = getSessionInfo(item);
-                                                        const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
+                                    {activeSubTab === 'servicos' && (() => {
+                                        // Build contract-level view from packages (one row per subscription)
+                                        const contracts = (localClient.packages || []).filter(
+                                            (pkg: any) => pkg.type === 'package' || pkg.type === 'plan'
+                                        );
+
+                                        return (
+                                            <>
+                                                <h4 className="text-lg font-semibold text-gray-800 mb-3">Contratos & Assinaturas ({contracts.length})</h4>
+                                                <div className="space-y-3">
+                                                    {contracts.length > 0 ? contracts.map((contract: any) => {
+                                                        // Count consumed sessions dynamically from history
+                                                        const relatedAppointments = (localClient.history || []).filter((h: ClientHistory) => {
+                                                            if (contract.type === 'package' && contract.package_id) {
+                                                                return h.package_id === contract.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                            }
+                                                            if (contract.type === 'plan' && contract.plan_id) {
+                                                                return h.salon_plan_id === contract.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                            }
+                                                            return false;
+                                                        });
+
+                                                        const consumed = relatedAppointments.length;
+                                                        const total = contract.total_sessions || 0;
+                                                        const isCompleted = total > 0 && consumed >= total;
+
+                                                        // Nomenclature
+                                                        const sessionLabel = total > 0
+                                                            ? (contract.type === 'plan'
+                                                                ? `Vez ${consumed} de ${total}`
+                                                                : `Sessão ${consumed} de ${total}`)
+                                                            : (consumed > 0
+                                                                ? (contract.type === 'plan' ? `${consumed} vezes` : `${consumed} sessões`)
+                                                                : 'Nenhuma sessão');
+
+                                                        // Find a representative history item for ScheduleInternalModal
+                                                        const representativeItem = relatedAppointments.length > 0
+                                                            ? relatedAppointments[relatedAppointments.length - 1]
+                                                            : null;
+
+                                                        // Fabricate a historyItem for the modal
+                                                        const historyItemForModal: ClientHistory = {
+                                                            id: representativeItem?.id || 0,
+                                                            name: contract.name,
+                                                            date: representativeItem?.date || new Date().toISOString().split('T')[0],
+                                                            time: representativeItem?.time || '09:00',
+                                                            professional: representativeItem?.professional || 'Profissional',
+                                                            professionalId: representativeItem?.professionalId,
+                                                            service_id: representativeItem?.service_id,
+                                                            package_id: contract.type === 'package' ? contract.package_id : undefined,
+                                                            salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
+                                                            type: contract.type === 'package' ? 'Pacote' : 'Plano',
+                                                            total_sessions: total,
+                                                            consumed_sessions: consumed,
+                                                        };
+
                                                         return (
-                                                            <div key={item.id} className={`flex justify-between items-center bg-white p-3 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
+                                                            <div key={`contract-${contract.type}-${contract.package_id || contract.plan_id}`} className={`flex justify-between items-center bg-white p-4 rounded-xl border ${isCompleted ? 'border-green-200 bg-green-50/30' : 'border-blue-200 bg-blue-50/20'}`}>
                                                                 <div className="flex-1">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
-                                                                            {item.name}
-                                                                        </p>
-                                                                        {item.type && item.type !== 'Serviço' && !item.name.includes(item.type) && (
-                                                                            <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
-                                                                                {item.type}
-                                                                            </span>
-                                                                        )}
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <p className="font-bold text-gray-800">{contract.name}</p>
+                                                                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-teal-50 text-teal-600 border-teal-200'}`}>
+                                                                            {contract.type === 'package' ? 'Pacote' : 'Plano'}
+                                                                        </span>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-                                                                        {consumptionState && (
-                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                {consumptionState.label}
-                                                                            </span>
+                                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${isCompleted ? 'text-green-700 bg-green-100 border-green-200' : 'text-blue-700 bg-blue-100 border-blue-200'}`}>
+                                                                            {sessionLabel}
+                                                                        </span>
+                                                                        {total > 0 && (
+                                                                            <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className={`h-full rounded-full transition-all ${isCompleted ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                                                    style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
+                                                                                />
+                                                                            </div>
                                                                         )}
                                                                     </div>
-                                                                    {isCanceled && item.cancellation_reason && (
-                                                                        <p className="text-xs text-red-500 mt-1 italic">Motivo: {item.cancellation_reason}</p>
-                                                                    )}
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
-                                                                    {!isCanceled && consumptionState && !consumptionState.isLast && (
+                                                                    {!isCompleted ? (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                setInternalScheduleModal({ isOpen: true, historyItem: item });
+                                                                                setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
                                                                             }}
                                                                             className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1"
                                                                             title="Agendar Próxima"
@@ -1412,81 +1458,19 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </svg>
                                                                             Agendar
                                                                         </button>
-                                                                    )}
-                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' :
-                                                                        (consumptionState && !consumptionState.isLast) ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                                                        }`}>
-                                                                        {isCanceled ? item.status : (consumptionState && !consumptionState.isLast ? 'Em Andamento' : 'Concluído')}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })
-                                                    : <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum serviço realizado.</p>
-                                                }
-                                            </div>
-
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-3 mt-8">{`${t('servicesPending')} (${pendingServices.length})`}</h4>
-                                            <div className="space-y-3">
-                                                {pendingServices.length > 0 ? (
-                                                    pendingServices.map(item => {
-                                                        const consumptionState = getSessionInfo(item);
-                                                        const statusKey = (item.status || '').toLowerCase();
-                                                        let statusBaseClass = 'bg-gray-100 text-gray-800';
-                                                        if (statusKey === 'agendado') statusBaseClass = 'bg-blue-100 text-blue-800';
-                                                        else if (statusKey === 'a realizar') statusBaseClass = 'bg-orange-100 text-orange-800 cursor-pointer hover:bg-green-200 hover:text-green-900 transition-colors';
-
-                                                        const isValidDate = item.date && !isNaN(new Date(item.date).getTime()) && item.date !== 'Pendente';
-                                                        const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
-
-                                                        return (
-                                                            <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border">
-                                                                <div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className="font-semibold text-gray-800">{item.name}</p>
-                                                                        {item.type && item.type !== 'Serviço' && !item.name.includes(item.type) && (
-                                                                            <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
-                                                                                {item.type}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className="text-sm text-gray-500">{dateDisplay}</p>
-                                                                        {consumptionState && (
-                                                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                                </svg>
-                                                                                {consumptionState.label}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    {(item.package_id || item.salon_plan_id) ? (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setInternalScheduleModal({ isOpen: true, historyItem: item });
-                                                                            }}
-                                                                            className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                            </svg>
-                                                                            Agendar
-                                                                        </button>
                                                                     ) : (
-                                                                        <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusBaseClass}`}>{item.status}</span>
+                                                                        <span className="text-sm font-medium px-3 py-1 rounded-full bg-green-100 text-green-800">
+                                                                            ✓ Concluído
+                                                                        </span>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                         );
-                                                    })
-                                                ) : <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum serviço pendente.</p>}
-                                            </div>
-                                        </>
-                                    )}
+                                                    }) : <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum pacote ou plano ativo.</p>}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
 
                                     {activeSubTab === 'agendamentos' && (
                                         <>
