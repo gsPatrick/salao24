@@ -1329,13 +1329,21 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 const index = allRelevantItems.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
 
+                                const current = index + 1;
+                                const isLast = current >= total && total > 0;
+                                let label = '';
+
                                 if (total > 0) {
                                     if (item.salon_plan_id) { // Plan nomenclature
-                                        return `Vez ${index + 1} de ${total}`;
+                                        label = `Vez ${current} de ${total}`;
+                                    } else {
+                                        label = `Sessão ${current} de ${total}`; // Package nomenclature
                                     }
-                                    return `Sessão ${index + 1} de ${total}`; // Package nomenclature
+                                } else {
+                                    label = `Sessão ${current}`; // Fallback
                                 }
-                                return `Sessão ${index + 1}`; // Fallback
+
+                                return { label, isLast };
                             };
                             return (
                                 <div>
@@ -1362,6 +1370,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <div className="space-y-4 mb-6">
                                                 {completedServices.length > 0
                                                     ? completedServices.map(item => {
+                                                        const consumptionState = getSessionInfo(item);
                                                         const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
                                                         return (
                                                             <div key={item.id} className={`flex justify-between items-center bg-white p-3 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
@@ -1378,9 +1387,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-                                                                        {(item.package_id || item.salon_plan_id) && (
+                                                                        {consumptionState && (
                                                                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                {getSessionInfo(item)}
+                                                                                {consumptionState.label}
                                                                             </span>
                                                                         )}
                                                                     </div>
@@ -1389,7 +1398,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
-                                                                    {!isCanceled && (item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0) && (
+                                                                    {!isCanceled && consumptionState && !consumptionState.isLast && (
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
@@ -1405,9 +1414,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         </button>
                                                                     )}
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' :
-                                                                        ((item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0)) ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                                                        (consumptionState && !consumptionState.isLast) ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                                                                         }`}>
-                                                                        {isCanceled ? item.status : (((item.package_id || item.salon_plan_id) && (item.consumed_sessions || 0) < (item.total_sessions || 0)) ? 'Ativo' : 'Concluído')}
+                                                                        {isCanceled ? item.status : (consumptionState && !consumptionState.isLast ? 'Ativo' : 'Concluído')}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1421,6 +1430,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <div className="space-y-3">
                                                 {pendingServices.length > 0 ? (
                                                     pendingServices.map(item => {
+                                                        const consumptionState = getSessionInfo(item);
                                                         const statusKey = (item.status || '').toLowerCase();
                                                         let statusBaseClass = 'bg-gray-100 text-gray-800';
                                                         if (statusKey === 'agendado') statusBaseClass = 'bg-blue-100 text-blue-800';
@@ -1442,12 +1452,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-sm text-gray-500">{dateDisplay}</p>
-                                                                        {(item.package_id || item.salon_plan_id) && (
+                                                                        {consumptionState && (
                                                                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                                 </svg>
-                                                                                {getSessionInfo(item)}
+                                                                                {consumptionState.label}
                                                                             </span>
                                                                         )}
                                                                     </div>
@@ -1484,18 +1494,27 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <div className="space-y-3">
                                                 {localClient.history.length > 0 ? (
                                                     localClient.history.map(item => {
+                                                        const consumptionState = getSessionInfo(item);
+                                                        const statusKey = (item.status || '').toLowerCase();
                                                         const statusStyles: { [key: string]: string } = {
-                                                            'Atendido': 'bg-green-100 text-green-800',
+                                                            'atendido': 'bg-green-100 text-green-800',
+                                                            'concluido': 'bg-green-100 text-green-800',
                                                             'concluído': 'bg-green-100 text-green-800',
-                                                            'Agendado': 'bg-blue-100 text-blue-800',
+                                                            'agendado': 'bg-blue-100 text-blue-800',
                                                             'a realizar': 'bg-orange-100 text-orange-800',
-                                                            'Faltou': 'bg-red-100 text-red-800',
-                                                            'Desmarcou': 'bg-gray-100 text-gray-800',
-                                                            'Reagendado': 'bg-yellow-100 text-yellow-800'
+                                                            'faltou': 'bg-red-100 text-red-800',
+                                                            'desmarcou': 'bg-gray-100 text-gray-800',
+                                                            'reagendado': 'bg-yellow-100 text-yellow-800',
+                                                            'cancelado': 'bg-red-100 text-red-800'
                                                         };
-                                                        const statusClass = statusStyles[item.status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800';
+                                                        const statusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
                                                         const isValidDate = item.date && !isNaN(new Date(item.date).getTime()) && item.date !== 'Pendente';
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
+
+                                                        // Logic for showing 'Em Andamento' or 'Ativo' label if it's a non-final session of a package/plan
+                                                        const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
+                                                            ? 'Realizado'
+                                                            : item.status;
 
                                                         return (
                                                             <div key={item.id} className="bg-white p-4 rounded-lg border">
@@ -1503,9 +1522,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center gap-2">
                                                                             <p className="font-semibold text-gray-800">{item.name}</p>
-                                                                            {(item.package_id || item.salon_plan_id) && (
+                                                                            {consumptionState && (
                                                                                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                    {getSessionInfo(item)}
+                                                                                    {consumptionState.label}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -1516,7 +1535,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     </div>
                                                                     <div className="flex flex-col items-end gap-2">
                                                                         <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
-                                                                            {item.status}
+                                                                            {displayStatus}
                                                                         </span>
                                                                     </div>
                                                                 </div>
