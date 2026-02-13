@@ -305,7 +305,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         }
     };
 
-    const { professionals } = useData();
+
 
     const handleManualConsumption = async (contract: any) => {
         const profId = (user as any)?.professionalId || (professionals && professionals.length > 0 ? professionals[0].id : null);
