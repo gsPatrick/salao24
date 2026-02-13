@@ -96,7 +96,7 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
     };
 
     const handleConfirm = async () => {
-        if (!client || !selectedProf || !service || !selectedDate || !selectedTime) return;
+        if (!client || !selectedProf || !service?.id || !selectedDate || !selectedTime) return;
 
         setIsSubmitting(true);
         try {
@@ -109,8 +109,8 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
                 status: 'agendado',
                 price: '0.00', // Already paid via package/plan
                 payment_status: 'linked_to_package',
-                package_subscription_id: contractInfo?.package_subscription_id,
-                salon_plan_subscription_id: contractInfo?.salon_plan_subscription_id,
+                package_subscription_id: typeof contractInfo?.package_subscription_id === 'number' ? contractInfo.package_subscription_id : undefined,
+                salon_plan_subscription_id: typeof contractInfo?.salon_plan_subscription_id === 'number' ? contractInfo.salon_plan_subscription_id : undefined,
                 notes: `Agendado via ${contractInfo?.label || 'Contrato'}`
             });
 
