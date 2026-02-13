@@ -1795,6 +1795,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     contractInfo={{
                         package_subscription_id: localClient?.packages?.find(p => p.package_id === internalScheduleModal.historyItem?.package_id)?.id,
                         salon_plan_subscription_id: localClient?.packages?.find(p => p.plan_id === internalScheduleModal.historyItem?.salon_plan_id)?.id,
+                        package_id: internalScheduleModal.historyItem.package_id,
+                        salon_plan_id: internalScheduleModal.historyItem.salon_plan_id,
                         label: internalScheduleModal.historyItem.package_id ? 'Pacote' : 'Plano'
                     }}
                     onScheduleSuccess={() => {

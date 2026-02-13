@@ -29,6 +29,8 @@ interface ScheduleInternalModalProps {
     contractInfo: {
         package_subscription_id?: number;
         salon_plan_subscription_id?: number;
+        package_id?: number;
+        salon_plan_id?: number;
         label: string;
     } | null;
     onScheduleSuccess: () => void;
@@ -96,19 +98,22 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
     };
 
     const handleConfirm = async () => {
-        if (!client || !selectedProf || !service?.id || !selectedDate || !selectedTime) return;
+        // Allow if we have service_id OR package_id OR salon_plan_id
+        if (!client || !selectedProf || (!service?.id && !contractInfo?.package_id && !contractInfo?.salon_plan_id) || !selectedDate || !selectedTime) return;
 
         setIsSubmitting(true);
         try {
             const response = await appointmentsAPI.create({
                 clientId: client.id,
                 professionalId: selectedProf.id,
-                service_id: service.id,
+                service_id: service.id || undefined,
                 date: selectedDate,
                 time: selectedTime,
                 status: 'agendado',
                 price: '0.00', // Already paid via package/plan
                 payment_status: 'linked_to_package',
+                package_id: contractInfo?.package_id,
+                salon_plan_id: contractInfo?.salon_plan_id,
                 package_subscription_id: typeof contractInfo?.package_subscription_id === 'number' ? contractInfo.package_subscription_id : undefined,
                 salon_plan_subscription_id: typeof contractInfo?.salon_plan_subscription_id === 'number' ? contractInfo.salon_plan_subscription_id : undefined,
                 notes: `Agendado via ${contractInfo?.label || 'Contrato'}`
