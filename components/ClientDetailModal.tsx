@@ -1586,38 +1586,44 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </button>
                                                                         )}
 
-                                                                        {/* Archive / Reactivate */}
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
-                                                                            className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
-                                                                            title="Arquivar / Encerrar Contrato"
-                                                                        >
-                                                                            <ArchiveIcon className="h-5 w-5" />
-                                                                        </button>
+                                                                        {/* Archive / Reactivate (Admin Only) */}
+                                                                        {isAdmin && (
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
+                                                                                className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
+                                                                                title="Arquivar / Encerrar Contrato"
+                                                                            >
+                                                                                <ArchiveIcon className="h-5 w-5" />
+                                                                            </button>
+                                                                        )}
 
-                                                                        {/* Delete */}
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
-                                                                            className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
-                                                                            title="Excluir"
-                                                                        >
-                                                                            <TrashIcon className="h-5 w-5" />
-                                                                        </button>
+                                                                        {/* Delete (Admin Only) */}
+                                                                        {isAdmin && (
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
+                                                                                className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
+                                                                                title="Excluir"
+                                                                            >
+                                                                                <TrashIcon className="h-5 w-5" />
+                                                                            </button>
+                                                                        )}
 
                                                                         {/* Schedule */}
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
-                                                                            }}
-                                                                            className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1 ml-2"
-                                                                            title="Agendar Próxima"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                            </svg>
-                                                                            Agendar
-                                                                        </button>
+                                                                        {!isCompleted && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
+                                                                                }}
+                                                                                className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1 ml-2"
+                                                                                title="Agendar Próxima"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                </svg>
+                                                                                Agendar
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             );
@@ -1625,34 +1631,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     </div>
                                                 </div>
 
-                                                {/* History of Usage */}
-                                                <div>
-                                                    <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Histórico de Sessões Realizadas
-                                                    </h4>
-                                                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                                        {usageHistory.length > 0 ? (
-                                                            <div className="divide-y divide-gray-100">
-                                                                {usageHistory.map((item: any, idx: number) => (
-                                                                    <div key={item.id || idx} className="p-3 hover:bg-gray-50 flex justify-between items-center bg-green-50/10">
-                                                                        <div>
-                                                                            <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                                                                            <p className="text-xs text-gray-500">
-                                                                                {new Date(item.date).toLocaleDateString('pt-BR')} às {item.time} • {item.professional || 'Sem profissional'}
-                                                                            </p>
-                                                                        </div>
-                                                                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 uppercase">
-                                                                            {item.status}
-                                                                        </span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-center text-gray-500 py-4">Nenhuma sessão realizada ainda.</p>
-                                                        )}
-                                                    </div>
-                                                </div>
+
 
                                                 {/* Archived Contracts (Collapsible details if needed, but simple list for now) */}
                                                 {archivedContracts.length > 0 && (
@@ -1700,27 +1679,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">Histórico Completo de Agendamentos</h4>
                                             <div className="space-y-3">
                                                 {(() => {
-                                                    // Filter history to show only LATEST session for contracts
-                                                    const processedHistory: any[] = [];
-                                                    const seenContracts = new Set<string>();
-
-                                                    // robust sort descending
-                                                    const sortedHistory = [...localClient.history].sort((a, b) => {
+                                                    const processedHistory = [...(localClient.history || [])].sort((a, b) => {
                                                         const dateA = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
                                                         const dateB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
                                                         return dateB - dateA;
-                                                    });
-
-                                                    sortedHistory.forEach(item => {
-                                                        if (item.package_id || item.salon_plan_id) {
-                                                            const key = item.package_id ? `pkg-${item.package_id}` : `plan-${item.salon_plan_id}`;
-                                                            if (!seenContracts.has(key)) {
-                                                                seenContracts.add(key);
-                                                                processedHistory.push(item);
-                                                            }
-                                                        } else {
-                                                            processedHistory.push(item);
-                                                        }
                                                     });
 
                                                     if (processedHistory.length === 0) {

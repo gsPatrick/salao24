@@ -10,7 +10,7 @@ interface User {
     avatarUrl: string;
     role?: 'admin' | 'gerente' | 'concierge' | 'profissional';
 }
-type AppointmentStatus = 'Agendado' | 'Confirmado' | 'Em Espera' | 'Atendido' | 'Falta' | 'confirmado'; // Add lowercase for API compat
+type AppointmentStatus = 'Agendado' | 'Confirmado' | 'Em Espera' | 'Atendido' | 'Falta' | 'confirmado' | 'Cancelado';
 
 const Confetti: React.FC = () => (
     <>
@@ -91,6 +91,7 @@ const AppointmentCard: React.FC<{
             if (!status) return 'Agendado';
             const lower = status.toLowerCase();
             if (lower === 'atendido' || lower === 'completed' || lower === 'concluído' || lower === 'concluido' || lower === 'realizado') return 'Atendido';
+            if (lower === 'cancelado' || lower === 'cancelled' || lower === 'excluido' || lower === 'deleted') return 'Cancelado';
             if (lower === 'em espera' || lower === 'em_espera' || lower === 'em_atendimento' || lower === 'waiting') return 'Em Espera';
             if (lower === 'confirmado' || lower === 'confirmed') return 'Confirmado';
             if (lower === 'falta' || lower === 'missed' || lower === 'absent' || lower === 'faltou') return 'Falta';
@@ -107,6 +108,7 @@ const AppointmentCard: React.FC<{
             'Confirmado': 'bg-teal-100 text-teal-800 border-teal-200',
             'confirmado': 'bg-teal-100 text-teal-800 border-teal-200',
             'Falta': 'bg-red-100 text-red-800 border-red-200',
+            'Cancelado': 'bg-gray-100 text-gray-500 border-gray-200',
         };
 
         const handleActionClick = (e: React.MouseEvent) => {
@@ -115,12 +117,18 @@ const AppointmentCard: React.FC<{
 
         const canReassign = currentUser && ['admin', 'gerente', 'concierge'].includes(currentUser.role || '');
 
+        // Determine card color based on status
+        let cardBaseBg = 'bg-white';
+        if (isBirthday) cardBaseBg = 'bg-yellow-300 shadow-yellow-200';
+        else if (currentStatus === 'Atendido') cardBaseBg = 'bg-green-50/50 shadow-sm opacity-80';
+        else if (currentStatus === 'Cancelado') cardBaseBg = 'bg-gray-50 opacity-60 grayscale-[0.5] shadow-none border-gray-100';
+        else if (currentStatus === 'Falta') cardBaseBg = 'bg-red-50/50';
+
         return (
             <div
                 onClick={onClick}
                 style={style}
-                className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group ${isBirthday ? 'bg-yellow-300' : 'bg-white'
-                    } ${isDraggable ? 'cursor-grab' : 'cursor-pointer'} ${isDragging ? 'opacity-30' : 'transform hover:scale-105'
+                className={`p-3 rounded-lg shadow-md flex flex-col space-y-2 transition-all duration-200 relative overflow-hidden group ${cardBaseBg} ${isDraggable ? 'cursor-grab' : 'cursor-pointer'} ${isDragging ? 'opacity-30' : 'transform hover:scale-105'
                     } ${className || ''}`}
                 draggable={isDraggable}
                 onDragStart={onDragStart}
