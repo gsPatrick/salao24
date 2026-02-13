@@ -128,7 +128,7 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
     };
 
     if (!isOpen && !isExiting) return null;
-    if (!client || !professional || !service) return null;
+    if (!client || !service) return null;
 
     return (
         <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-300 ${isOpen ? 'opacity-100 bg-black/50 backdrop-blur-sm' : 'opacity-0'}`}>
@@ -168,37 +168,43 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
                         <div className="space-y-4">
                             <label className="block text-sm font-bold text-gray-700">Selecione o Profissional</label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-                                {professionals.filter(p => !p.suspended && !p.archived).map(p => (
-                                    <button
-                                        key={p.id}
-                                        onClick={() => {
-                                            setSelectedProf({ id: p.id, name: p.name });
-                                            setStep('datetime');
-                                        }}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 text-left ${selectedProf?.id === p.id
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                            : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'}`}
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold overflow-hidden border border-gray-200">
-                                            {(p.photo || p.avatar) ? (
-                                                <img src={p.photo || p.avatar} alt={p.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                p.name.charAt(0)
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`font-bold text-sm truncate ${selectedProf?.id === p.id ? 'text-primary' : 'text-gray-800'}`}>{p.name}</p>
-                                            <p className="text-xs text-gray-500 truncate">{p.occupation || 'Profissional'}</p>
-                                        </div>
-                                        {selectedProf?.id === p.id && (
-                                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
+                                {professionals && professionals.filter(p => !p.suspended && !p.archived).length > 0 ? (
+                                    professionals.filter(p => !p.suspended && !p.archived).map(p => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => {
+                                                setSelectedProf({ id: p.id, name: p.name });
+                                                setStep('datetime');
+                                            }}
+                                            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 text-left ${selectedProf?.id === p.id
+                                                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'}`}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold overflow-hidden border border-gray-200">
+                                                {(p.photo || p.avatar) ? (
+                                                    <img src={p.photo || p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    p.name.charAt(0)
+                                                )}
                                             </div>
-                                        )}
-                                    </button>
-                                ))}
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`font-bold text-sm truncate ${selectedProf?.id === p.id ? 'text-primary' : 'text-gray-800'}`}>{p.name}</p>
+                                                <p className="text-xs text-gray-500 truncate">{p.occupation || 'Profissional'}</p>
+                                            </div>
+                                            {selectedProf?.id === p.id && (
+                                                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <p className="text-gray-500 text-sm">Nenhum profissional disponível no momento.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
