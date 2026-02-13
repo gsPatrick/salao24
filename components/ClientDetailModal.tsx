@@ -259,6 +259,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         setActiveReminder(null);
     };
 
+    const ArchiveIcon = ({ className = "h-5 w-5" }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>;
+
     // Handlers for subscription management
     const refetchClient = async () => {
         if (!clientId) return;
@@ -274,7 +276,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     };
 
     const handleArchiveSubscription = async (id: number, type: 'package' | 'plan') => {
-        if (!window.confirm('Deseja marcar este contrato como Concluído/Cancelado?')) return;
+        if (!window.confirm('Deseja Arquivar/Encerrar este contrato? Ele deixará de aparecer na lista de ativos.')) return;
         try {
             if (type === 'package') {
                 await packagesAPI.archiveSubscription(id);
@@ -289,7 +291,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     };
 
     const handleDeleteSubscription = async (id: number, type: 'package' | 'plan') => {
-        if (!window.confirm('Tem certeza que deseja excluir este contrato? Esta ação é irreversível e removerá o histórico associado se não houver vínculos.')) return;
+        if (!window.confirm('Tem certeza que deseja excluir este contrato? Esta ação é irreversível.')) return;
         try {
             if (type === 'package') {
                 await packagesAPI.deleteSubscription(id);
@@ -300,6 +302,51 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         } catch (error) {
             alert('Erro ao excluir contrato.');
             console.error(error);
+        }
+    };
+
+    const { professionals } = useData();
+
+    const handleManualConsumption = async (contract: any) => {
+        const profId = (user as any)?.professionalId || (professionals && professionals.length > 0 ? professionals[0].id : null);
+
+        if (!profId) {
+            alert('Erro: Não foi possível identificar um profissional para registrar a baixa. Por favor, utilize o botão "Agendar".');
+            return;
+        }
+
+        if (!window.confirm(`Confirmar realização manual de 1 sessão para "${contract.name}"? Isso registrará um atendimento concluído agora.`)) return;
+
+        setIsLoadingDetails(true);
+        try {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            await appointmentsAPI.create({
+                clientId: localClient?.id,
+                professionalId: profId,
+                service_id: null,
+                package_id: contract.type === 'package' ? contract.package_id : undefined,
+                salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
+                package_subscription_id: contract.type === 'package' ? contract.id : undefined,
+                salon_plan_subscription_id: contract.type === 'plan' ? contract.id : undefined,
+                date: dateStr,
+                time: timeStr,
+                status: 'concluido',
+                price: '0.00',
+                payment_status: 'linked_to_package',
+                notes: 'Sessão realizada manualmente via painel do cliente'
+            });
+
+            await refetchClient();
+            alert('Sessão contabilizada com sucesso!');
+        } catch (error: any) {
+            console.error(error);
+            const msg = error.response?.data?.error || error.response?.data?.message || error.message || 'Erro desconhecido.';
+            alert('Erro ao realizar sessão manual: ' + msg);
+        } finally {
+            setIsLoadingDetails(false);
         }
     };
 
@@ -1415,110 +1462,136 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     {/* Content based on sub-tab */}
                                     {activeSubTab === 'servicos' && (() => {
                                         // Build contract-level view from packages (one row per subscription)
-                                        const contracts = (localClient.packages || []).filter(
+                                        const allContracts = (localClient.packages || []).filter(
                                             (pkg: any) => pkg.type === 'package' || pkg.type === 'plan'
                                         );
 
+                                        // Separate active vs archived
+                                        // We need to calculate status dynamically first to know if it is completed by consumption
+                                        const processedContracts = allContracts.map((contract: any) => {
+                                            const relatedAppointments = (localClient.history || []).filter((h: ClientHistory) => {
+                                                if (contract.type === 'package' && contract.package_id) {
+                                                    return h.package_id === contract.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                }
+                                                if (contract.type === 'plan' && contract.plan_id) {
+                                                    return h.salon_plan_id === contract.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                }
+                                                return false;
+                                            });
+                                            const consumed = relatedAppointments.length;
+                                            const total = contract.total_sessions || 0;
+                                            const isCompleted = (total > 0 && consumed >= total) || contract.status === 'archived' || contract.status === 'expired' || contract.status === 'cancelado';
+                                            const isActive = contract.status === 'active' || !contract.status; // default active
+
+                                            // Real status for sorting/filtering
+                                            const effectiveStatus = isCompleted ? 'completed' : (isActive ? 'active' : 'inactive');
+
+                                            return { ...contract, relatedAppointments, consumed, total, isCompleted, isActive, effectiveStatus };
+                                        });
+
+                                        const activeContracts = processedContracts.filter((c: any) => c.effectiveStatus === 'active');
+                                        const archivedContracts = processedContracts.filter((c: any) => c.effectiveStatus !== 'active');
+
+                                        // History of usage
+                                        const usageHistory = (localClient.history || []).filter((h: ClientHistory) =>
+                                            (h.package_id || h.salon_plan_id) &&
+                                            !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase())
+                                        ).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
                                         return (
-                                            <>
-                                                <h4 className="text-lg font-semibold text-gray-800 mb-3">Contratos & Assinaturas ({contracts.length})</h4>
-                                                <div className="space-y-3">
-                                                    {contracts.length > 0 ? contracts.map((contract: any) => {
-                                                        // Count consumed sessions dynamically from history
-                                                        const relatedAppointments = (localClient.history || []).filter((h: ClientHistory) => {
-                                                            if (contract.type === 'package' && contract.package_id) {
-                                                                return h.package_id === contract.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
-                                                            }
-                                                            if (contract.type === 'plan' && contract.plan_id) {
-                                                                return h.salon_plan_id === contract.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
-                                                            }
-                                                            return false;
-                                                        });
+                                            <div className="space-y-6">
+                                                {/* Active Contracts */}
+                                                <div>
+                                                    <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Assinaturas Ativas ({activeContracts.length})
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        {activeContracts.length > 0 ? activeContracts.map((contract: any) => {
+                                                            const { consumed, total, isCompleted, isActive } = contract;
 
-                                                        const consumed = relatedAppointments.length;
-                                                        const total = contract.total_sessions || 0;
-                                                        const isCompleted = (total > 0 && consumed >= total) || contract.status === 'archived' || contract.status === 'expired' || contract.status === 'cancelado';
-                                                        const isActive = contract.status === 'active' || !contract.status;
+                                                            // Nomenclature
+                                                            const sessionLabel = total > 0
+                                                                ? (contract.type === 'plan'
+                                                                    ? `Vez ${consumed} de ${total}`
+                                                                    : `Sessão ${consumed} de ${total}`)
+                                                                : (consumed > 0
+                                                                    ? (contract.type === 'plan' ? `${consumed} vezes` : `${consumed} sessões`)
+                                                                    : 'Nenhuma sessão');
 
-                                                        // Nomenclature
-                                                        const sessionLabel = total > 0
-                                                            ? (contract.type === 'plan'
-                                                                ? `Vez ${consumed} de ${total}`
-                                                                : `Sessão ${consumed} de ${total}`)
-                                                            : (consumed > 0
-                                                                ? (contract.type === 'plan' ? `${consumed} vezes` : `${consumed} sessões`)
-                                                                : 'Nenhuma sessão');
+                                                            // Find a representative history item for ScheduleInternalModal
+                                                            const representativeItem = contract.relatedAppointments.length > 0
+                                                                ? contract.relatedAppointments[contract.relatedAppointments.length - 1]
+                                                                : null;
 
-                                                        // Find a representative history item for ScheduleInternalModal
-                                                        const representativeItem = relatedAppointments.length > 0
-                                                            ? relatedAppointments[relatedAppointments.length - 1]
-                                                            : null;
+                                                            // Fabricate a historyItem for the modal
+                                                            const historyItemForModal: ClientHistory = {
+                                                                id: representativeItem?.id || 0,
+                                                                name: contract.name,
+                                                                date: representativeItem?.date || new Date().toISOString().split('T')[0],
+                                                                time: representativeItem?.time || '09:00',
+                                                                professional: representativeItem?.professional || 'Profissional',
+                                                                professionalId: representativeItem?.professionalId,
+                                                                service_id: representativeItem?.service_id,
+                                                                package_id: contract.type === 'package' ? contract.package_id : undefined,
+                                                                salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
+                                                                type: contract.type === 'package' ? 'Pacote' : 'Plano',
+                                                                total_sessions: total,
+                                                                consumed_sessions: consumed,
+                                                            };
 
-                                                        // Fabricate a historyItem for the modal
-                                                        const historyItemForModal: ClientHistory = {
-                                                            id: representativeItem?.id || 0,
-                                                            name: contract.name,
-                                                            date: representativeItem?.date || new Date().toISOString().split('T')[0],
-                                                            time: representativeItem?.time || '09:00',
-                                                            professional: representativeItem?.professional || 'Profissional',
-                                                            professionalId: representativeItem?.professionalId,
-                                                            service_id: representativeItem?.service_id,
-                                                            package_id: contract.type === 'package' ? contract.package_id : undefined,
-                                                            salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
-                                                            type: contract.type === 'package' ? 'Pacote' : 'Plano',
-                                                            total_sessions: total,
-                                                            consumed_sessions: consumed,
-                                                        };
-
-                                                        return (
-                                                            <div key={contract.id} className={`flex justify-between items-center bg-white p-4 rounded-xl border ${isCompleted ? 'border-gray-200 bg-gray-50' : 'border-blue-200 bg-blue-50/20'}`}>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <p className={`font-bold ${isCompleted ? 'text-gray-500' : 'text-gray-800'}`}>{contract.name}</p>
-                                                                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-teal-50 text-teal-600 border-teal-200'}`}>
-                                                                            {contract.type === 'package' ? 'Pacote' : 'Plano'}
-                                                                        </span>
-                                                                        {!isActive && (
-                                                                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-gray-100 text-gray-500 border-gray-200">
-                                                                                {contract.status === 'archived' ? 'Arquivado' : (contract.status === 'expired' ? 'Expirado' : contract.status)}
+                                                            return (
+                                                                <div key={contract.id} className="flex justify-between items-center bg-white p-4 rounded-xl border border-blue-200 bg-blue-50/20">
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <p className="font-bold text-gray-800">{contract.name}</p>
+                                                                            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-teal-50 text-teal-600 border-teal-200'}`}>
+                                                                                {contract.type === 'package' ? 'Pacote' : 'Plano'}
                                                                             </span>
-                                                                        )}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border text-blue-700 bg-blue-100 border-blue-200">
+                                                                                {sessionLabel}
+                                                                            </span>
+                                                                            {total > 0 && (
+                                                                                <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                                    <div
+                                                                                        className="h-full rounded-full transition-all bg-blue-500"
+                                                                                        style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
+                                                                                    />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${isCompleted ? 'text-gray-600 bg-gray-100 border-gray-200' : 'text-blue-700 bg-blue-100 border-blue-200'}`}>
-                                                                            {sessionLabel}
-                                                                        </span>
-                                                                        {total > 0 && (
-                                                                            <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                                                <div
-                                                                                    className={`h-full rounded-full transition-all ${isCompleted ? 'bg-gray-400' : 'bg-blue-500'}`}
-                                                                                    style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
-                                                                                />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    {/* Archive / Reactivate */}
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
-                                                                        className={`p-2 transition-colors rounded-full ${contract.status === 'archived' ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
-                                                                        title={contract.status === 'archived' ? "Reativar" : "Arquivar/Concluir"}
-                                                                    >
-                                                                        <CheckCircleIcon className="h-5 w-5" />
-                                                                    </button>
+                                                                        {/* Manual Complete */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleManualConsumption(contract); }}
+                                                                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors rounded-full"
+                                                                            title="Concluir Sessão Manualmente (Baixa sem agendar)"
+                                                                        >
+                                                                            <CheckCircleIcon className="h-5 w-5" />
+                                                                        </button>
 
-                                                                    {/* Delete */}
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
-                                                                        className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
-                                                                        title="Excluir"
-                                                                    >
-                                                                        <TrashIcon className="h-5 w-5" />
-                                                                    </button>
+                                                                        {/* Archive / Reactivate */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
+                                                                            className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
+                                                                            title="Arquivar / Encerrar Contrato"
+                                                                        >
+                                                                            <ArchiveIcon className="h-5 w-5" />
+                                                                        </button>
 
-                                                                    {/* Schedule - Only if active and not fully consumed */}
-                                                                    {!isCompleted && isActive ? (
+                                                                        {/* Delete */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
+                                                                            className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
+                                                                            title="Excluir"
+                                                                        >
+                                                                            <TrashIcon className="h-5 w-5" />
+                                                                        </button>
+
+                                                                        {/* Schedule */}
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
@@ -1532,13 +1605,80 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </svg>
                                                                             Agendar
                                                                         </button>
-                                                                    ) : null}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        );
-                                                    }) : <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum pacote ou plano ativo.</p>}
+                                                            );
+                                                        }) : <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">Nenhum contrato ativo.</p>}
+                                                    </div>
                                                 </div>
-                                            </>
+
+                                                {/* History of Usage */}
+                                                <div>
+                                                    <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Histórico de Sessões Realizadas
+                                                    </h4>
+                                                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                                        {usageHistory.length > 0 ? (
+                                                            <div className="divide-y divide-gray-100">
+                                                                {usageHistory.map((item: any, idx: number) => (
+                                                                    <div key={item.id || idx} className="p-3 hover:bg-gray-50 flex justify-between items-center bg-green-50/10">
+                                                                        <div>
+                                                                            <p className="font-medium text-gray-800 text-sm">{item.name}</p>
+                                                                            <p className="text-xs text-gray-500">
+                                                                                {new Date(item.date).toLocaleDateString('pt-BR')} às {item.time} • {item.professional || 'Sem profissional'}
+                                                                            </p>
+                                                                        </div>
+                                                                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 uppercase">
+                                                                            {item.status}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-center text-gray-500 py-4">Nenhuma sessão realizada ainda.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Archived Contracts (Collapsible details if needed, but simple list for now) */}
+                                                {archivedContracts.length > 0 && (
+                                                    <div>
+                                                        <h4 className="text-lg font-semibold text-gray-500 mb-3 flex items-center gap-2 opacity-80">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                                                            Contratos Finalizados / Arquivados
+                                                        </h4>
+                                                        <div className="space-y-3 opacity-75">
+                                                            {archivedContracts.map((contract: any) => (
+                                                                <div key={contract.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                                    <div>
+                                                                        <p className="font-semibold text-gray-600">{contract.name}</p>
+                                                                        <p className="text-xs text-gray-500">
+                                                                            {contract.type === 'package' ? 'Pacote' : 'Plano'} • {contract.status || 'Concluído'} • {contract.consumed} / {contract.total_sessions}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
+                                                                            className="p-1 px-2 text-xs bg-white border rounded shadow-sm hover:bg-gray-100 text-gray-600"
+                                                                            title="Reativar"
+                                                                        >
+                                                                            Reativar
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
+                                                                            className="p-1 text-gray-400 hover:text-red-600"
+                                                                            title="Excluir"
+                                                                        >
+                                                                            <TrashIcon className="h-4 w-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         );
                                     })()}
 
