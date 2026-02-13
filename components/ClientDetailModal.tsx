@@ -1686,8 +1686,35 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                         <>
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">Histórico Completo de Agendamentos</h4>
                                             <div className="space-y-3">
-                                                {localClient.history.length > 0 ? (
-                                                    localClient.history.map(item => {
+                                                {(() => {
+                                                    // Filter history to show only LATEST session for contracts
+                                                    const processedHistory: any[] = [];
+                                                    const seenContracts = new Set<string>();
+
+                                                    // robust sort descending
+                                                    const sortedHistory = [...localClient.history].sort((a, b) => {
+                                                        const dateA = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
+                                                        const dateB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
+                                                        return dateB - dateA;
+                                                    });
+
+                                                    sortedHistory.forEach(item => {
+                                                        if (item.package_id || item.salon_plan_id) {
+                                                            const key = item.package_id ? `pkg-${item.package_id}` : `plan-${item.salon_plan_id}`;
+                                                            if (!seenContracts.has(key)) {
+                                                                seenContracts.add(key);
+                                                                processedHistory.push(item);
+                                                            }
+                                                        } else {
+                                                            processedHistory.push(item);
+                                                        }
+                                                    });
+
+                                                    if (processedHistory.length === 0) {
+                                                        return <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum agendamento encontrado.</p>;
+                                                    }
+
+                                                    return processedHistory.map(item => {
                                                         const consumptionState = getSessionInfo(item);
                                                         const statusKey = (item.status || '').toLowerCase();
                                                         const statusStyles: { [key: string]: string } = {
@@ -1706,6 +1733,15 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
 
                                                         // Logic for showing 'Em Andamento' or 'Ativo' label if it's a non-final session of a package/plan
+                                                        // For the HISTORY tab, we want to show the specific status of THIS appointment, 
+                                                        // BUT user wants it to look like a "Contract Status" card.
+                                                        // If we show "Concluído", it refers to the session.
+                                                        // If we show "Em Andamento", it refers to the contract?
+                                                        // User said: "atualizar o dado para o da versao mais recente".
+                                                        // So if the latest session is "Agendado", status is "Agendado".
+                                                        // If latest is "Concluído", status is "Concluído" (e.g. session 2/3 done).
+                                                        // The 'displayStatus' logic below tries to override 'Concluído' with 'Em Andamento' if not last.
+                                                        // I will keep it for consistency.
                                                         const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
                                                             ? 'Em Andamento'
                                                             : item.status;
@@ -1735,10 +1771,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 </div>
                                                             </div>
                                                         );
-                                                    })
-                                                ) : (
-                                                    <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum agendamento encontrado.</p>
-                                                )}
+                                                    });
+                                                })()}
                                             </div>
                                         </>
                                     )}
