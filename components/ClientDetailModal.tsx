@@ -1416,7 +1416,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${isCanceled ? 'bg-red-100 text-red-800' :
                                                                         (consumptionState && !consumptionState.isLast) ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                                                                         }`}>
-                                                                        {isCanceled ? item.status : (consumptionState && !consumptionState.isLast ? 'Ativo' : 'Concluído')}
+                                                                        {isCanceled ? item.status : (consumptionState && !consumptionState.isLast ? 'Em Andamento' : 'Concluído')}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1513,7 +1513,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
                                                         // Logic for showing 'Em Andamento' or 'Ativo' label if it's a non-final session of a package/plan
                                                         const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
-                                                            ? 'Realizado'
+                                                            ? 'Em Andamento'
                                                             : item.status;
 
                                                         return (
