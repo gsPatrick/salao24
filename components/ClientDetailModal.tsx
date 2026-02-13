@@ -1573,6 +1573,19 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             <CheckCircleIcon className="h-5 w-5" />
                                                                         </button>
 
+                                                                        {/* Refund Latest Session (Admin Only) */}
+                                                                        {isAdmin && representativeItem && (
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleOpenRefundModal(representativeItem.id); }}
+                                                                                className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
+                                                                                title="Estornar Última Sessão"
+                                                                            >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        )}
+
                                                                         {/* Archive / Reactivate */}
                                                                         <button
                                                                             onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
@@ -1775,12 +1788,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         {isAdmin && !isCanceled && (
                                                                             <button
                                                                                 onClick={() => handleOpenRefundModal(item.id)}
-                                                                                className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+                                                                                className="hidden p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
                                                                                 title="Estornar Serviço"
                                                                             >
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                                                                                </svg>
+                                                                                {/* Hidden in history tab per user request, moved to Services tab */}
                                                                             </button>
                                                                         )}
                                                                     </div>
