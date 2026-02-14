@@ -1480,17 +1480,18 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             });
                                             const consumed = relatedAppointments.length;
                                             const total = contract.total_sessions || 0;
-                                            const isCompleted = (total > 0 && consumed >= total) || contract.status === 'archived' || contract.status === 'expired' || contract.status === 'cancelado';
-                                            const isActive = contract.status === 'active' || !contract.status; // default active
 
-                                            // Real status for sorting/filtering
-                                            const effectiveStatus = isCompleted ? 'completed' : (isActive ? 'active' : 'inactive');
+                                            // Realized = fully consumed (active or not)
+                                            const isRealized = total > 0 && consumed >= total;
 
-                                            return { ...contract, relatedAppointments, consumed, total, isCompleted, isActive, effectiveStatus };
+                                            // Active = not realized AND not manually archived/cancelled
+                                            const isActive = !isRealized && (contract.status === 'active' || !contract.status);
+
+                                            return { ...contract, relatedAppointments, consumed, total, isRealized, isActive };
                                         });
 
-                                        const activeContracts = processedContracts.filter((c: any) => c.effectiveStatus === 'active');
-                                        const archivedContracts = processedContracts.filter((c: any) => c.effectiveStatus !== 'active');
+                                        const activeContracts = processedContracts.filter((c: any) => c.isActive);
+                                        const archivedContracts = processedContracts.filter((c: any) => c.isRealized);
 
                                         // History of usage
                                         const usageHistory = (localClient.history || []).filter((h: ClientHistory) =>
@@ -1626,7 +1627,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 {archivedContracts.length > 0 && (
                                                     <div>
                                                         <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                                            Serviços Realizados
+                                                            Serviços Realizados ({archivedContracts.length})
                                                         </h4>
                                                         <div className="space-y-3">
                                                             {archivedContracts.map((contract: any) => (
