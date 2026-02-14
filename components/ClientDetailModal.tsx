@@ -1644,11 +1644,33 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         {/* Action Button: Agendar vs A Realizar */}
                                                                         {!isCompleted && (
                                                                             <button
-                                                                                onClick={(e) => {
+                                                                                onClick={async (e) => {
                                                                                     e.stopPropagation();
                                                                                     if (contract.type === 'service') {
                                                                                         handleManualConsumption(contract);
                                                                                     } else {
+                                                                                        // Auto-conclude logic for packages/plans
+                                                                                        const pendingApt = contract.relatedAppointments?.find((a: any) =>
+                                                                                            ['agendado', 'confirmado', 'reagendado'].includes((a.status || '').toLowerCase())
+                                                                                        );
+
+                                                                                        if (pendingApt) {
+                                                                                            try {
+                                                                                                // Show a small loading indicator or just do it optimistically?
+                                                                                                // For now, we just do it. The user expects it to be automatic.
+                                                                                                await appointmentsAPI.updateStatus(pendingApt.id, 'concluido');
+                                                                                                // Refresh local data to reflect the change immediately in the background
+                                                                                                if (onRefresh) onRefresh();
+
+                                                                                                // Also update local state if possible, though strict sync might require a full refetch
+                                                                                                // We can rely on the modal opening and the user seeing the 'past' as done eventually.
+                                                                                            } catch (err) {
+                                                                                                console.error("Error auto-concluding previous session:", err);
+                                                                                                // We continue to open the modal even if this fails, or maybe we should alert?
+                                                                                                // Continuing seems safer to not block the user.
+                                                                                            }
+                                                                                        }
+
                                                                                         setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
                                                                                     }
                                                                                 }}
