@@ -1504,7 +1504,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 <div>
                                                     <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Assinaturas Ativas ({activeContracts.length})
+                                                        Serviços Pendentes ({activeContracts.length})
                                                     </h4>
                                                     <div className="space-y-3">
                                                         {activeContracts.length > 0 ? activeContracts.map((contract: any) => {
@@ -1638,16 +1638,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     <div>
                                                         <h4 className="text-lg font-semibold text-gray-500 mb-3 flex items-center gap-2 opacity-80">
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                                                            Contratos Finalizados / Arquivados
+                                                            Serviços Realizados
                                                         </h4>
                                                         <div className="space-y-3 opacity-75">
                                                             {archivedContracts.map((contract: any) => (
                                                                 <div key={contract.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                                                                     <div>
                                                                         <p className="font-semibold text-gray-600">{contract.name}</p>
-                                                                        <p className="text-xs text-gray-500">
-                                                                            {contract.type === 'package' ? 'Pacote' : 'Plano'} • {contract.status || 'Concluído'} • {contract.consumed} / {contract.total_sessions}
-                                                                        </p>
                                                                     </div>
                                                                     <div className="flex gap-2">
                                                                         <button
