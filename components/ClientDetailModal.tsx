@@ -326,12 +326,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
             if (contract.appointmentId) {
-                // Update existing appointment status
-                await appointmentsAPI.update(contract.appointmentId, {
-                    status: 'concluido',
-                    price: contract.price || '0.00',
-                    notes: (contract.notes || '') + (contract.notes ? ' | ' : '') + 'Realizado via painel do cliente'
-                });
+                // Update existing appointment status via updateStatus for full side-effects
+                await appointmentsAPI.updateStatus(contract.appointmentId, 'concluido');
             } else {
                 // Create a new consumption record
                 await appointmentsAPI.create({
@@ -1799,6 +1795,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             const isExpanded = expandedAppointments.has(item.id);
                                                             const { latest, sessions } = item;
                                                             const consumptionState = getSessionInfo(latest);
+
+                                                            const hasConcluded = sessions.some((s: any) => {
+                                                                const sLower = (s.status || '').toLowerCase();
+                                                                return sLower === 'concluido' || sLower === 'concluído' || sLower === 'atendido' || sLower === 'finalizado' || sLower === 'pago';
+                                                            });
+
                                                             const statusKey = (latest.status || '').toLowerCase();
                                                             const statusStyles: { [key: string]: string } = {
                                                                 'atendido': 'bg-green-100 text-green-800',
@@ -1811,10 +1813,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 'reagendado': 'bg-yellow-100 text-yellow-800',
                                                                 'cancelado': 'bg-red-100 text-red-800'
                                                             };
-                                                            const statusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
-                                                            const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
-                                                                ? 'Em Andamento'
-                                                                : latest.status;
+
+                                                            // For the group summary status:
+                                                            // 1. If not all sessions are done but some are, show 'Em Andamento'
+                                                            // 2. Otherwise show latest session status
+                                                            let displayStatus = latest.status;
+                                                            let groupStatusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
+
+                                                            if (consumptionState && !consumptionState.isLast && hasConcluded) {
+                                                                displayStatus = 'Em Andamento';
+                                                                groupStatusClass = 'bg-green-100 text-green-800';
+                                                            }
 
                                                             return (
                                                                 <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
@@ -1836,7 +1845,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </p>
                                                                         </div>
                                                                         <div className="flex items-center gap-3">
-                                                                            <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
+                                                                            <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${groupStatusClass}`}>
                                                                                 {displayStatus}
                                                                             </span>
                                                                             <svg
@@ -1860,7 +1869,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                         </p>
                                                                                         <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
                                                                                     </div>
-                                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${s.status?.toLowerCase() === 'concluido' || s.status?.toLowerCase() === 'concluído' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                                                                                         }`}>
                                                                                         {s.status}
                                                                                     </span>
