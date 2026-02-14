@@ -1622,33 +1622,31 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
 
 
-                                                {/* Archived Contracts (Collapsible details if needed, but simple list for now) */}
+                                                {/* Archived Contracts */}
                                                 {archivedContracts.length > 0 && (
                                                     <div>
-                                                        <h4 className="text-lg font-semibold text-gray-500 mb-3 flex items-center gap-2 opacity-80">
+                                                        <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                                             Serviços Realizados
                                                         </h4>
-                                                        <div className="space-y-3 opacity-75">
+                                                        <div className="space-y-3">
                                                             {archivedContracts.map((contract: any) => (
                                                                 <div key={contract.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                                                    <div>
-                                                                        <p className="font-semibold text-gray-600">{contract.name}</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="font-semibold text-gray-800">{contract.name}</p>
+                                                                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-green-50 text-green-600 border-green-200">
+                                                                            Concluído
+                                                                        </span>
                                                                     </div>
                                                                     <div className="flex gap-2">
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
-                                                                            className="p-1 px-2 text-xs bg-white border rounded shadow-sm hover:bg-gray-100 text-gray-600"
-                                                                            title="Reativar"
-                                                                        >
-                                                                            Reativar
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
-                                                                            className="p-1 text-gray-400 hover:text-red-600"
-                                                                            title="Excluir"
-                                                                        >
-                                                                            <TrashIcon className="h-4 w-4" />
-                                                                        </button>
+                                                                        {isAdmin && (
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(contract.id, contract.type); }}
+                                                                                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                                                                title="Excluir"
+                                                                            >
+                                                                                <TrashIcon className="h-5 w-5" />
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             ))}
