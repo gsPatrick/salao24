@@ -1841,6 +1841,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             // 1. If not all sessions are done but some are, show 'Em Andamento'
                                                             // 2. Otherwise show latest session status
                                                             let displayStatus = latest.status;
+                                                            if (['concluido', 'concluído'].includes((latest.status || '').toLowerCase())) {
+                                                                displayStatus = 'Atendido';
+                                                            }
+
                                                             let groupStatusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
 
                                                             if (consumptionState && !consumptionState.isLast && hasConcluded) {
@@ -1915,7 +1919,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                     </div>
                                                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                                                                                         }`}>
-                                                                                        {s.status}
+                                                                                        {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
                                                                                     </span>
                                                                                 </div>
                                                                             ))}
@@ -1942,6 +1946,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
                                                         const isCanceled = statusKey === 'cancelado';
 
+                                                        const displayStatus = ['concluido', 'concluído'].includes(statusKey) ? 'Atendido' : item.status;
+
                                                         return (
                                                             <div key={item.id} className={`bg-white p-4 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
                                                                 <div className="flex justify-between items-start">
@@ -1954,7 +1960,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         {item.price && <p className="text-sm text-gray-500 font-medium">Valor: R$ {item.price}</p>}
                                                                     </div>
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
-                                                                        {item.status}
+                                                                        {displayStatus}
                                                                     </span>
                                                                 </div>
                                                             </div>
