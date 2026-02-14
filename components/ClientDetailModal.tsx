@@ -35,6 +35,7 @@ interface ClientHistory {
     service_name?: string;
     price?: string; // Ensure price is available for refund logic
     status?: string; // Ensure status is available for refund logic
+    session_index?: number; // From API
 }
 
 interface ClientPackage {
@@ -1433,7 +1434,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 const index = allRelevantItems.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
 
-                                const current = index + 1;
+                                const current = item.session_index || (index + 1);
                                 const isLast = current >= total && total > 0;
                                 let label = '';
 
