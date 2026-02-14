@@ -1827,35 +1827,56 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             }
 
                                                             return (
-                                                                <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                                                <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                                                                     <div
                                                                         onClick={() => toggleAccordion(item.id)}
                                                                         className="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center transition-colors"
                                                                     >
                                                                         <div className="flex-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <p className="font-semibold text-gray-800 text-base">{item.name}</p>
                                                                                 {consumptionState && (
-                                                                                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
                                                                                         {consumptionState.label}
                                                                                     </span>
                                                                                 )}
                                                                             </div>
-                                                                            <p className="text-sm text-gray-500 mt-1">
-                                                                                Última sessão: {new Date(latest.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} às {latest.time}
-                                                                            </p>
+
+                                                                            {/* Metadata Row */}
+                                                                            <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                    </svg>
+                                                                                    <span>{new Date(latest.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                    </svg>
+                                                                                    <span>{latest.time}</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <span className="font-medium text-gray-900">
+                                                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(latest.price || '0'))}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
+
                                                                         <div className="flex items-center gap-3">
-                                                                            <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${groupStatusClass}`}>
+                                                                            <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide ${groupStatusClass}`}>
                                                                                 {displayStatus}
                                                                             </span>
-                                                                            <svg
-                                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                                className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                                                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                                            >
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                                            </svg>
+                                                                            <div className={`p-1 rounded-full transition-colors ${isExpanded ? 'bg-gray-200' : 'bg-transparent'}`}>
+                                                                                <svg
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                                                >
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
 
