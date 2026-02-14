@@ -43,9 +43,10 @@ interface ClientPackage {
     total_sessions: number;
     used_sessions: number;
     sessions?: number | string;
-    type: 'package' | 'plan';
+    type: 'package' | 'plan' | 'service';
     package_id?: number;
     plan_id?: number;
+    service_id?: number;
     status: 'active' | 'expired' | 'archived';
 }
 
@@ -326,7 +327,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             await appointmentsAPI.create({
                 clientId: localClient?.id,
                 professionalId: profId,
-                service_id: null,
+                service_id: contract.type === 'service' ? contract.service_id : null,
                 package_id: contract.type === 'package' ? contract.package_id : undefined,
                 salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
                 package_subscription_id: contract.type === 'package' ? contract.id : undefined,
@@ -1463,7 +1464,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     {activeSubTab === 'servicos' && (() => {
                                         // Build contract-level view from packages (one row per subscription)
                                         const allContracts = (localClient.packages || []).filter(
-                                            (pkg: any) => pkg.type === 'package' || pkg.type === 'plan'
+                                            (pkg: any) => pkg.type === 'package' || pkg.type === 'plan' || pkg.type === 'service'
                                         );
 
                                         // Separate active vs archived
@@ -1475,6 +1476,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 }
                                                 if (contract.type === 'plan' && contract.plan_id) {
                                                     return h.salon_plan_id === contract.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                }
+                                                if (contract.type === 'service' && contract.service_id) {
+                                                    return h.service_id === contract.service_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
                                                 }
                                                 return false;
                                             });
@@ -1546,8 +1550,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center gap-2 mb-1">
                                                                             <p className="font-bold text-gray-800">{contract.name}</p>
-                                                                            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-teal-50 text-teal-600 border-teal-200'}`}>
-                                                                                {contract.type === 'package' ? 'Pacote' : 'Plano'}
+                                                                            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                                                                                    contract.type === 'plan' ? 'bg-teal-50 text-teal-600 border-teal-200' :
+                                                                                        'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                                                                                {contract.type === 'package' ? 'Pacote' : contract.type === 'plan' ? 'Plano' : 'Serviço'}
                                                                             </span>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
@@ -1598,20 +1604,28 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </button>
                                                                         )}
 
-                                                                        {/* Schedule */}
+                                                                        {/* Action Button: Agendar vs A Realizar */}
                                                                         {!isCompleted && (
                                                                             <button
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
-                                                                                    setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
+                                                                                    if (contract.type === 'service') {
+                                                                                        handleManualConsumption(contract);
+                                                                                    } else {
+                                                                                        setInternalScheduleModal({ isOpen: true, historyItem: historyItemForModal });
+                                                                                    }
                                                                                 }}
-                                                                                className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1 ml-2"
-                                                                                title="Agendar Próxima"
+                                                                                className={`px-4 py-2 ${contract.type === 'service' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-500 hover:bg-blue-600'} text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1 ml-2`}
+                                                                                title={contract.type === 'service' ? "Marcar como realizado agora" : "Agendar Próxima"}
                                                                             >
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                                </svg>
-                                                                                Agendar
+                                                                                {contract.type === 'service' ? (
+                                                                                    <CheckCircleIcon className="h-4 w-4" />
+                                                                                ) : (
+                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                    </svg>
+                                                                                )}
+                                                                                {contract.type === 'service' ? 'A Realizar' : 'Agendar'}
                                                                             </button>
                                                                         )}
                                                                     </div>
