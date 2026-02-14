@@ -1590,16 +1590,20 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             </span>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
-                                                                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border text-blue-700 bg-blue-100 border-blue-200">
-                                                                                {sessionLabel}
-                                                                            </span>
-                                                                            {total > 0 && (
-                                                                                <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                                                    <div
-                                                                                        className="h-full rounded-full transition-all bg-blue-500"
-                                                                                        style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
-                                                                                    />
-                                                                                </div>
+                                                                            {contract.type !== 'service' && (
+                                                                                <>
+                                                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full border text-blue-700 bg-blue-100 border-blue-200">
+                                                                                        {sessionLabel}
+                                                                                    </span>
+                                                                                    {total > 0 && (
+                                                                                        <div className="flex-1 max-w-[120px] h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                                            <div
+                                                                                                className="h-full rounded-full transition-all bg-blue-500"
+                                                                                                style={{ width: `${Math.min((consumed / total) * 100, 100)}%` }}
+                                                                                            />
+                                                                                        </div>
+                                                                                    )}
+                                                                                </>
                                                                             )}
                                                                         </div>
                                                                     </div>
