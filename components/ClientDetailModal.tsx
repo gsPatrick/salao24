@@ -1573,30 +1573,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             <CheckCircleIcon className="h-5 w-5" />
                                                                         </button>
 
-                                                                        {/* Refund Latest Session (Admin Only) */}
-                                                                        {isAdmin && representativeItem && (
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleOpenRefundModal(representativeItem.id); }}
-                                                                                className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
-                                                                                title="Estornar Última Sessão"
-                                                                            >
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                                                                                </svg>
-                                                                            </button>
-                                                                        )}
-
-                                                                        {/* Archive / Reactivate (Admin Only) */}
-                                                                        {isAdmin && (
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleArchiveSubscription(contract.id, contract.type); }}
-                                                                                className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
-                                                                                title="Arquivar / Encerrar Contrato"
-                                                                            >
-                                                                                <ArchiveIcon className="h-5 w-5" />
-                                                                            </button>
-                                                                        )}
-
                                                                         {/* Delete (Admin Only) */}
                                                                         {isAdmin && (
                                                                             <button
@@ -1637,7 +1613,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 {archivedContracts.length > 0 && (
                                                     <div>
                                                         <h4 className="text-lg font-semibold text-gray-500 mb-3 flex items-center gap-2 opacity-80">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                                                             Serviços Realizados
                                                         </h4>
                                                         <div className="space-y-3 opacity-75">
