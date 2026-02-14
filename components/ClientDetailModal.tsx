@@ -344,7 +344,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     date: dateStr,
                     time: timeStr,
                     status: 'concluido',
-                    price: '0.00',
+                    price: contract.price || '0.00',
                     payment_status: 'linked_to_package',
                     notes: 'Sessão realizada manualmente via painel do cliente'
                 });
@@ -1522,7 +1522,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     isActive,
                                                     relatedAppointments: [h],
                                                     date: h.date,
-                                                    status: h.status
+                                                    status: h.status,
+                                                    price: h.price
                                                 };
                                             });
 
@@ -1573,9 +1574,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 service_id: representativeItem?.service_id,
                                                                 package_id: contract.type === 'package' ? contract.package_id : undefined,
                                                                 salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
-                                                                type: contract.type === 'package' ? 'Pacote' : 'Plano',
+                                                                type: contract.type === 'package' ? 'Pacote' : contract.type === 'plan' ? 'Plano' : 'Serviço',
                                                                 total_sessions: total,
                                                                 consumed_sessions: consumed,
+                                                                price: contract.price || '0.00',
                                                             };
 
                                                             return (
