@@ -178,6 +178,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const [blockReason, setBlockReason] = useState('');
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [notification, setNotification] = useState<string | null>(null);
+    const [expandedAppointments, setExpandedAppointments] = useState<Set<string>>(new Set());
 
     // State for reminders
     const [activeReminder, setActiveReminder] = useState<Reminder | null>(null);
@@ -1732,18 +1733,145 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <h4 className="text-lg font-semibold text-gray-800 mb-3">Histórico Completo de Agendamentos</h4>
                                             <div className="space-y-3">
                                                 {(() => {
-                                                    const processedHistory = [...(localClient.history || [])].sort((a, b) => {
+                                                    const history = [...(localClient.history || [])].sort((a, b) => {
                                                         const dateA = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
                                                         const dateB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
                                                         return dateB - dateA;
                                                     });
 
-                                                    if (processedHistory.length === 0) {
+                                                    if (history.length === 0) {
                                                         return <p className="text-center text-gray-500 py-4 bg-light rounded-lg">Nenhum agendamento encontrado.</p>;
                                                     }
 
-                                                    return processedHistory.map(item => {
-                                                        const consumptionState = getSessionInfo(item);
+                                                    // Use subscription ID (from packages list) to group correctly
+                                                    // But history items might not have the subscription ID directly.
+                                                    // We'll use (package_id/salon_plan_id) as grouping key for now, 
+                                                    // assuming a client doesn't have multiple active contracts for the same package simultaneously (common in this app).
+                                                    const grouped: { [key: string]: ClientHistory[] } = {};
+                                                    const standalone: ClientHistory[] = [];
+
+                                                    history.forEach(item => {
+                                                        if (item.package_id || item.salon_plan_id) {
+                                                            const key = item.package_id ? `pkg-${item.package_id}` : `plan-${item.salon_plan_id}`;
+                                                            if (!grouped[key]) grouped[key] = [];
+                                                            grouped[key].push(item);
+                                                        } else {
+                                                            standalone.push(item);
+                                                        }
+                                                    });
+
+                                                    // Map grouped items into a consolidated structure for rendering
+                                                    const groupedItems = Object.entries(grouped).map(([key, sessions]) => {
+                                                        // The "main" item for display is the most recent one
+                                                        const latest = sessions[0];
+                                                        return {
+                                                            id: key,
+                                                            isGroup: true,
+                                                            latest,
+                                                            sessions,
+                                                            name: latest.name,
+                                                            package_id: latest.package_id,
+                                                            salon_plan_id: latest.salon_plan_id
+                                                        };
+                                                    });
+
+                                                    // Combine and sort again to maintain chronology based on the latest activity
+                                                    const finalItems = [
+                                                        ...groupedItems,
+                                                        ...standalone.map(item => ({ ...item, isGroup: false }))
+                                                    ].sort((a: any, b: any) => {
+                                                        const dateA = new Date(`${(a.isGroup ? a.latest : a).date}T${(a.isGroup ? a.latest : a).time || '00:00'}`).getTime();
+                                                        const dateB = new Date(`${(b.isGroup ? b.latest : b).date}T${(b.isGroup ? b.latest : b).time || '00:00'}`).getTime();
+                                                        return dateB - dateA;
+                                                    });
+
+                                                    const toggleAccordion = (id: string) => {
+                                                        setExpandedAppointments(prev => {
+                                                            const next = new Set(prev);
+                                                            if (next.has(id)) next.delete(id);
+                                                            else next.add(id);
+                                                            return next;
+                                                        });
+                                                    };
+
+                                                    return finalItems.map((item: any) => {
+                                                        if (item.isGroup) {
+                                                            const isExpanded = expandedAppointments.has(item.id);
+                                                            const { latest, sessions } = item;
+                                                            const consumptionState = getSessionInfo(latest);
+                                                            const statusKey = (latest.status || '').toLowerCase();
+                                                            const statusStyles: { [key: string]: string } = {
+                                                                'atendido': 'bg-green-100 text-green-800',
+                                                                'concluido': 'bg-green-100 text-green-800',
+                                                                'concluído': 'bg-green-100 text-green-800',
+                                                                'agendado': 'bg-blue-100 text-blue-800',
+                                                                'a realizar': 'bg-orange-100 text-orange-800',
+                                                                'faltou': 'bg-red-100 text-red-800',
+                                                                'desmarcou': 'bg-gray-100 text-gray-800',
+                                                                'reagendado': 'bg-yellow-100 text-yellow-800',
+                                                                'cancelado': 'bg-red-100 text-red-800'
+                                                            };
+                                                            const statusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
+                                                            const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
+                                                                ? 'Em Andamento'
+                                                                : latest.status;
+
+                                                            return (
+                                                                <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                                                    <div
+                                                                        onClick={() => toggleAccordion(item.id)}
+                                                                        className="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center transition-colors"
+                                                                    >
+                                                                        <div className="flex-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="font-semibold text-gray-800">{item.name}</p>
+                                                                                {consumptionState && (
+                                                                                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                                                                        {consumptionState.label}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <p className="text-sm text-gray-500 mt-1">
+                                                                                Última sessão: {new Date(latest.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} às {latest.time}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
+                                                                                {displayStatus}
+                                                                            </span>
+                                                                            <svg
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                                className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                                                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                                            >
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {isExpanded && (
+                                                                        <div className="bg-gray-50 border-t border-gray-100 p-4 space-y-3">
+                                                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Histórico de Sessões</p>
+                                                                            {sessions.map((s: any) => (
+                                                                                <div key={s.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 pl-2">
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium text-gray-800">
+                                                                                            {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
+                                                                                        </p>
+                                                                                        <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                                    </div>
+                                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${s.status?.toLowerCase() === 'concluido' || s.status?.toLowerCase() === 'concluído' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                                                        }`}>
+                                                                                        {s.status}
+                                                                                    </span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        }
+
                                                         const statusKey = (item.status || '').toLowerCase();
                                                         const statusStyles: { [key: string]: string } = {
                                                             'atendido': 'bg-green-100 text-green-800',
@@ -1759,22 +1887,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                         const statusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
                                                         const isValidDate = item.date && !isNaN(new Date(item.date).getTime()) && item.date !== 'Pendente';
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
-
-                                                        // Logic for showing 'Em Andamento' or 'Ativo' label if it's a non-final session of a package/plan
-                                                        // For the HISTORY tab, we want to show the specific status of THIS appointment, 
-                                                        // BUT user wants it to look like a "Contract Status" card.
-                                                        // If we show "Concluído", it refers to the session.
-                                                        // If we show "Em Andamento", it refers to the contract?
-                                                        // User said: "atualizar o dado para o da versao mais recente".
-                                                        // So if the latest session is "Agendado", status is "Agendado".
-                                                        // If latest is "Concluído", status is "Concluído" (e.g. session 2/3 done).
-                                                        // The 'displayStatus' logic below tries to override 'Concluído' with 'Em Andamento' if not last.
-                                                        // I will keep it for consistency.
-                                                        const displayStatus = (consumptionState && !consumptionState.isLast && (statusKey === 'concluido' || statusKey === 'concluído' || statusKey === 'atendido'))
-                                                            ? 'Em Andamento'
-                                                            : item.status;
-
-                                                        const isCanceled = (item.status || '').toLowerCase() === 'cancelado';
+                                                        const isCanceled = statusKey === 'cancelado';
 
                                                         return (
                                                             <div key={item.id} className={`bg-white p-4 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>
@@ -1782,34 +1895,14 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center gap-2">
                                                                             <p className={`font-semibold ${isCanceled ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{item.name}</p>
-                                                                            {consumptionState && (
-                                                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                                                    {consumptionState.label}
-                                                                                </span>
-                                                                            )}
                                                                         </div>
-                                                                        <p className="text-sm text-gray-500">Data: {dateDisplay}</p>
-                                                                        <p className="text-sm text-gray-500">Hora: {item.time}</p>
+                                                                        <p className="text-sm text-gray-500 mt-1">Data: {dateDisplay} às {item.time}</p>
                                                                         <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
-                                                                        {item.price && <p className="text-sm text-gray-500">Valor: R$ {item.price}</p>}
-                                                                        {isCanceled && item.cancellation_reason && (
-                                                                            <p className="text-xs text-red-500 mt-1 italic">Motivo: {item.cancellation_reason}</p>
-                                                                        )}
+                                                                        {item.price && <p className="text-sm text-gray-500 font-medium">Valor: R$ {item.price}</p>}
                                                                     </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
-                                                                            {displayStatus}
-                                                                        </span>
-                                                                        {isAdmin && !isCanceled && (
-                                                                            <button
-                                                                                onClick={() => handleOpenRefundModal(item.id)}
-                                                                                className="hidden p-1.5 text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
-                                                                                title="Estornar Serviço"
-                                                                            >
-                                                                                {/* Hidden in history tab per user request, moved to Services tab */}
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
+                                                                    <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
+                                                                        {item.status}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         );
