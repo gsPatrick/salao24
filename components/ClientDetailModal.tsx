@@ -324,21 +324,31 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             const dateStr = now.toISOString().split('T')[0];
             const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            await appointmentsAPI.create({
-                clientId: localClient?.id,
-                professionalId: profId,
-                service_id: contract.type === 'service' ? contract.service_id : null,
-                package_id: contract.type === 'package' ? contract.package_id : undefined,
-                salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
-                package_subscription_id: contract.type === 'package' ? contract.id : undefined,
-                salon_plan_subscription_id: contract.type === 'plan' ? contract.id : undefined,
-                date: dateStr,
-                time: timeStr,
-                status: 'concluido',
-                price: '0.00',
-                payment_status: 'linked_to_package',
-                notes: 'Sessão realizada manualmente via painel do cliente'
-            });
+            if (contract.appointmentId) {
+                // Update existing appointment status
+                await appointmentsAPI.update(contract.appointmentId, {
+                    status: 'concluido',
+                    price: contract.price || '0.00',
+                    notes: (contract.notes || '') + (contract.notes ? ' | ' : '') + 'Realizado via painel do cliente'
+                });
+            } else {
+                // Create a new consumption record
+                await appointmentsAPI.create({
+                    clientId: localClient?.id,
+                    professionalId: profId,
+                    service_id: contract.type === 'service' ? contract.service_id : null,
+                    package_id: contract.type === 'package' ? contract.package_id : undefined,
+                    salon_plan_id: contract.type === 'plan' ? contract.plan_id : undefined,
+                    package_subscription_id: contract.type === 'package' ? contract.id : undefined,
+                    salon_plan_subscription_id: contract.type === 'plan' ? contract.id : undefined,
+                    date: dateStr,
+                    time: timeStr,
+                    status: 'concluido',
+                    price: '0.00',
+                    payment_status: 'linked_to_package',
+                    notes: 'Sessão realizada manualmente via painel do cliente'
+                });
+            }
 
             await refetchClient();
             alert('Sessão contabilizada com sucesso!');
@@ -1469,7 +1479,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
                                         // Separate active vs archived
                                         // We need to calculate status dynamically first to know if it is completed by consumption
-                                        const processedContracts = allContracts.map((contract: any) => {
+                                        const packageItems = allContracts.map((contract: any) => {
                                             const relatedAppointments = (localClient.history || []).filter((h: ClientHistory) => {
                                                 if (contract.type === 'package' && contract.package_id) {
                                                     return h.package_id === contract.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
@@ -1494,8 +1504,31 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             return { ...contract, relatedAppointments, consumed, total, isRealized, isActive };
                                         });
 
-                                        const activeContracts = processedContracts.filter((c: any) => c.isActive);
-                                        const archivedContracts = processedContracts.filter((c: any) => c.isRealized);
+                                        // Merge standalone appointments as single services
+                                        const singleServiceItems = (localClient.history || [])
+                                            .filter((h: ClientHistory) => !h.package_id && !h.salon_plan_id)
+                                            .map((h: ClientHistory) => {
+                                                const statusLower = (h.status || '').toLowerCase();
+                                                const isRealized = statusLower === 'concluido' || statusLower === 'finalizado' || statusLower === 'atendido';
+                                                const isActive = !isRealized && !['cancelado', 'desmarcou', 'faltou'].includes(statusLower);
+                                                return {
+                                                    id: `apt-${h.id}`,
+                                                    appointmentId: h.id,
+                                                    name: h.name,
+                                                    type: 'service',
+                                                    consumed: isRealized ? 1 : 0,
+                                                    total: 1,
+                                                    isRealized,
+                                                    isActive,
+                                                    relatedAppointments: [h],
+                                                    date: h.date,
+                                                    status: h.status
+                                                };
+                                            });
+
+                                        const combinedItems = [...packageItems, ...singleServiceItems];
+                                        const activeContracts = combinedItems.filter((c: any) => c.isActive);
+                                        const archivedContracts = combinedItems.filter((c: any) => c.isRealized);
 
                                         // History of usage
                                         const usageHistory = (localClient.history || []).filter((h: ClientHistory) =>
@@ -1551,8 +1584,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         <div className="flex items-center gap-2 mb-1">
                                                                             <p className="font-bold text-gray-800">{contract.name}</p>
                                                                             <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${contract.type === 'package' ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                                                                                    contract.type === 'plan' ? 'bg-teal-50 text-teal-600 border-teal-200' :
-                                                                                        'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                                                                                contract.type === 'plan' ? 'bg-teal-50 text-teal-600 border-teal-200' :
+                                                                                    'bg-orange-50 text-orange-600 border-orange-200'}`}>
                                                                                 {contract.type === 'package' ? 'Pacote' : contract.type === 'plan' ? 'Plano' : 'Serviço'}
                                                                             </span>
                                                                         </div>
