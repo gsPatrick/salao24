@@ -4131,7 +4131,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             return tDate.toDateString() === today.toDateString() && tDate.getHours() >= hour && tDate.getHours() < hour + 2;
                         });
                         const fat = hourTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
-                        const atend = hourAppointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                        const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
+                        const atend = hourAppointments.filter(a => completionStatuses.includes((a.status || '').toLowerCase())).length;
                         dataObj.faturamento.push(fat);
                         dataObj.atendimentos.push(atend);
                         dataObj.agendamentos.push(hourAppointments.length);
@@ -4148,7 +4149,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         const dayAppointments = appointments.filter(a => new Date(a.date).toDateString() === d.toDateString());
                         const dayTransactions = transactions.filter(t => new Date(t.date).toDateString() === d.toDateString());
                         const fat = dayTransactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
-                        const atend = dayAppointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                        const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
+                        const atend = dayAppointments.filter(a => completionStatuses.includes((a.status || '').toLowerCase())).length;
                         dataObj.faturamento.push(fat);
                         dataObj.atendimentos.push(atend);
                         dataObj.agendamentos.push(dayAppointments.length);
@@ -4159,7 +4161,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     // Fallback: show simple metrics for "mes" or "anual"
                     labels.push('Período');
                     const fat = transactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
-                    const atend = appointments.filter(a => a.status === 'Atendido' || a.status === 'Completed').length;
+                    const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
+                    const atend = appointments.filter(a => completionStatuses.includes((a.status || '').toLowerCase())).length;
                     dataObj.faturamento.push(fat);
                     dataObj.atendimentos.push(atend);
                     dataObj.agendamentos.push(appointments.length);

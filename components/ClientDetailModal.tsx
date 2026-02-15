@@ -424,8 +424,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             };
         }
 
+        const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
         const completedServices = localClient.history.filter(
-            h => ['atendido', 'concluido', 'concluído'].includes((h.status || '').toLowerCase())
+            h => completionStatuses.includes((h.status || '').toLowerCase())
         );
 
         if (completedServices.length === 0) {
@@ -1416,8 +1417,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 value={(() => {
                                     // Calculate visits dynamically from history
                                     // A visit is any appointment with a "completed" status
+                                    const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
                                     return (localClient?.history || []).filter(h =>
-                                        ['concluido', 'concluído', 'atendido', 'pago'].includes((h.status || '').toLowerCase())
+                                        completionStatuses.includes((h.status || '').toLowerCase())
                                     ).length;
                                 })()}
                             />
