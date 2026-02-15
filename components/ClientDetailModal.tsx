@@ -1153,7 +1153,26 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         </div>
                     ) : localClient.packages && localClient.packages.length > 0 ? (
                         <div className="space-y-3">
-                            {localClient.packages.map((pkg: any, idx: number) => {
+                            {localClient.packages.filter((pkg: any) => {
+                                const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                const used = (localClient.history || []).filter((h: any) => {
+                                    const statusLower = (h.status || '').toLowerCase();
+                                    const isExcluded = ['cancelado', 'desmarcou', 'faltou'].includes(statusLower);
+                                    if (isExcluded) return false;
+
+                                    if (pkg.type === 'package' && pkg.package_id) {
+                                        return h.package_id === pkg.package_id;
+                                    }
+                                    if (pkg.type === 'plan' && pkg.plan_id) {
+                                        return h.salon_plan_id === pkg.plan_id;
+                                    }
+                                    return false;
+                                }).length;
+
+                                // Hide if completed (used >= total and total > 0)
+                                if (total > 0 && used >= total) return false;
+                                return true;
+                            }).map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
 
@@ -1389,7 +1408,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             </div>
                         </div>
                         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <HeaderStat icon={<VisitsIcon />} label={t('totalVisits')} value={localClient.totalVisits || 0} />
+                            <HeaderStat
+                                icon={<VisitsIcon />}
+                                label={t('totalVisits')}
+                                value={(() => {
+                                    // Calculate visits dynamically from history
+                                    // A visit is any appointment with a "completed" status
+                                    return (localClient?.history || []).filter(h =>
+                                        ['concluido', 'concluído', 'atendido', 'pago'].includes((h.status || '').toLowerCase())
+                                    ).length;
+                                })()}
+                            />
                             <HeaderStat icon={<CalendarIcon />} label={t('lastVisit')} value={lastVisitDateFormatted} />
                             <HeaderStat icon={<UserPlusIcon />} label={t('clientSince')} value={clientSince} />
                         </div>
