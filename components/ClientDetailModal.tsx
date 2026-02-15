@@ -1435,7 +1435,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 const allRelevantItems = localClient?.history.filter(h =>
                                     (item.package_id && h.package_id === item.package_id) ||
                                     (item.salon_plan_id && h.salon_plan_id === item.salon_plan_id)
-                                ).filter(h => !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase()))
+                                )
+                                    // REFINEMENT: Exclude 'faltou' from the sequential count for labels
+                                    .filter(h => !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase()))
                                     .sort((a, b) => {
                                         const dateA = new Date(a.date).getTime();
                                         const dateB = new Date(b.date).getTime();
@@ -1504,11 +1506,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     isMatch = h.service_id === contract.service_id;
                                                 }
 
-                                                if (isMatch && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase())) {
+
+                                                // Exclude 'faltou' from counting towards the package quota
+                                                if (isMatch && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase())) {
                                                     consumedCount++;
-                                                    if (['concluido', 'concluído', 'finalizado', 'atendido', 'pago', 'faltou'].includes((h.status || '').toLowerCase())) {
+                                                    if (['concluido', 'concluído', 'finalizado', 'atendido', 'pago'].includes((h.status || '').toLowerCase())) {
                                                         finalizedCount++;
                                                     }
+                                                    return true;
+                                                }
+                                                // Include 'faltou' in the list for history display, but don't count it
+                                                if (isMatch && (h.status || '').toLowerCase() === 'faltou') {
                                                     return true;
                                                 }
                                                 return false;
@@ -1961,26 +1969,38 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     {isExpanded && (
                                                                         <div className="bg-gray-50 border-t border-gray-100 p-4 space-y-3">
                                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Histórico de Sessões</p>
-                                                                            {sessions.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s: any, idx: number) => {
-                                                                                const sessionLabels = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Sétima", "Oitava", "Nona", "Décima"];
-                                                                                const ordinalLabel = idx < 10 ? sessionLabels[idx] : `${idx + 1}ª`;
+                                                                            {(() => {
+                                                                                let validSessionCount = 0;
+                                                                                return sessions.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s: any) => {
+                                                                                    // Only count valid sessions for the ordinal label
+                                                                                    const isSkipped = ['cancelado', 'desmarcou', 'faltou'].includes((s.status || '').toLowerCase());
+                                                                                    if (!isSkipped) validSessionCount++;
 
-                                                                                return (
-                                                                                    <div key={s.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 pl-2">
-                                                                                        <div>
-                                                                                            <p className="text-xs font-bold text-blue-600 uppercase mb-0.5">{ordinalLabel} Sessão</p>
-                                                                                            <p className="text-sm font-medium text-gray-800">
-                                                                                                {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
-                                                                                            </p>
-                                                                                            <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                                    const sessionLabels = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Sétima", "Oitava", "Nona", "Décima"];
+                                                                                    const ordinalLabel = !isSkipped && validSessionCount <= 10 ? sessionLabels[validSessionCount - 1] : `${validSessionCount}ª`;
+
+                                                                                    return (
+                                                                                        <div key={s.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 pl-2">
+                                                                                            <div>
+                                                                                                {!isSkipped ? (
+                                                                                                    <p className="text-xs font-bold text-blue-600 uppercase mb-0.5">{ordinalLabel} Sessão</p>
+                                                                                                ) : (
+                                                                                                    <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">Sessão {s.status}</p>
+                                                                                                )}
+                                                                                                <p className="text-sm font-medium text-gray-800">
+                                                                                                    {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
+                                                                                                </p>
+                                                                                                <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                                            </div>
+                                                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' :
+                                                                                                s.status?.toLowerCase() === 'faltou' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                                                                                }`}>
+                                                                                                {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
+                                                                                            </span>
                                                                                         </div>
-                                                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                                                            }`}>
-                                                                                            {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
+                                                                                    );
+                                                                                });
+                                                                            })()}
                                                                         </div>
                                                                     )}
                                                                 </div>
