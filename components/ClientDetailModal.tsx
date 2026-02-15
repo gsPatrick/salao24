@@ -415,8 +415,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const financialSummary = useMemo(() => {
         if (!localClient) return { totalSpent: 0, averageTicket: 0, mostFrequentService: t('noServicesYet') };
 
-        // Prioritize backend calculated values if they exist
-        if (localClient.totalSpent !== undefined && localClient.totalSpent > 0) {
+        // Prioritize backend calculated values
+        // We use a small threshold to check if it's set
+        if (localClient.totalSpent !== undefined && parseFloat(localClient.totalSpent) > 0) {
             return {
                 totalSpent: parseFloat(localClient.totalSpent),
                 averageTicket: parseFloat(localClient.averageTicket) || 0,
@@ -424,31 +425,46 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             };
         }
 
+        // Fallback calculation (same logic as updated backend)
         const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
-        const completedServices = localClient.history.filter(
-            h => completionStatuses.includes((h.status || '').toLowerCase())
+
+        // Standalone completed
+        const completedStandalone = (localClient.history || []).filter(
+            h => completionStatuses.includes((h.status || '').toLowerCase()) && !h.package_id && !h.salon_plan_id
         );
 
-        if (completedServices.length === 0) {
-            return { totalSpent: 0, averageTicket: 0, mostFrequentService: t('noServicesYet') };
-        }
+        // Agendado with price (standalone)
+        const agendadoWithPrice = (localClient.history || []).filter(
+            h => (h.status || '').toLowerCase() === 'agendado' && parseFloat(String(h.price || '0')) > 0 && !h.package_id && !h.salon_plan_id
+        );
 
-        const totalSpent = completedServices.reduce((sum, historyItem) => {
-            const priceStr = String(historyItem.price || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
-            const price = parseFloat(priceStr) || 0;
-            return sum + price;
-        }, 0);
+        let totalSpent = 0;
 
-        const averageTicket = totalSpent / completedServices.length;
+        // Sum standalone
+        [...completedStandalone, ...agendadoWithPrice].forEach(h => {
+            const priceStr = String(h.price || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+            totalSpent += parseFloat(priceStr) || 0;
+        });
 
-        const serviceCounts = completedServices.reduce((acc, item) => {
-            acc[item.name] = (acc[item.name] || 0) + 1;
-            return acc;
-        }, {} as { [key: string]: number });
+        // Sum Subscriptions
+        const packageValues = (localClient.packages || [])
+            .filter(p => p.type === 'package' && p.status !== 'canceled')
+            .reduce((sum, p) => sum + (parseFloat(String(p.price || '0')) || 0), 0);
 
-        const mostFrequentService = Object.keys(serviceCounts).reduce((a, b) => serviceCounts[a] > serviceCounts[b] ? a : b, t('noServicesYet'));
+        const planValues = (localClient.packages || [])
+            .filter(p => p.type === 'plan' && p.status !== 'canceled')
+            .reduce((sum, p) => sum + (parseFloat(String(p.price || '0')) || 0), 0);
 
-        return { totalSpent, averageTicket, mostFrequentService };
+        totalSpent += packageValues + planValues;
+
+        const totalVisits = (localClient.history || []).filter(h => completionStatuses.includes((h.status || '').toLowerCase())).length;
+        const averageTicket = totalVisits > 0 ? totalSpent / totalVisits : totalSpent;
+
+        return {
+            totalSpent,
+            averageTicket,
+            mostFrequentService: localClient.mostFrequentService || t('noServicesYet')
+        };
     }, [localClient, t]);
 
     const handlePrint = () => {
