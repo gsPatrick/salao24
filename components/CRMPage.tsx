@@ -237,6 +237,9 @@ const KanbanColumn: React.FC<{
     isConfigOpen: boolean;
     onToggleConfig: (id: string) => void;
     onConfigChange: (id: string, field: keyof CrmColumnConfig, value: any) => void;
+    onActionChange: (columnId: string, actionId: string, field: keyof AIAction, value: any) => void;
+    onCreateAction: (columnId: string) => void;
+    onRemoveAction: (columnId: string, actionId: string) => void;
     onCardClick: (client: any) => void;
     onDragStart: (e: React.DragEvent, clientId: number) => void;
     onDragOver: (e: React.DragEvent) => void;
@@ -253,191 +256,210 @@ const KanbanColumn: React.FC<{
     appointments: any[];
     services: Service[];
     professionals: Professional[];
-}> = ({ columnId, title, icon, clients, config, isConfigOpen, onToggleConfig, onConfigChange, onCardClick, onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave, onDragEnd, isDropTarget, draggedClientId, isIndividualPlan, currentUser, navigate, onOpenChat, appointments, services, professionals }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
+}> = ({
+    columnId, title, icon, clients, config, isConfigOpen, onToggleConfig,
+    onConfigChange, onActionChange, onCreateAction, onRemoveAction,
+    onCardClick, onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave,
+    onDragEnd, isDropTarget, draggedClientId, isIndividualPlan, currentUser,
+    navigate, onOpenChat, appointments, services, professionals
+}) => {
+        const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
-    const isPlanRestricted = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !currentUser?.is_super_admin;
+        // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
+        const isPlanRestricted = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !currentUser?.is_super_admin;
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const fileName = e.target.files[0].name;
-            onConfigChange(columnId, 'attachmentName', fileName);
-        }
-    };
+        const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.files && e.target.files[0]) {
+                const fileName = e.target.files[0].name;
+                onConfigChange(columnId, 'attachmentName', fileName);
+            }
+        };
 
-    const handleRemoveFile = () => {
-        onConfigChange(columnId, 'attachmentName', undefined);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Reset the input so the same file can be selected again
-        }
-    };
+        const handleRemoveFile = () => {
+            onConfigChange(columnId, 'attachmentName', undefined);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''; // Reset the input so the same file can be selected again
+            }
+        };
 
-    return (
-        <div
-            className={`flex-1 min-w-[300px] bg-light rounded-xl p-4 transition-all duration-300 ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            onDragEnter={onDragEnter}
-            onDragLeave={onDragLeave}
-        >
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-secondary flex items-center">{icon} <span className="ml-2">{title} ({clients.length})</span></h2>
-                <button onClick={() => onToggleConfig(columnId)} className="text-gray-400 hover:text-primary p-1 rounded-full transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                </button>
-            </div>
-            {isConfigOpen && (
-                isIndividualPlan ? (
-                    <div className="relative bg-gray-100 p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in text-center">
-                        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-4 rounded-md">
-                            <LockIcon />
-                            <h4 className="font-bold text-gray-800">Exclusivo do Plano Empresa</h4>
-                            <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade do seu plano.</p>
-                            <button
-                                onClick={() => navigate('upgrade_to_empresa')}
-                                className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
-                            >
-                                Fazer Upgrade
-                            </button>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-1">Título da Ação</label>
-                            <input type="text" disabled className="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-1">Descrição (Instrução para IA)</label>
-                            <div className="relative">
-                                <textarea rows={3} disabled className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
-                                <div className="absolute bottom-2 right-2 p-1 text-gray-400 cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-200' : 'bg-gray-200'}`}>
-                            <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-gray-400'}`}>Executar Ação com IA</label>
-                            <div className="w-11 h-6 bg-gray-300 rounded-full relative">
-                                <div className="absolute top-0.5 left-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 transition-all"></div>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="bg-white p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-600 mb-1">Título da Ação</label>
-                            <input
-                                type="text"
-                                value={config.configTitle || ''}
-                                onChange={(e) => onConfigChange(columnId, 'configTitle', e.target.value)}
-                                className="w-full p-2 text-sm border border-gray-300 rounded-md"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor={`config-desc-${columnId}`} className="block text-xs font-bold text-gray-600 mb-1">Descrição (Instrução para IA)</label>
-                            <div className="relative">
-                                <textarea
-                                    id={`config-desc-${columnId}`}
-                                    value={config.configDescription || ''}
-                                    onChange={(e) => onConfigChange(columnId, 'configDescription', e.target.value)}
-                                    rows={3}
-                                    className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md"
-                                    placeholder="Ex: Enviar mensagem de boas-vindas com o cupom BOASVINDAS10..."
-                                />
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                    className="hidden"
-                                    aria-hidden="true"
-                                />
+        return (
+            <div
+                className={`flex-1 min-w-[300px] bg-light rounded-xl p-4 transition-all duration-300 ${isDropTarget ? 'bg-primary/10 border-2 border-dashed border-primary' : ''}`}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                onDragEnter={onDragEnter}
+                onDragLeave={onDragLeave}
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-secondary flex items-center">{icon} <span className="ml-2">{title} ({clients.length})</span></h2>
+                    <button onClick={() => onToggleConfig(columnId)} className="text-gray-400 hover:text-primary p-1 rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                </div>
+                {isConfigOpen && (
+                    isIndividualPlan ? (
+                        <div className="relative bg-gray-100 p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in text-center">
+                            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-4 rounded-md">
+                                <LockIcon />
+                                <h4 className="font-bold text-gray-800">Exclusivo do Plano Empresa</h4>
+                                <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade do seu plano.</p>
                                 <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="absolute bottom-2 right-2 p-1 text-gray-400 hover:text-primary rounded-full transition-colors"
-                                    title="Anexar imagem ou documento"
+                                    onClick={() => navigate('upgrade_to_empresa')}
+                                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                    </svg>
+                                    Fazer Upgrade
                                 </button>
                             </div>
-                            {config.attachmentName && (
-                                <div className="mt-2 p-2 bg-gray-100 rounded-md text-xs flex items-center justify-between animate-fade-in border">
-                                    <span className="truncate text-gray-700 font-medium">{config.attachmentName}</span>
-                                    <button
-                                        type="button"
-                                        onClick={handleRemoveFile}
-                                        className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
-                                        title="Remover anexo"
-                                    >
-                                        &times;
-                                    </button>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-1">Título da Ação</label>
+                                <input type="text" disabled className="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-1">Descrição (Instrução para IA)</label>
+                                <div className="relative">
+                                    <textarea rows={3} disabled className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
+                                    <div className="absolute bottom-2 right-2 p-1 text-gray-400 cursor-not-allowed">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-100' : 'bg-primary/10'}`}>
-                            <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-primary'}`}>
-                                Executar Ação com IA
-                                {isPlanRestricted && (
-                                    <svg className="w-4 h-4 ml-1 inline" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-                                    </svg>
-                                )}
-                            </label>
-                            {isPlanRestricted ? (
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-gray-500">Plano limitado</span>
-                                    <button
-                                        onClick={() => navigate('upgrade_to_empresa')}
-                                        className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-full transition-colors"
-                                    >
-                                        Upgrade
-                                    </button>
+                            </div>
+                            <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-200' : 'bg-gray-200'}`}>
+                                <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-gray-400'}`}>Executar Ação com IA</label>
+                                <div className="w-11 h-6 bg-gray-300 rounded-full relative">
+                                    <div className="absolute top-0.5 left-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 transition-all"></div>
                                 </div>
-                            ) : (
-                                <label htmlFor={`ai-toggle-${columnId}`} className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        id={`ai-toggle-${columnId}`}
-                                        className="sr-only peer"
-                                        checked={config.isAIActionActive || false}
-                                        onChange={(e) => onConfigChange(columnId, 'isAIActionActive', e.target.checked)}
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                </label>
-                            )}
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            className="w-full text-center font-semibold py-2 px-4 rounded-md border-2 border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition-colors text-sm flex items-center justify-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                            Criar Nova Ação
-                        </button>
-                    </div>
-                )
-            )}
-            <div className="space-y-4 h-[calc(100vh-380px)] overflow-y-auto pr-2">
-                {clients.map(client => (
-                    <ClientCard
-                        key={client.id}
-                        client={client}
-                        onClick={() => onCardClick(client)}
-                        onDragStart={(e) => onDragStart(e, client.id)}
-                        onDragEnd={onDragEnd}
-                        isDragging={draggedClientId === client.id}
-                        onOpenChat={onOpenChat}
-                        appointments={appointments}
-                        services={services}
-                        professionals={professionals}
-                    />
-                ))}
+                    ) : (
+                        <div className="space-y-4 animate-fade-in">
+                            {(config.ai_actions || []).map((action, index) => (
+                                <div key={action.id || index} className="bg-white p-4 rounded-md border border-gray-200 shadow-inner space-y-3 relative group/action">
+                                    {config.ai_actions!.length > 1 && (
+                                        <button
+                                            onClick={() => onRemoveAction(columnId, action.id)}
+                                            className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover/action:opacity-100 transition-opacity"
+                                            title="Remover Ação"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Título da Ação</label>
+                                        <input
+                                            type="text"
+                                            value={action.title || ''}
+                                            onChange={(e) => onActionChange(columnId, action.id, 'title', e.target.value)}
+                                            className="w-full p-2 text-sm border border-gray-300 rounded-md"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`config-desc-${columnId}-${action.id}`} className="block text-xs font-bold text-gray-600 mb-1">Descrição (Instrução para IA)</label>
+                                        <div className="relative">
+                                            <textarea
+                                                id={`config-desc-${columnId}-${action.id}`}
+                                                value={action.description || ''}
+                                                onChange={(e) => onActionChange(columnId, action.id, 'description', e.target.value)}
+                                                rows={3}
+                                                className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md"
+                                                placeholder="Ex: Enviar mensagem de boas-vindas..."
+                                            />
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        onActionChange(columnId, action.id, 'attachmentName', e.target.files[0].name);
+                                                    }
+                                                }}
+                                                className="hidden"
+                                                aria-hidden="true"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="absolute bottom-2 right-2 p-1 text-gray-400 hover:text-primary rounded-full transition-colors"
+                                                title="Anexar imagem ou documento"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        {action.attachmentName && (
+                                            <div className="mt-2 p-2 bg-gray-100 rounded-md text-xs flex items-center justify-between animate-fade-in border">
+                                                <span className="truncate text-gray-700 font-medium">{action.attachmentName}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onActionChange(columnId, action.id, 'attachmentName', undefined)}
+                                                    className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                                                    title="Remover anexo"
+                                                >
+                                                    &times;
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-100' : 'bg-primary/10'}`}>
+                                        <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-primary'}`}>
+                                            Executar Ação com IA
+                                            {isPlanRestricted && (
+                                                <svg className="w-4 h-4 ml-1 inline" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                                                </svg>
+                                            )}
+                                        </label>
+                                        {isPlanRestricted ? (
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-xs text-gray-500">Upgrade</span>
+                                            </div>
+                                        ) : (
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={action.active || false}
+                                                    onChange={(e) => onActionChange(columnId, action.id, 'active', e.target.checked)}
+                                                />
+                                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => onCreateAction(columnId)}
+                                className="w-full text-center font-semibold py-2 px-4 rounded-md border-2 border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition-colors text-sm flex items-center justify-center bg-white/50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                Criar Nova Ação
+                            </button>
+                        </div>
+                    )
+                )}
+                <div className="space-y-4 h-[calc(100vh-380px)] overflow-y-auto pr-2">
+                    {clients.map(client => (
+                        <ClientCard
+                            key={client.id}
+                            client={client}
+                            onClick={() => onCardClick(client)}
+                            onDragStart={(e) => onDragStart(e, client.id)}
+                            onDragEnd={onDragEnd}
+                            isDragging={draggedClientId === client.id}
+                            onOpenChat={onOpenChat}
+                            appointments={appointments}
+                            services={services}
+                            professionals={professionals}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
 
 const PlaceholderView: React.FC<{ title: string; icon: React.ReactNode }> = ({ title, icon }) => (
     <div className="text-center p-16 bg-light rounded-lg animate-fade-in border-2 border-dashed">
@@ -449,16 +471,21 @@ const PlaceholderView: React.FC<{ title: string; icon: React.ReactNode }> = ({ t
     </div>
 );
 
+interface AIAction {
+    id: string;
+    title: string;
+    description: string;
+    active: boolean;
+    attachmentName?: string;
+}
+
 interface CrmColumnConfig {
     id: string;
     title: string;
     icon: string;
     visible: boolean;
     deletable?: boolean;
-    configTitle?: string;
-    configDescription?: string;
-    isAIActionActive?: boolean;
-    attachmentName?: string;
+    ai_actions?: AIAction[];
 }
 
 interface Classification {
@@ -511,10 +538,18 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     // Load persisted settings
     useEffect(() => {
-        if (crmSettings?.funnel_stages && Array.isArray(crmSettings.funnel_stages) && crmSettings.funnel_stages.length > 0) {
+        if (crmSettings?.funnel_stages) {
             setColumnsConfig(crmSettings.funnel_stages);
         }
+        if (crmSettings?.classifications) {
+            setClassifications(crmSettings.classifications);
+        }
     }, [crmSettings]);
+
+    const handleSaveClassifications = async (updatedClassifications: Classification[]) => {
+        setClassifications(updatedClassifications);
+        await updateCrmSettings({ classifications: updatedClassifications });
+    };
 
     const [classifications, setClassifications] = useState<Classification[]>([
         { text: 'VIP', icon: '👑' },
@@ -552,17 +587,11 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     }, []);
 
     const handleColumnFilterChange = (columnId: string) => {
-        setColumnFilter(prev => {
-            if (prev.includes(columnId)) {
-                return prev.filter(id => id !== columnId);
-            } else {
-                return [...prev, columnId];
-            }
-        });
-    };
-
-    const handleToggleConfig = (columnId: string) => {
-        setOpenConfigColumnId(prev => (prev === columnId ? null : columnId));
+        setColumnFilter(prev =>
+            prev.includes(columnId)
+                ? prev.filter(id => id !== columnId)
+                : [...prev, columnId]
+        );
     };
 
     const handleColumnConfigChange = async (columnId: string, field: keyof CrmColumnConfig, value: any) => {
@@ -570,7 +599,49 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             col.id === columnId ? { ...col, [field]: value } : col
         );
         setColumnsConfig(updated);
-        // Persist change
+        await updateCrmSettings({ funnel_stages: updated });
+    };
+
+    const handleActionChange = async (columnId: string, actionId: string, field: keyof AIAction, value: any) => {
+        const updated = columnsConfig.map(col => {
+            if (col.id === columnId) {
+                const updatedActions = (col.ai_actions || []).map(action =>
+                    action.id === actionId ? { ...action, [field]: value } : action
+                );
+                return { ...col, ai_actions: updatedActions };
+            }
+            return col;
+        });
+        setColumnsConfig(updated);
+        await updateCrmSettings({ funnel_stages: updated });
+    };
+
+    const handleCreateAction = async (columnId: string) => {
+        const updated = columnsConfig.map(col => {
+            if (col.id === columnId) {
+                const newAction: AIAction = {
+                    id: Date.now().toString(),
+                    title: 'Nova Ação',
+                    description: '',
+                    active: false
+                };
+                return { ...col, ai_actions: [...(col.ai_actions || []), newAction] };
+            }
+            return col;
+        });
+        setColumnsConfig(updated);
+        await updateCrmSettings({ funnel_stages: updated });
+    };
+
+    const handleRemoveAction = async (columnId: string, actionId: string) => {
+        const updated = columnsConfig.map(col => {
+            if (col.id === columnId) {
+                const updatedActions = (col.ai_actions || []).filter(a => a.id !== actionId);
+                return { ...col, ai_actions: updatedActions };
+            }
+            return col;
+        });
+        setColumnsConfig(updated);
         await updateCrmSettings({ funnel_stages: updated });
     };
 
@@ -1289,6 +1360,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                     isConfigOpen={openConfigColumnId === column.id}
                                     onToggleConfig={handleToggleConfig}
                                     onConfigChange={handleColumnConfigChange}
+                                    onActionChange={handleActionChange}
+                                    onCreateAction={handleCreateAction}
+                                    onRemoveAction={handleRemoveAction}
                                     onCardClick={handleCardClick}
                                     onDragStart={handleDragStart}
                                     onDragOver={handleDragOver}
@@ -1508,7 +1582,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 columns={columnsConfig}
                 onSave={handleSaveSettings}
                 classifications={classifications}
-                onClassificationsChange={setClassifications}
+                onClassificationsChange={handleSaveClassifications}
             />
             <ClientDetailModal
                 isOpen={isDetailModalOpen}
