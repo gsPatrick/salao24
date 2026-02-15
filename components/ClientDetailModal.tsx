@@ -1148,7 +1148,18 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                             {localClient.packages.map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
-                                const used = Number(pkg.used_sessions || pkg.clicks || 0);
+
+                                // Dynamic Calculation to match History Tab
+                                const used = (localClient.history || []).filter((h: any) => {
+                                    if (pkg.type === 'package' && pkg.package_id) {
+                                        return h.package_id === pkg.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                    }
+                                    if (pkg.type === 'plan' && pkg.plan_id) {
+                                        return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                    }
+                                    return false;
+                                }).length;
+
                                 const status = (pkg.status || 'active').toLowerCase();
 
                                 let statusClasses = 'bg-green-100 text-green-800';
@@ -1588,6 +1599,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                     'bg-orange-50 text-orange-600 border-orange-200'}`}>
                                                                                 {contract.type === 'package' ? 'Pacote' : contract.type === 'plan' ? 'Plano' : 'Serviço'}
                                                                             </span>
+                                                                            {/* Pago Badge */}
+                                                                            {contract.type !== 'service' && (
+                                                                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-green-50 text-green-600 border-green-200">
+                                                                                    Pago
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
                                                                             {contract.type !== 'service' && (
