@@ -1695,7 +1695,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         </button>
 
                                                                         {/* Refund Latest Session (Admin Only) */}
-                                                                        {isAdmin && representativeItem && (
+                                                                        {isAdmin && representativeItem && (representativeItem.status || '').toLowerCase() !== 'cancelado' && (
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); handleOpenRefundModal(representativeItem.id); }}
                                                                                 className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
@@ -1802,7 +1802,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             )}
                                                                         </div>
                                                                         <div className="flex gap-2">
-                                                                            {isAdmin && representativeItem && (
+                                                                            {isAdmin && representativeItem && !isRefunded && (
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); handleOpenRefundModal(representativeItem.id); }}
                                                                                     className="p-1 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-full"
