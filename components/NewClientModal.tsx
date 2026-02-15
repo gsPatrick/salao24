@@ -127,6 +127,7 @@ const initialFormData = {
   howTheyFoundUs: '',
   indicatedBy: '',
   observations: '',
+  gender: '',
   reminders: [] as any[],
   blocked: { status: false, reason: '' },
 };
@@ -391,6 +392,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           team: clientToEdit.team || '',
           preferredUnit: clientToEdit.preferredUnit || '',
           observations: clientToEdit.observations || '',
+          gender: clientToEdit.gender || '',
           indicatedBy: clientToEdit.indicatedBy || '',
           howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
           instagram: clientToEdit.instagram || '',
@@ -1042,6 +1044,33 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               ]}
               error={errors.maritalStatus}
             />
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm font-medium text-gray-700">Sexo</label>
+              <div className="flex items-center space-x-6 h-10">
+                <label className="flex items-center cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="masculino"
+                    checked={formData.gender === 'masculino'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 transition-colors cursor-pointer"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">Masculino</span>
+                </label>
+                <label className="flex items-center cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="feminino"
+                    checked={formData.gender === 'feminino'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 transition-colors cursor-pointer"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">Feminino</span>
+                </label>
+              </div>
+            </div>
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('relationshipSectionTitle')}</label>
               <div className="space-y-3">

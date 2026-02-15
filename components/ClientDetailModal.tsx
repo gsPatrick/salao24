@@ -144,10 +144,10 @@ const InfoSection: React.FC<{ title: string; children: React.ReactNode; }> = ({ 
     </div>
 );
 
-const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string | React.ReactNode; }> = ({ icon, label, value }) => {
+const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string | React.ReactNode; className?: string }> = ({ icon, label, value, className = "" }) => {
     if (!value || value === 'Não informado' || (typeof value === 'string' && value.trim() === '')) return null;
     return (
-        <div className="flex items-start gap-3">
+        <div className={`flex items-start gap-3 ${className}`}>
             <span className="mt-1 text-gray-400 flex-shrink-0">{icon}</span>
             <div>
                 <p className="text-xs font-semibold text-gray-500">{label}</p>
@@ -1044,6 +1044,16 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         <InfoItem icon={<UsersIcon />} label={t('socialName')} value={localClient.socialName} />
                         <InfoItem icon={<MailIcon />} label={t('email')} value={localClient.email} />
                         <InfoItem icon={<PhoneIcon />} label={t('phone')} value={localClient.phone} />
+                        <InfoItem
+                            icon={<UsersIcon />}
+                            label="Sexo"
+                            value={(() => {
+                                const g = localClient.gender || localClient.sexo;
+                                if (!g) return null;
+                                return g.charAt(0).toUpperCase() + g.slice(1);
+                            })()}
+                            className="md:col-start-2"
+                        />
                         {localClient.additionalPhones?.map((phone: any, idx: number) => (
                             <InfoItem
                                 key={idx}
@@ -1071,7 +1081,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         <InfoItem icon={<UsersIcon />} label="Time" value={localClient.team} />
                         <InfoItem icon={<StarIcon className="h-5 w-5 text-gray-400" />} label="Observações" value={localClient.observations} />
                         <InfoItem icon={<UserPlusIcon />} label="Parentesco" value={localClient.kinship} />
-                        <InfoItem icon={<UsersIcon />} label="Gênero" value={localClient.gender} />
                         <InfoItem
                             icon={<StarIcon className="h-5 w-5 text-gray-400" />}
                             label="Cadastro Completo"
