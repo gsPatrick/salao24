@@ -32,6 +32,8 @@ interface ScheduleInternalModalProps {
         package_id?: number;
         salon_plan_id?: number;
         label: string;
+        sessionIndex?: number;
+        totalSessions?: number;
     } | null;
     onScheduleSuccess: () => void;
     professionals: Professional[];
@@ -166,7 +168,14 @@ const ScheduleInternalModal: React.FC<ScheduleInternalModalProps> = ({
                             <p className="font-bold text-secondary leading-tight">{client.name}</p>
                             <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{service.name}</span>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{contractInfo?.label}</span>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                                    {contractInfo?.label}
+                                    {contractInfo?.sessionIndex && contractInfo?.totalSessions && (
+                                        <span className="ml-1 opacity-90">
+                                            ({contractInfo.sessionIndex}ª de {contractInfo.totalSessions})
+                                        </span>
+                                    )}
+                                </span>
                             </div>
                         </div>
                     </div>

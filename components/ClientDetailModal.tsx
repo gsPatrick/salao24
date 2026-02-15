@@ -1489,23 +1489,37 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                         // Separate active vs archived
                                         // We need to calculate status dynamically first to know if it is completed by consumption
                                         const packageItems = allContracts.map((contract: any) => {
+                                            // Calculate consumed (all valid appointments including scheduled)
+                                            // AND calculate finalized (completed/attended/missed) for realization check
+                                            let consumedCount = 0;
+                                            let finalizedCount = 0;
+
                                             const relatedAppointments = (localClient.history || []).filter((h: ClientHistory) => {
+                                                let isMatch = false;
                                                 if (contract.type === 'package' && contract.package_id) {
-                                                    return h.package_id === contract.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                                    isMatch = h.package_id === contract.package_id;
+                                                } else if (contract.type === 'plan' && contract.plan_id) {
+                                                    isMatch = h.salon_plan_id === contract.plan_id;
+                                                } else if (contract.type === 'service' && contract.service_id) {
+                                                    isMatch = h.service_id === contract.service_id;
                                                 }
-                                                if (contract.type === 'plan' && contract.plan_id) {
-                                                    return h.salon_plan_id === contract.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
-                                                }
-                                                if (contract.type === 'service' && contract.service_id) {
-                                                    return h.service_id === contract.service_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+
+                                                if (isMatch && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase())) {
+                                                    consumedCount++;
+                                                    if (['concluido', 'concluído', 'finalizado', 'atendido', 'pago', 'faltou'].includes((h.status || '').toLowerCase())) {
+                                                        finalizedCount++;
+                                                    }
+                                                    return true;
                                                 }
                                                 return false;
                                             });
-                                            const consumed = relatedAppointments.length;
+
+                                            const consumed = consumedCount;
                                             const total = contract.total_sessions || 0;
 
-                                            // Realized = fully consumed (active or not)
-                                            const isRealized = total > 0 && consumed >= total;
+                                            // Realized = fully finalized (all sessions are Done/Missed/Paid)
+                                            // Bug fix: 'Agendado' counts towards 'consumed' (usage) but NOT 'isRealized' (archiving)
+                                            const isRealized = total > 0 && finalizedCount >= total;
 
                                             // Active = not realized AND not manually archived/cancelled
                                             const isActive = !isRealized && (contract.status === 'active' || !contract.status);
@@ -1518,8 +1532,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             .filter((h: ClientHistory) => !h.package_id && !h.salon_plan_id)
                                             .map((h: ClientHistory) => {
                                                 const statusLower = (h.status || '').toLowerCase();
-                                                const isRealized = statusLower === 'concluido' || statusLower === 'finalizado' || statusLower === 'atendido';
-                                                const isActive = !isRealized && !['cancelado', 'desmarcou', 'faltou'].includes(statusLower);
+                                                // Fix: 'isRealized' for individual single services depends on completion
+                                                const isRealized = ['concluido', 'finalizado', 'atendido', 'pago', 'faltou'].includes(statusLower);
+                                                const isActive = !isRealized && !['cancelado', 'desmarcou'].includes(statusLower);
                                                 return {
                                                     id: `apt-${h.id}`,
                                                     appointmentId: h.id,
@@ -1535,6 +1550,22 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                     price: h.price
                                                 };
                                             });
+
+
+
+                                        // Fix: isActive logic for packages was already calculated in packageItems map above?
+                                        // Wait, I need to update the packageItems map logic too!
+                                        // Let's rewrite packageItems map logic in the Previous Block if possible or here.
+                                        // For now, I will filter based on the properties I set.
+                                        // Actually I need to fix the packageItems mapping logic in lines 1491-1514. 
+                                        // Since this block only covers singleServiceItems, I will target the packageItems block in a separate replace or extensive replace?
+                                        // I will use a separate replace for packageItems to be safe.
+
+                                        // This replacement only handles singleServiceItems? 
+                                        // The TargetContent above was lines 1520-1537 which IS singleServiceItems.
+                                        // The user request requires fixing PACKAGES.
+                                        // I should have targeted lines 1491-1514 too.
+                                        // I will abort this specific replace and do a larger one or separate ones.
 
                                         const combinedItems = [...packageItems, ...singleServiceItems];
                                         const activeContracts = combinedItems.filter((c: any) => c.isActive);
@@ -1573,6 +1604,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 : null;
 
                                                             // Fabricate a historyItem for the modal
+                                                            // Fabricate a historyItem for the modal with next session index info
+                                                            const nextSessionIndex = consumed + 1;
                                                             const historyItemForModal: ClientHistory = {
                                                                 id: representativeItem?.id || 0,
                                                                 name: contract.name,
@@ -1586,6 +1619,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 type: contract.type === 'package' ? 'Pacote' : contract.type === 'plan' ? 'Plano' : 'Serviço',
                                                                 total_sessions: total,
                                                                 consumed_sessions: consumed,
+                                                                // Pass next session info via a temporary property or use session_index if available
+                                                                session_index: nextSessionIndex,
                                                                 price: contract.price || '0.00',
                                                             };
 
@@ -1926,20 +1961,26 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     {isExpanded && (
                                                                         <div className="bg-gray-50 border-t border-gray-100 p-4 space-y-3">
                                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Histórico de Sessões</p>
-                                                                            {sessions.map((s: any) => (
-                                                                                <div key={s.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 pl-2">
-                                                                                    <div>
-                                                                                        <p className="text-sm font-medium text-gray-800">
-                                                                                            {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
-                                                                                        </p>
-                                                                                        <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                            {sessions.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s: any, idx: number) => {
+                                                                                const sessionLabels = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Sétima", "Oitava", "Nona", "Décima"];
+                                                                                const ordinalLabel = idx < 10 ? sessionLabels[idx] : `${idx + 1}ª`;
+
+                                                                                return (
+                                                                                    <div key={s.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 pl-2">
+                                                                                        <div>
+                                                                                            <p className="text-xs font-bold text-blue-600 uppercase mb-0.5">{ordinalLabel} Sessão</p>
+                                                                                            <p className="text-sm font-medium text-gray-800">
+                                                                                                {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
+                                                                                            </p>
+                                                                                            <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                                        </div>
+                                                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                                                            }`}>
+                                                                                            {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
+                                                                                        </span>
                                                                                     </div>
-                                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                                                        }`}>
-                                                                                        {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
-                                                                                    </span>
-                                                                                </div>
-                                                                            ))}
+                                                                                );
+                                                                            })}
                                                                         </div>
                                                                     )}
                                                                 </div>
