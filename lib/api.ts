@@ -726,8 +726,8 @@ export const packagesAPI = {
         const response = await api.put(`/packages/subscriptions/${id}`, data);
         return response.data;
     },
-    deleteSubscription: async (id: number) => {
-        const response = await api.delete(`/packages/subscriptions/${id}`);
+    deleteSubscription: async (id: string | number, params?: { isVirtual?: boolean, clientId?: number }) => {
+        const response = await api.delete(`/packages/subscriptions/${id}`, { params });
         return response.data;
     },
     archiveSubscription: async (id: number) => {
@@ -793,8 +793,8 @@ export const salonPlansAPI = {
         const response = await api.put(`/salon-plans/subscriptions/${id}`, data);
         return response.data;
     },
-    deleteSubscription: async (id: number) => {
-        const response = await api.delete(`/salon-plans/subscriptions/${id}`);
+    deleteSubscription: async (id: string | number, params?: { isVirtual?: boolean, clientId?: number }) => {
+        const response = await api.delete(`/salon-plans/subscriptions/${id}`, { params });
         return response.data;
     },
     archiveSubscription: async (id: number) => {

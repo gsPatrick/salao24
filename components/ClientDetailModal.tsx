@@ -295,17 +295,35 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         }
     };
 
-    const handleDeleteSubscription = async (id: number, type: 'package' | 'plan') => {
-        if (!window.confirm('Tem certeza que deseja excluir este contrato? Esta ação é irreversível.')) return;
+    const handleDeleteSubscription = async (id: any, type: 'package' | 'plan' | 'service') => {
+        if (!window.confirm('Tem certeza que deseja excluir? Esta ação é irreversível e removerá todos os agendamentos vinculados.')) return;
         try {
-            if (type === 'package') {
-                await packagesAPI.deleteSubscription(id);
+            if (type === 'service') {
+                // For standalone services, the ID might be formatted as 'apt-ID'
+                const appointmentId = typeof id === 'string' && id.startsWith('apt-') ? id.replace('apt-', '') : id;
+                await appointmentsAPI.delete(Number(appointmentId));
             } else {
-                await salonPlansAPI.deleteSubscription(id);
+                let finalId = id;
+                let isVirtual = false;
+
+                // Virtual IDs are formatted as 'history-type-ID'
+                if (typeof id === 'string' && id.startsWith('history-')) {
+                    const parts = id.split('-');
+                    finalId = parts[parts.length - 1];
+                    isVirtual = true;
+                }
+
+                const params = isVirtual ? { isVirtual: true, clientId: localClient.id } : undefined;
+
+                if (type === 'package') {
+                    await packagesAPI.deleteSubscription(finalId, params);
+                } else {
+                    await salonPlansAPI.deleteSubscription(finalId, params);
+                }
             }
             await refetchClient();
         } catch (error) {
-            alert('Erro ao excluir contrato.');
+            alert('Erro ao excluir item.');
             console.error(error);
         }
     };
