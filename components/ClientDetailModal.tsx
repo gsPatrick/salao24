@@ -1436,8 +1436,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     (item.package_id && h.package_id === item.package_id) ||
                                     (item.salon_plan_id && h.salon_plan_id === item.salon_plan_id)
                                 )
-                                    // REFINEMENT: Exclude 'faltou' from the sequential count for labels
-                                    .filter(h => !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase()))
+                                    // REFINEMENT: Include 'faltou' in the list so it can be viewed, but we need to handle its index carefully
+                                    .filter(h => !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase()))
                                     .sort((a, b) => {
                                         const dateA = new Date(a.date).getTime();
                                         const dateB = new Date(b.date).getTime();
@@ -1447,11 +1447,21 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 const index = allRelevantItems.findIndex(h => h.id === item.id);
                                 if (index === -1) return null;
 
-                                const current = item.session_index || (index + 1);
+                                // Calculate effective session index (ignoring 'faltou' items before this one)
+                                let effectiveIndex = 0;
+                                for (let i = 0; i <= index; i++) {
+                                    if ((allRelevantItems[i].status || '').toLowerCase() !== 'faltou') {
+                                        effectiveIndex++;
+                                    }
+                                }
+
+                                const current = item.session_index || effectiveIndex;
                                 const isLast = current >= total && total > 0;
                                 let label = '';
 
-                                if (total > 0) {
+                                if ((item.status || '').toLowerCase() === 'faltou') {
+                                    label = 'Faltou';
+                                } else if (total > 0) {
                                     if (item.salon_plan_id) { // Plan nomenclature
                                         label = `Vez ${current} de ${total}`;
                                     } else {
