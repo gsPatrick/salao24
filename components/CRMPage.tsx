@@ -545,12 +545,21 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages) {
-            setColumnsConfig(crmSettings.funnel_stages);
+            // Determine if user can customize (delete) default columns
+            const canCustomize = currentUser?.is_super_admin || currentUser?.plan === 'Pro' || currentUser?.plan === 'Premium';
+
+            const processedStages = crmSettings.funnel_stages.map(stage => ({
+                ...stage,
+                // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
+                deletable: canCustomize ? true : stage.deletable
+            }));
+
+            setColumnsConfig(processedStages);
         }
         if (crmSettings?.classifications) {
             setClassifications(crmSettings.classifications);
         }
-    }, [crmSettings]);
+    }, [crmSettings, currentUser]);
 
     const handleSaveClassifications = async (updatedClassifications: Classification[]) => {
         setClassifications(updatedClassifications);
