@@ -536,6 +536,12 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         { id: 'inactive', title: 'Inativas (60+ dias)', icon: '⏳', visible: true, deletable: false, configTitle: 'Campanha de Reativação', configDescription: 'Enviar mensagem com oferta especial para clientes que não retornam há mais de 60 dias.', isAIActionActive: false },
     ]);
 
+    const [classifications, setClassifications] = useState<Classification[]>([
+        { text: 'VIP', icon: '👑' },
+        { text: 'Potencial', icon: '💡' },
+        { text: 'Retorno', icon: '🔄' }
+    ]);
+
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages) {
@@ -550,12 +556,6 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         setClassifications(updatedClassifications);
         await updateCrmSettings({ classifications: updatedClassifications });
     };
-
-    const [classifications, setClassifications] = useState<Classification[]>([
-        { text: 'VIP', icon: '👑' },
-        { text: 'Potencial', icon: '💡' },
-        { text: 'Retorno', icon: '🔄' }
-    ]);
 
     // State for drag and drop
     const [cardPositions, setCardPositions] = useState<{ [key: string]: any[] } | null>(null);
@@ -585,6 +585,10 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    const handleToggleConfig = (columnId: string) => {
+        setOpenConfigColumnId(prev => (prev === columnId ? null : columnId));
+    };
 
     const handleColumnFilterChange = (columnId: string) => {
         setColumnFilter(prev =>
