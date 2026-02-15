@@ -1052,7 +1052,6 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 if (!g) return null;
                                 return g.charAt(0).toUpperCase() + g.slice(1);
                             })()}
-                            className="md:col-start-2"
                         />
                         {localClient.additionalPhones?.map((phone: any, idx: number) => (
                             <InfoItem
@@ -1161,10 +1160,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 // Dynamic Calculation to match History Tab
                                 const used = (localClient.history || []).filter((h: any) => {
                                     if (pkg.type === 'package' && pkg.package_id) {
-                                        return h.package_id === pkg.package_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                        return h.package_id === pkg.package_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
                                     }
                                     if (pkg.type === 'plan' && pkg.plan_id) {
-                                        return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase());
+                                        return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
                                     }
                                     return false;
                                 }).length;
@@ -1559,9 +1558,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             .filter((h: ClientHistory) => !h.package_id && !h.salon_plan_id)
                                             .map((h: ClientHistory) => {
                                                 const statusLower = (h.status || '').toLowerCase();
-                                                // Fix: 'isRealized' for individual single services depends on completion
-                                                const isRealized = ['concluido', 'finalizado', 'atendido', 'pago', 'faltou'].includes(statusLower);
-                                                const isActive = !isRealized && !['cancelado', 'desmarcou'].includes(statusLower);
+                                                // Fix: 'isRealized' for individual single services depends on completion or cancellation (refund)
+                                                const isRealized = ['concluido', 'finalizado', 'atendido', 'pago', 'faltou', 'cancelado', 'desmarcou'].includes(statusLower);
+                                                const isActive = !isRealized;
                                                 return {
                                                     id: `apt-${h.id}`,
                                                     appointmentId: h.id,
@@ -1600,8 +1599,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
                                         // History of usage
                                         const usageHistory = (localClient.history || []).filter((h: ClientHistory) =>
-                                            (h.package_id || h.salon_plan_id) &&
-                                            !['cancelado', 'desmarcou'].includes((h.status || '').toLowerCase())
+                                            (h.package_id || h.salon_plan_id)
                                         ).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
                                         return (
@@ -1786,13 +1784,22 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 const representativeItem = contract.relatedAppointments.length > 0
                                                                     ? contract.relatedAppointments[contract.relatedAppointments.length - 1]
                                                                     : null;
+                                                                const isRefunded = (contract.status || '').toLowerCase() === 'cancelado' ||
+                                                                    (representativeItem?.status || '').toLowerCase() === 'cancelado';
+
                                                                 return (
                                                                     <div key={contract.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                                                                         <div className="flex items-center gap-2">
-                                                                            <p className="font-semibold text-gray-800">{contract.name}</p>
-                                                                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-green-50 text-green-600 border-green-200">
-                                                                                Pago
-                                                                            </span>
+                                                                            <p className={`font-semibold ${isRefunded ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{contract.name}</p>
+                                                                            {isRefunded ? (
+                                                                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-orange-50 text-orange-600 border-orange-200">
+                                                                                    Estornado
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border bg-green-50 text-green-600 border-green-200">
+                                                                                    Pago
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                         <div className="flex gap-2">
                                                                             {isAdmin && representativeItem && (
@@ -1904,6 +1911,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             });
 
                                                             const statusKey = (latest.status || '').toLowerCase();
+                                                            const isRefunded = statusKey === 'cancelado';
                                                             const statusStyles: { [key: string]: string } = {
                                                                 'atendido': 'bg-green-100 text-green-800',
                                                                 'concluido': 'bg-green-100 text-green-800',
@@ -1913,15 +1921,17 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                 'faltou': 'bg-red-100 text-red-800',
                                                                 'desmarcou': 'bg-gray-100 text-gray-800',
                                                                 'reagendado': 'bg-yellow-100 text-yellow-800',
-                                                                'cancelado': 'bg-red-100 text-red-800'
+                                                                'cancelado': 'bg-orange-100 text-orange-800'
                                                             };
 
                                                             // For the group summary status:
                                                             // 1. If not all sessions are done but some are, show 'Em Andamento'
                                                             // 2. Otherwise show latest session status
                                                             let displayStatus = latest.status;
-                                                            if (['concluido', 'concluído'].includes((latest.status || '').toLowerCase())) {
+                                                            if (['concluido', 'concluído'].includes(statusKey)) {
                                                                 displayStatus = 'Atendido';
+                                                            } else if (statusKey === 'cancelado') {
+                                                                displayStatus = 'Estornado';
                                                             }
 
                                                             let groupStatusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
@@ -1939,7 +1949,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                     >
                                                                         <div className="flex-1">
                                                                             <div className="flex items-center gap-2 mb-1">
-                                                                                <p className="font-semibold text-gray-800 text-base">{item.name}</p>
+                                                                                <p className={`font-semibold text-base ${isRefunded ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{item.name}</p>
                                                                                 {consumptionState && (
                                                                                     <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
                                                                                         {consumptionState.label}
@@ -2006,15 +2016,18 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                                 ) : (
                                                                                                     <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">Sessão {s.status}</p>
                                                                                                 )}
-                                                                                                <p className="text-sm font-medium text-gray-800">
+                                                                                                <p className={`text-sm font-medium ${isSkipped && (s.status || '').toLowerCase() === 'cancelado' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                                                                                                     {new Date(s.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - {s.time}
                                                                                                 </p>
-                                                                                                <p className="text-xs text-gray-500">Profissional: {s.professional}</p>
+                                                                                                <p className={`text-xs ${isSkipped && (s.status || '').toLowerCase() === 'cancelado' ? 'text-gray-400 line-through' : 'text-gray-500'}`}>Profissional: {s.professional}</p>
                                                                                             </div>
                                                                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${['concluido', 'concluído', 'atendido', 'finalizado', 'pago'].includes(s.status?.toLowerCase()) ? 'bg-green-100 text-green-700' :
-                                                                                                s.status?.toLowerCase() === 'faltou' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                                                                                s.status?.toLowerCase() === 'faltou' ? 'bg-red-100 text-red-700' :
+                                                                                                    s.status?.toLowerCase() === 'cancelado' ? 'bg-orange-100 text-orange-700' :
+                                                                                                        'bg-blue-100 text-blue-700'
                                                                                                 }`}>
-                                                                                                {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' : s.status}
+                                                                                                {['concluido', 'concluído'].includes((s.status || '').toLowerCase()) ? 'Atendido' :
+                                                                                                    (s.status || '').toLowerCase() === 'cancelado' ? 'Estornado' : s.status}
                                                                                             </span>
                                                                                         </div>
                                                                                     );
@@ -2036,14 +2049,15 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             'faltou': 'bg-red-100 text-red-800',
                                                             'desmarcou': 'bg-gray-100 text-gray-800',
                                                             'reagendado': 'bg-yellow-100 text-yellow-800',
-                                                            'cancelado': 'bg-red-100 text-red-800'
+                                                            'cancelado': 'bg-orange-100 text-orange-800'
                                                         };
                                                         const statusClass = statusStyles[statusKey] || 'bg-gray-100 text-gray-800';
                                                         const isValidDate = item.date && !isNaN(new Date(item.date).getTime()) && item.date !== 'Pendente';
                                                         const dateDisplay = isValidDate ? new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="italic">{t('datePending')}</span>;
                                                         const isCanceled = statusKey === 'cancelado';
 
-                                                        const displayStatus = ['concluido', 'concluído'].includes(statusKey) ? 'Atendido' : item.status;
+                                                        const displayStatus = ['concluido', 'concluído'].includes(statusKey) ? 'Atendido' :
+                                                            statusKey === 'cancelado' ? 'Estornado' : item.status;
 
                                                         return (
                                                             <div key={item.id} className={`bg-white p-4 rounded-lg border ${isCanceled ? 'opacity-60 bg-gray-50' : ''}`}>

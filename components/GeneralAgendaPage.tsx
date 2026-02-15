@@ -8,7 +8,8 @@ import BlockTimeModal from './BlockTimeModal';
 import SchedulingLinkModal from './SchedulingLinkModal'; // New Import
 import ReassignAppointmentModal from './ReassignAppointmentModal';
 import ProfessionalColumn from './ProfessionalColumn';
-import { useData } from '../contexts/DataContext';
+import { useData, mapAppointmentFromAPI, mapBlockFromAPI } from '../contexts/DataContext';
+import { appointmentsAPI } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -113,6 +114,60 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   const calendarRef = useRef<HTMLDivElement>(null);
   const [preRegInitialData, setPreRegInitialData] = useState<any>(null);
 
+  // Local state for optimized data fetching
+  const [fetchedAppointments, setFetchedAppointments] = useState<Appointment[]>([]);
+  const [fetchedBlocks, setFetchedBlocks] = useState<any[]>([]);
+  const [isLoadingAgenda, setIsLoadingAgenda] = useState(false);
+
+  const fetchAgendaData = async () => {
+    setIsLoadingAgenda(true);
+    try {
+      let dateFrom, dateTo;
+      if (viewMode === 'day') {
+        dateFrom = formatDateForLookup(currentDate);
+        dateTo = dateFrom;
+      } else if (viewMode === 'week') {
+        // Calculate week range
+        const start = new Date(currentDate);
+        const dayOfWeek = start.getDay();
+        const diff = start.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        start.setDate(diff);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        dateFrom = formatDateForLookup(start);
+        dateTo = formatDateForLookup(end);
+      } else if (viewMode === 'month') {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        dateFrom = formatDateForLookup(firstDay);
+        dateTo = formatDateForLookup(lastDay);
+      }
+
+      const [aptResponse, blockResponse] = await Promise.all([
+        appointmentsAPI.getAll({ dateFrom, dateTo, unitId: selectedUnitId }),
+        appointmentsAPI.getBlocks({ dateFrom, dateTo, unit: 'all' })
+      ]);
+
+      if (aptResponse.success !== false) {
+        setFetchedAppointments((aptResponse.data || []).map(mapAppointmentFromAPI));
+      }
+      if (blockResponse.success !== false) {
+        setFetchedBlocks((blockResponse.data || []).map(mapBlockFromAPI));
+      }
+
+    } catch (error) {
+      console.error("Error fetching agenda data:", error);
+    } finally {
+      setIsLoadingAgenda(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgendaData();
+  }, [currentDate, viewMode, selectedUnitId]);
+
   const canDragAndDrop = currentUser && ['admin', 'gerente', 'concierge'].includes(currentUser.role || '');
 
   useEffect(() => {
@@ -169,7 +224,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
 
   const handleDragEnter = (e: React.DragEvent, professionalId: number) => {
     e.preventDefault();
-    const appointment = contextAppointments.find(a => a.id === draggedAppointmentId);
+    const appointment = fetchedAppointments.find(a => a.id === draggedAppointmentId);
     if (appointment && appointment.professionalId !== professionalId) {
       setDragOverProfessionalId(professionalId);
     }
@@ -183,10 +238,11 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   const handleDrop = async (e: React.DragEvent, targetProfessionalId: number) => {
     e.preventDefault();
     const appointmentId = Number(e.dataTransfer.getData('appointmentId'));
-    const appointment = contextAppointments.find(a => a.id === appointmentId);
+    const appointment = fetchedAppointments.find(a => a.id === appointmentId);
 
     if (appointment && appointment.professionalId !== targetProfessionalId) {
       await saveAppointment({ ...appointment, professionalId: targetProfessionalId });
+      await fetchAgendaData(); // Refresh data
     }
     handleDragEnd();
   };
@@ -194,7 +250,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   const handleDropAtTime = async (e: React.DragEvent, targetProfessionalId: number, targetTime: string) => {
     e.preventDefault();
     const appointmentId = Number(e.dataTransfer.getData('appointmentId'));
-    const appointment = contextAppointments.find(a => a.id === appointmentId);
+    const appointment = fetchedAppointments.find(a => a.id === appointmentId);
 
     if (appointment) {
       const updateData: any = { ...appointment, professionalId: targetProfessionalId, time: targetTime };
@@ -208,6 +264,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
       updateData.endTime = minutesToTime(newStart + duration);
 
       await saveAppointment(updateData);
+      await fetchAgendaData(); // Refresh data
     }
     handleDragEnd();
   };
@@ -218,7 +275,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   };
 
   const handleStatusChange = async (appointmentId: number, newStatus: AppointmentStatus) => {
-    const targetAppointment = contextAppointments.find(appt => appt.id === appointmentId);
+    const targetAppointment = fetchedAppointments.find(appt => appt.id === appointmentId);
 
     if (targetAppointment && newStatus === 'Em Espera') {
       const client = contextClients.find(c => c.id === targetAppointment.clientId);
@@ -233,6 +290,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
     }
 
     await updateAppointmentStatus(appointmentId, newStatus);
+    await fetchAgendaData(); // Refresh data
   };
 
   const handleSaveBlock = async (blockData: any) => {
@@ -240,11 +298,13 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
       ...blockData,
     });
     setIsBlockModalOpen(false);
+    await fetchAgendaData(); // Refresh data
   };
 
   const handleDeleteBlock = async (blockId: number) => {
     if (window.confirm('Tem certeza que deseja remover este bloqueio?')) {
       await deleteBlock(blockId);
+      await fetchAgendaData(); // Refresh data
     }
   };
 
@@ -254,9 +314,10 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   };
 
   const handleSaveReassignment = async (appointmentId: number, newProfessionalId: number, newDate: string, newTime: string) => {
-    const appt = contextAppointments.find(a => a.id === appointmentId);
+    const appt = fetchedAppointments.find(a => a.id === appointmentId);
     if (appt) {
       await saveAppointment({ ...appt, professionalId: newProfessionalId, date: newDate, time: newTime });
+      await fetchAgendaData(); // Refresh data
     }
     setIsReassignModalOpen(false);
   };
@@ -329,7 +390,8 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
         });
 
         // Force refresh to ensure the new appointment appears immediately
-        await refreshAppointments();
+        // await refreshAppointments(); // REMOVED global refresh
+        await fetchAgendaData(); // Refresh local data
 
         // Optional: Show success message/toast
         // alert("Agendamento realizado com sucesso!"); 
@@ -500,12 +562,15 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
   };
 
   const renderAgendaContent = () => {
+    if (isLoadingAgenda) {
+      return <div className="p-8 text-center text-gray-500">Carregando agenda...</div>;
+    }
     const dateKey = formatDateForLookup(currentDate);
-    const appointmentsForDay = contextAppointments.filter(a => {
+    const appointmentsForDay = fetchedAppointments.filter(a => {
       const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
       return apptDate === dateKey;
-    }); // Using contextAppointments
-    const blocksForDay = contextBlocks.filter(b => b.date === dateKey);
+    }); // Using fetchedAppointments
+    const blocksForDay = fetchedBlocks.filter(b => b.date === dateKey); // Using fetchedBlocks
 
     if (viewMode === 'day') {
       return (
@@ -555,7 +620,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
               const day = new Date(startOfWeek);
               day.setDate(startOfWeek.getDate() + i);
               const dayDateKey = formatDateForLookup(day);
-              const appointmentsForDay = contextAppointments.filter(a => {
+              const appointmentsForDay = fetchedAppointments.filter(a => {
                 const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
                 // Exclude cancelled/deleted appointments
                 const status = (a.status || '').toLowerCase();
@@ -608,7 +673,7 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
             {Array.from({ length: daysInMonth }).map((_, day) => {
               const date = new Date(year, month, day + 1);
               const dayDateKey = formatDateForLookup(date);
-              const appointmentsForDay = contextAppointments.filter(a => {
+              const appointmentsForDay = fetchedAppointments.filter(a => {
                 const apptDate = a.date.includes('T') ? a.date.split('T')[0] : a.date;
                 // Exclude cancelled/deleted appointments
                 const status = (a.status || '').toLowerCase();
