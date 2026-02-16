@@ -219,7 +219,7 @@ const ClientCard: React.FC<{
 
                 return (
                     <div className="mt-4 pt-1">
-                        <h4 className={`text-sm font-semibold mb-3 ${isBirthdayMonth ? 'text-gray-800' : 'text-secondary'}`}>Pacotes Ativos</h4>
+                        <h4 className={`text-sm font-semibold mb-3 ${isBirthdayMonth ? 'text-gray-800' : 'text-secondary'}`}>Pacotes e Planos Ativos</h4>
                         <div className="space-y-4">
                             {activePackages.map((pkg: any, idx: number) => {
                                 const total = Number(pkg.totalSessions || pkg.total_sessions || pkg.sessions || 0);
