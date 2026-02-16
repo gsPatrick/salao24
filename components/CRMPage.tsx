@@ -112,21 +112,21 @@ const ClientCard: React.FC<{
             onDragEnd={onDragEnd}
         >
             {isBirthdayMonth && <Confetti />}
-            <div className="flex items-start gap-3 relative z-10">
+            <div className="flex items-start gap-4 relative z-10">
                 <div className="relative flex-shrink-0">
-                    <img src={client.photo} alt={client.name} className="w-14 h-14 rounded-full object-cover" />
+                    <img src={client.photo} alt={client.name} className="w-16 h-16 rounded-full object-cover shadow-sm border border-gray-100" />
                     {isBirthdayMonth && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
+                        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-3xl transform -rotate-[15deg]" role="img" aria-label="Rosto festivo">🥳</span>
                     )}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-1">
-                        <h3 className={`font-bold text-sm truncate ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
+                    <div className="flex justify-between items-start gap-1 mb-1">
+                        <h3 className={`font-bold text-base truncate leading-tight ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
                         <ClassificationBadge classification={classification} />
                     </div>
-                    <div className={`text-xs space-y-1 mt-1 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
+                    <div className={`text-xs space-y-1.5 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
                         <div className="flex items-center justify-between">
-                            <a href={`tel:${client.phone.replace(/\D/g, '')}`} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-semibold text-current hover:text-primary transition-colors truncate">
+                            <a href={`tel:${client.phone.replace(/\D/g, '')}`} title="Ligar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold text-current hover:text-primary transition-colors truncate">
                                 <PhoneIcon />
                                 <span className="truncate">{client.phone}</span>
                             </a>
@@ -141,15 +141,18 @@ const ClientCard: React.FC<{
                                 <WhatsAppIcon />
                             </button>
                         </div>
-                        <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 text-current hover:text-primary transition-colors truncate">
+                        <a href={`mailto:${client.email}`} className="flex items-center gap-2 text-current hover:text-primary transition-colors truncate">
                             <MailIcon /><span className="truncate">{client.email}</span>
                         </a>
-                        <p className="flex items-center gap-1.5"><CakeIcon /><span>{formattedBirthdate}</span></p>
+                        <p className="flex items-center gap-2"><CakeIcon /><span className="font-medium">{formattedBirthdate}</span></p>
                     </div>
                 </div>
             </div>
-            <div className="mt-3 border-t pt-2 relative z-10">
-                <h4 className={`text-xs font-semibold mb-1.5 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Próximo Agendamento:</h4>
+
+            <hr className="my-3 border-gray-100" />
+
+            <div className="relative z-10">
+                <h4 className={`text-sm font-semibold mb-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-secondary'}`}>Próximo Agendamento:</h4>
                 <div className={`text-xs ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-700'}`}>
                     {(() => {
                         const today = new Date();
@@ -171,42 +174,43 @@ const ClientCard: React.FC<{
                             const formattedDate = `${aDay}/${aMonth}/${aYear}`;
 
                             return (
-                                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-                                    <span className="font-medium">Data:</span>
-                                    <span className="text-right">{formattedDate}</span>
-                                    <span className="font-medium">Hora:</span>
-                                    <span className="text-right">{nextAppointment.time}</span>
-                                    <span className="font-medium">Serviço:</span>
-                                    <span className="text-right break-words">{nextAppointment.service}</span>
-                                    <span className="font-medium">Profissional:</span>
-                                    <span className="text-right">{professional?.name || 'Não definido'}</span>
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-secondary">Data:</span>
+                                        <span className="font-semibold">{formattedDate}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-secondary">Hora:</span>
+                                        <span className="font-semibold">{nextAppointment.time}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start">
+                                        <span className="font-medium text-secondary flex-shrink-0 mr-4">Serviço:</span>
+                                        <span className="text-right break-words font-semibold">{nextAppointment.service}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-secondary">Profissional:</span>
+                                        <span className="font-semibold">{professional?.name || 'Não definido'}</span>
+                                    </div>
                                 </div>
                             );
                         } else {
-                            return <span className="text-gray-500">Nenhum agendamento futuro</span>;
+                            return <span className="text-gray-500 italic">Nenhum agendamento futuro</span>;
                         }
                     })()}
                 </div>
             </div>
+
             {(() => {
-                // Apply same filtering logic as ClientDetailModal
                 const activePackages = (client.packages || []).filter((pkg: any) => {
                     const total = Number(pkg.totalSessions || pkg.total_sessions || pkg.sessions || 0);
                     const used = (client.history || []).filter((h: any) => {
                         const statusLower = (h.status || '').toLowerCase();
                         const isExcluded = ['cancelado', 'desmarcou', 'faltou'].includes(statusLower);
                         if (isExcluded) return false;
-
-                        if (pkg.type === 'package' && pkg.package_id) {
-                            return h.package_id === pkg.package_id;
-                        }
-                        if (pkg.type === 'plan' && pkg.plan_id) {
-                            return h.salon_plan_id === pkg.plan_id;
-                        }
+                        if (pkg.type === 'package' && pkg.package_id) return h.package_id === pkg.package_id;
+                        if (pkg.type === 'plan' && pkg.plan_id) return h.salon_plan_id === pkg.plan_id;
                         return false;
                     }).length;
-
-                    // Hide if completed
                     if (total > 0 && used >= total) return false;
                     return true;
                 });
@@ -214,43 +218,31 @@ const ClientCard: React.FC<{
                 if (activePackages.length === 0) return null;
 
                 return (
-                    <div className="mt-3 border-t pt-2">
-                        <h4 className={`text-xs font-semibold mb-1.5 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Planos e Pacotes Ativos</h4>
-                        <div className="space-y-1.5">
+                    <div className="mt-4 pt-1">
+                        <h4 className={`text-sm font-semibold mb-3 ${isBirthdayMonth ? 'text-gray-800' : 'text-secondary'}`}>Pacotes Ativos</h4>
+                        <div className="space-y-4">
                             {activePackages.map((pkg: any, idx: number) => {
-                                const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.totalSessions || pkg.total_sessions || pkg.sessions || 0);
                                 const used = (client.history || []).filter((h: any) => {
-                                    if (pkg.type === 'package' && pkg.package_id) {
-                                        return h.package_id === pkg.package_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
-                                    }
-                                    if (pkg.type === 'plan' && pkg.plan_id) {
-                                        return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
-                                    }
+                                    if (pkg.type === 'package' && pkg.package_id) return h.package_id === pkg.package_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
+                                    if (pkg.type === 'plan' && pkg.plan_id) return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
                                     return false;
                                 }).length;
 
-                                const status = (pkg.status || 'active').toLowerCase();
-                                let statusColor = 'bg-green-100 text-green-800';
-                                if (status === 'expired') statusColor = 'bg-red-100 text-red-800';
-                                const statusLabel = status === 'active' ? 'Ativo' : status === 'expired' ? 'Expirado' : 'Arquivado';
+                                const percentage = Math.min((used / total) * 100, 100);
 
                                 return (
-                                    <div key={idx} className={`flex items-center justify-between gap-2 p-2 rounded-lg border ${isBirthdayMonth ? 'bg-yellow-100 border-yellow-300' : 'bg-white border-gray-200'}`}>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-1 flex-wrap">
-                                                <span className={`text-[11px] font-semibold ${isBirthdayMonth ? 'text-black' : 'text-gray-800'}`}>{pkg.name}</span>
-                                                <span className="text-[8px] uppercase font-bold bg-gray-100 text-gray-500 px-1 py-0.5 rounded border border-gray-200">
-                                                    {isPlan ? 'Plano' : 'Pacote'}
-                                                </span>
-                                            </div>
-                                            <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100 mt-0.5 inline-block">
-                                                {used}/{total} sessões
-                                            </span>
+                                    <div key={idx} className="space-y-1.5">
+                                        <div className="flex justify-between items-center gap-2">
+                                            <span className={`text-xs font-semibold truncate ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{pkg.name}</span>
+                                            <span className="text-xs font-bold text-primary flex-shrink-0">{used} / {total}</span>
                                         </div>
-                                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize flex-shrink-0 ${statusColor}`}>
-                                            {statusLabel}
-                                        </span>
+                                        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                            <div
+                                                className="bg-primary h-full rounded-full transition-all duration-1000 ease-out"
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
