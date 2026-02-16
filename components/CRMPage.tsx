@@ -167,11 +167,14 @@ const ClientCard: React.FC<{
                             const service = (services as Service[]).find(s => s.name === nextAppointment.service);
                             const professional = (professionals as Professional[]).find(p => p.id === nextAppointment.professionalId);
 
+                            const [aYear, aMonth, aDay] = nextAppointment.date.split('-');
+                            const formattedDate = `${aDay}/${aMonth}/${aYear}`;
+
                             return (
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">Data:</span>
-                                        <span>{new Date(nextAppointment.date).toLocaleDateString('pt-BR')}</span>
+                                        <span>{formattedDate}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">Hora:</span>
@@ -194,33 +197,38 @@ const ClientCard: React.FC<{
                 </div>
             </div>
             {client.packages && client.packages.length > 0 && (
-                <div className="mt-4">
-                    <h4 className={`text-sm font-semibold mb-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Pacotes Ativos</h4>
-                    {client.packages.map((pkg: any, index: number) => {
-                        const needsRenewal = typeof pkg.totalSessions === 'number' && pkg.completedSessions === pkg.totalSessions - 1;
-                        return (
-                            <div key={index} className="mb-2">
-                                <div className="flex justify-between items-center text-xs mb-1">
-                                    <span className={`font-medium ${isBirthdayMonth ? 'text-black' : 'text-gray-800'}`}>{pkg.name}</span>
-                                    <span className={`font-semibold ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>{pkg.completedSessions} / {pkg.totalSessions}</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div
-                                        className="bg-primary h-2.5 rounded-full transition-all duration-500"
-                                        style={{ width: `${(pkg.completedSessions / pkg.totalSessions) * 100}%` }}
-                                    ></div>
-                                </div>
-                                {needsRenewal && (
-                                    <div className="mt-2 flex items-center bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded-md animate-pulse">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 12.5M20 20l-1.5-1.5A9 9 0 013.5 11.5" />
-                                        </svg>
-                                        RENOVAR PACOTE
+                <div className="mt-4 border-t pt-3">
+                    <h4 className={`text-sm font-semibold mb-2 ${isBirthdayMonth ? 'text-gray-800' : 'text-gray-600'}`}>Planos e Pacotes Ativos</h4>
+                    <div className="space-y-2">
+                        {client.packages.map((pkg: any, idx: number) => {
+                            const isPlan = pkg.type === 'plan';
+                            const total = Number(pkg.totalSessions || pkg.total_sessions || pkg.sessions || 0);
+                            const used = Number(pkg.completedSessions || pkg.used_sessions || 0);
+                            const status = (pkg.status || 'active').toLowerCase();
+                            let statusColor = 'bg-green-100 text-green-800';
+                            if (status === 'expired') statusColor = 'bg-red-100 text-red-800';
+                            const statusLabel = status === 'active' ? 'Ativo' : status === 'expired' ? 'Expirado' : 'Arquivado';
+
+                            return (
+                                <div key={idx} className={`flex justify-between items-center p-2 rounded-lg border ${isBirthdayMonth ? 'bg-yellow-100 border-yellow-300' : 'bg-white border-gray-200'}`}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`text-xs font-semibold truncate ${isBirthdayMonth ? 'text-black' : 'text-gray-800'}`}>{pkg.name}</span>
+                                            <span className="text-[9px] uppercase font-bold bg-gray-100 text-gray-500 px-1 py-0.5 rounded border border-gray-200 flex-shrink-0">
+                                                {isPlan ? 'Plano' : 'Pacote'}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100 mt-1 inline-block">
+                                            {used}/{total} sessões
+                                        </span>
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize flex-shrink-0 ${statusColor}`}>
+                                        {statusLabel}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>
@@ -441,7 +449,7 @@ const KanbanColumn: React.FC<{
                         </div>
                     )
                 )}
-                <div className="space-y-4 h-[calc(100vh-380px)] overflow-y-auto pr-2">
+                <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                     {clients.map(client => (
                         <ClientCard
                             key={client.id}
