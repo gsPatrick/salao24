@@ -4,6 +4,7 @@ import ClientDetailModal from './ClientDetailModal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser } from '../contexts/DataContext';
 import { Client, Professional, Service, Appointment } from '../types';
+import { clientsAPI } from '../lib/api';
 
 // --- Helper Functions ---
 const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
@@ -1004,10 +1005,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
             const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
             // Update client's crm_stage in backend
-            fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/clients/${clientId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ crm_stage: targetColumnId, classification: matchingTag?.text || undefined })
+            clientsAPI.update(Number(clientId), {
+                crm_stage: targetColumnId,
+                classification: matchingTag?.text || undefined
             }).catch(err => console.error('[CRM] Error updating client stage:', err));
         }
     };
