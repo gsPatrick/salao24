@@ -297,12 +297,12 @@ const KanbanColumn: React.FC<{
                     </button>
                 </div>
                 {isConfigOpen && (
-                    isIndividualPlan ? (
+                    isPlanRestricted ? (
                         <div className="relative bg-gray-100 p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in text-center">
                             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-4 rounded-md">
                                 <LockIcon />
-                                <h4 className="font-bold text-gray-800">Exclusivo do Plano Empresa</h4>
-                                <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade do seu plano.</p>
+                                <h4 className="font-bold text-gray-800">CRM Inteligente - Exclusivo Pro</h4>
+                                <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade para o plano Pro.</p>
                                 <button
                                     onClick={() => navigate('upgrade_to_empresa')}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
@@ -953,6 +953,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 return currentPositions;
             }
 
+            // Sync tag: find the target column's icon and match it to a classification
+            const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
+            if (targetColumn) {
+                const matchingTag = classifications.find(cls => cls.icon === targetColumn.icon);
+                if (matchingTag) {
+                    draggedClient = { ...draggedClient, classification: matchingTag.text, classificationIcon: matchingTag.icon };
+                }
+            }
+
             // Immutable update
             const newPositions = { ...currentPositions };
             newPositions[sourceColumnId] = (newPositions[sourceColumnId] || []).filter(c => c.id !== clientId);
@@ -960,6 +969,18 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
             return newPositions;
         });
+
+        // Also persist the stage change to the backend
+        if (clientId) {
+            const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
+            const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
+            // Update client's crm_stage in backend
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/clients/${clientId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ crm_stage: targetColumnId, classification: matchingTag?.text || undefined })
+            }).catch(err => console.error('[CRM] Error updating client stage:', err));
+        }
     };
 
     const columnsToRender = useMemo(() => {
@@ -1661,6 +1682,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 onSave={handleSaveSettings}
                 classifications={classifications}
                 onClassificationsChange={handleSaveClassifications}
+                canCustomize={!isPlanRestricted}
             />
             <ClientDetailModal
                 isOpen={isDetailModalOpen}
