@@ -160,13 +160,14 @@ const ClientCard: React.FC<{
                             return `${year}-${month}-${day}`;
                         };
                         const todayKey = formatDateForLookup(today);
-                        const clientAppointments = appointments.filter(a => a.clientId === client.id && a.date >= todayKey).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                        const clientAppointments = appointments.filter(a => a.clientId == client.id && a.date >= todayKey).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
                         if (clientAppointments.length > 0) {
                             const nextAppointment = clientAppointments[0];
                             const professional = (professionals as Professional[]).find(p => p.id === nextAppointment.professionalId);
 
-                            const [aYear, aMonth, aDay] = nextAppointment.date.split('-');
+                            const datePart = nextAppointment.date.split('T')[0];
+                            const [aYear, aMonth, aDay] = datePart.split('-');
                             const formattedDate = `${aDay}/${aMonth}/${aYear}`;
 
                             return (
@@ -536,8 +537,10 @@ interface CRMPageProps {
     onOpenChat?: (clientId: number) => void;
 }
 
-const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpenChat }) => {
-    const { clients, appointments, services, professionals, crmSettings, updateCrmSettings } = useData();
+const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpenChat, clients: initialClients, appointments: initialAppointments }) => {
+    const { clients: dataClients, appointments: dataAppointments, services, professionals, crmSettings, updateCrmSettings } = useData();
+    const clients = (initialClients && initialClients.length > 0) ? initialClients : dataClients;
+    const appointments = (initialAppointments && initialAppointments.length > 0) ? initialAppointments : dataAppointments;
     const { t } = useLanguage();
 
     // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
