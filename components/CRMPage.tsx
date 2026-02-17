@@ -586,6 +586,14 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const [columnsConfig, setColumnsConfig] = useState<CrmColumnConfig[]>([
         {
+            id: 'birthday',
+            title: 'Aniversariantes',
+            description: "Objetivo: Parabenizar o cliente e incentivar o agendamento.",
+            icon: '🎂',
+            visible: true,
+            deletable: false
+        },
+        {
             id: 'new',
             title: 'Novos Clientes',
             description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativos.",
@@ -640,7 +648,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Recorrentes',
-                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, ao completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativos (60+ dias).\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
+                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, au completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativos (60+ dias).\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
                     active: true
                 }
             ]
@@ -676,20 +684,40 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             // Determine if user can customize (delete) default columns
             const canCustomize = currentUser?.is_super_admin || currentUser?.plan === 'Pro' || currentUser?.plan === 'Premium';
 
-            const processedStages = crmSettings.funnel_stages.map(stage => {
-                // Auto-fix titles on load
+            let processedStages = crmSettings.funnel_stages.map(stage => {
+                // Auto-fix titles and icons on load to match "classic" standard
                 let title = stage.title;
-                if (title === 'Recorrentes (Ativos)') title = 'Recorrentes';
-                if (title === 'Inativos (60+ dias)') title = 'Inativos';
+                let icon = stage.icon;
+
+                if (stage.id === 'new') { title = 'Novos Clientes'; icon = '⭐'; }
+                if (stage.id === 'scheduled') { title = 'Agendados'; icon = '✅'; }
+                if (stage.id === 'absent') { title = 'Faltantes'; icon = '❌'; }
+                if (stage.id === 'recurrent') { title = 'Recorrentes'; icon = '💎'; }
+                if (stage.id === 'inactive') { title = 'Inativos'; icon = '⏳'; }
+                if (stage.id === 'birthday') { title = 'Aniversariantes'; icon = '🎂'; }
 
                 return {
                     ...stage,
                     title,
+                    icon,
                     // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
                     deletable: canCustomize ? true : stage.deletable,
                     visible: stage.visible !== false // Default to true if undefined
                 };
             });
+
+            // Ensure Aniversariantes (birthday) exists as it's a primary classic column
+            if (!processedStages.find(s => s.id === 'birthday')) {
+                processedStages.unshift({
+                    id: 'birthday',
+                    title: 'Aniversariantes',
+                    description: "Objetivo: Parabenizar o cliente e incentivar o agendamento.",
+                    icon: '🎂',
+                    visible: true,
+                    deletable: false,
+                    ai_actions: []
+                });
+            }
 
             setColumnsConfig(processedStages);
         }
