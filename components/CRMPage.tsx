@@ -95,7 +95,9 @@ const ClientCard: React.FC<{
     services: Service[];
     professionals: Professional[];
 }> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals }) => {
-    const { isBirthdayMonth, classification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
+    const { isBirthdayMonth, classification: calculatedClassification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
+    // Prioritize explicit classification (from drag/drop or DB) over calculated one
+    const classification = client.classification || calculatedClassification;
 
     const cardClasses = `p-3 rounded-lg shadow-md border-l-4 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-xl w-full text-left cursor-grab relative ${isBirthdayMonth ? 'bg-yellow-300 border-pink-400' : 'bg-white border-gray-200'
         } ${isDragging ? 'opacity-50' : ''}`;
@@ -773,6 +775,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             groups[col.id] = [];
         });
 
+        console.log(`[CRM] Validating clients: ${clients.length}`);
+
+
         const filteredClients = clients.filter(client => {
             // Completeness Filter (based on CPF)
             if (completenessFilter === 'complete') {
@@ -932,6 +937,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             }
         }
 
+        console.log('[CRM] Groups distribution:', Object.fromEntries(Object.entries(groups).map(([k, v]) => [k, v.length])));
         return groups;
     }, [clients, appointments, searchQuery, startDate, endDate, sortOrder, completenessFilter, columnsConfig]);
 
