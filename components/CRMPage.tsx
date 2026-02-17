@@ -293,6 +293,7 @@ const KanbanColumn: React.FC<{
     onDragEnd, isDropTarget, draggedClientId, isIndividualPlan, currentUser,
     navigate, onOpenChat, appointments, services, professionals
 }) => {
+        const safeClients = clients || [];
         const fileInputRef = useRef<HTMLInputElement>(null);
 
         // Verificar se o usuário está em plano que bloqueia IA (Individual ou Essencial)
@@ -321,7 +322,7 @@ const KanbanColumn: React.FC<{
                 onDragLeave={onDragLeave}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-secondary flex items-center">{icon} <span className="ml-2">{title} ({clients.length})</span></h2>
+                    <h2 className="text-lg font-bold text-secondary flex items-center">{icon} <span className="ml-2">{title} ({safeClients.length})</span></h2>
                     <button onClick={() => onToggleConfig(columnId)} className="text-gray-400 hover:text-primary p-1 rounded-full transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
@@ -472,7 +473,7 @@ const KanbanColumn: React.FC<{
                     )
                 )}
                 <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-                    {clients.map(client => (
+                    {safeClients.map(client => (
                         <ClientCard
                             key={client.id}
                             client={client}
@@ -951,17 +952,17 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             for (const colId in clientGroups) {
                 if (!merged[colId]) merged[colId] = [];
                 // Add clients that exist in clientGroups but not in any column of merged
-                const allMergedIds = new Set(Object.values(merged).flat().map((c: any) => c.id));
+                const allMergedIds = new Set(Object.values(merged).flat().map((c: any) => String(c.id)));
                 clientGroups[colId].forEach((client: any) => {
-                    if (!allMergedIds.has(client.id)) {
+                    if (!allMergedIds.has(String(client.id))) {
                         merged[colId].push(client);
                     }
                 });
             }
             // Remove clients that no longer exist in the source data
-            const allSourceIds = new Set(Object.values(clientGroups).flat().map((c: any) => c.id));
+            const allSourceIds = new Set(Object.values(clientGroups).flat().map((c: any) => String(c.id)));
             for (const colId in merged) {
-                merged[colId] = merged[colId].filter((c: any) => allSourceIds.has(c.id));
+                merged[colId] = merged[colId].filter((c: any) => allSourceIds.has(String(c.id)));
             }
             return merged;
         });
