@@ -944,26 +944,47 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     // Initialize card positions on first load only.
     // Do NOT reset on every clientGroups change — that would overwrite manual drag-and-drop state.
+    // Initialize card positions on first load only.
+    // Do NOT reset on every clientGroups change — that would overwrite manual drag-and-drop state.
     useEffect(() => {
         setCardPositions(prev => {
             if (prev === null || prev === undefined) return clientGroups;
-            // Merge: keep manual positions but add any NEW clients that appeared
+
+            // Optimization: Calculate existing IDs set ONCE (O(N)) instead of per column (O(C*N))
             const merged = { ...prev };
+            const existingIds = new Set<string>();
+            Object.values(merged).forEach((col: any) => {
+                if (Array.isArray(col)) {
+                    col.forEach((c: any) => existingIds.add(String(c.id)));
+                }
+            });
+
+            // Merge: keep manual positions but add any NEW clients that appeared
             for (const colId in clientGroups) {
                 if (!merged[colId]) merged[colId] = [];
-                // Add clients that exist in clientGroups but not in any column of merged
-                const allMergedIds = new Set(Object.values(merged).flat().map((c: any) => String(c.id)));
+
                 clientGroups[colId].forEach((client: any) => {
-                    if (!allMergedIds.has(String(client.id))) {
+                    // Only add if not found in ANY column of the previous state
+                    if (!existingIds.has(String(client.id))) {
                         merged[colId].push(client);
+                        existingIds.add(String(client.id)); // Add to set to prevent duplicates if clientGroups has dupes (unlikely)
                     }
                 });
             }
+
             // Remove clients that no longer exist in the source data
-            const allSourceIds = new Set(Object.values(clientGroups).flat().map((c: any) => String(c.id)));
+            // We need to know which IDs are valid in clientGroups
+            const validIds = new Set<string>();
+            Object.values(clientGroups).forEach((col: any) => {
+                if (Array.isArray(col)) {
+                    col.forEach((c: any) => validIds.add(String(c.id)));
+                }
+            });
+
             for (const colId in merged) {
-                merged[colId] = merged[colId].filter((c: any) => allSourceIds.has(String(c.id)));
+                merged[colId] = merged[colId].filter((c: any) => validIds.has(String(c.id)));
             }
+
             return merged;
         });
     }, [clientGroups]);
