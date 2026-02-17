@@ -582,7 +582,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             deletable: false,
             ai_actions: [
                 {
-                    title: 'Funil Agentados',
+                    title: 'Funil Agendados',
                     description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente.\n\nPermanece neste funil todo cliente com agendamento futuro.\n\nMensagens automáticas:\nLembrete 72h antes do agendamento.\nMensagem de confirmação 24h antes.\nLembrete final 3h antes.\n\nRegras:\nConfirmou → alterar status para Confirmado na agenda.\nDesmarcou  →  alterar status para Faltou na agenda, remover o cliente da agenda, mover para Funil Faltantes. \nConcluiu atendimento e não possui novo agendamento → mover para Funil Recorrentes.\n",
                     active: true
                 }
@@ -618,7 +618,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         },
         {
             id: 'inactive',
-            title: 'Inativas (60+ dias)',
+            title: 'Inativos (60+ dias)',
             icon: '⏳',
             visible: true,
             deletable: false,
