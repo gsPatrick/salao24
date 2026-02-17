@@ -586,14 +586,6 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const [columnsConfig, setColumnsConfig] = useState<CrmColumnConfig[]>([
         {
-            id: 'birthday',
-            title: 'Aniversariantes',
-            description: "Objetivo: Parabenizar o cliente e incentivar o agendamento.",
-            icon: '🎂',
-            visible: true,
-            deletable: false
-        },
-        {
             id: 'new',
             title: 'Novos Clientes',
             description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativos.",
@@ -611,14 +603,14 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'scheduled',
             title: 'Agendados',
-            description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente. Se confirmou, manter. Se faltou, mover para Faltantes. Se concluiu, mover para Recorrentes.",
+            description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente. Se confirmou, manter. Se faltou, mover para Faltantes. Se concluiu, mover para Recorrente.",
             icon: '✅',
             visible: true,
             deletable: false,
             ai_actions: [
                 {
                     title: 'Funil Agendados',
-                    description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente.\n\nPermanece neste funil todo cliente com agendamento futuro.\n\nMensagens automáticas:\nLembrete 72h antes do agendamento.\nMensagem de confirmação 24h antes.\nLembrete final 3h antes.\n\nRegras:\nConfirmou → alterar status para Confirmado na agenda.\nDesmarcou  →  alterar status para Faltou na agenda, remover o cliente da agenda, mover para Funil Faltantes. \nConcluiu atendimento e não possui novo agendamento → mover para Funil Recorrentes.\n",
+                    description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente.\n\nPermanece neste funil todo cliente com agendamento futuro.\n\nMensagens automáticas:\nLembrete 72h antes do agendamento.\nMensagem de confirmação 24h antes.\nLembrete final 3h antes.\n\nRegras:\nConfirmou → alterar status para Confirmado na agenda.\nDesmarcou  →  alterar status para Faltou na agenda, remover o cliente da agenda, mover para Funil Faltantes. \nConcluiu atendimento e não possui novo agendamento → mover para Funil Recorrente.\n",
                     active: true
                 }
             ]
@@ -626,7 +618,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'absent',
             title: 'Faltantes',
-            description: "Objetivo: Recuperar clientes que faltaram. Tentar reagendar. Se reagendar, mover para Agendados. Se não reagendar em 60 dias, mover para Inativos.",
+            description: "Objetivo: Recuperar clientes que faltaram. Tentar reagendar. Se reagendar, mover para Agendados. Se não reagendar em 60 dias, mover para Inativo.",
             icon: '❌',
             visible: true,
             deletable: false,
@@ -640,29 +632,29 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         },
         {
             id: 'recurrent',
-            title: 'Recorrentes',
-            description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativos.",
+            title: 'Recorrente',
+            description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativo.",
             icon: '💎',
             visible: true,
             deletable: true,
             ai_actions: [
                 {
-                    title: 'Funil Recorrentes',
-                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, au completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativos (60+ dias).\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
+                    title: 'Funil Recorrente',
+                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, au completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativo.\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
                     active: true
                 }
             ]
         },
         {
             id: 'inactive',
-            title: 'Inativos',
+            title: 'Inativo',
             description: "Objetivo: Reativar clientes antigos. Tentar contato para novo agendamento. Se agendar, mover para Agendados.",
             icon: '⏳',
             visible: true,
             deletable: false,
             ai_actions: [
                 {
-                    title: 'Funil Inativos (60+ dias)',
+                    title: 'Funil Inativo',
                     description: "Objetivo: Reativar clientes sem movimentação há mais de 60 dias.\n\nEntram neste funil clientes que:\nEstão há mais de 60 dias sem atendimento.\nEstão há mais de 60 dias sem agendamento.\n\nAbordagem:\nCliente já atendido:\nMensagem cordial de retorno:\n“Faz tempo que não te vejo por aqui. Seu último atendimento foi no dia ___. Vamos agendar seu retorno?”\nCliente que nunca agendou:\nMensagem convidativa:\n“Faz um tempo que conversamos. Que tal agendar sua primeira experiência? Tenho certeza que você vai amar o atendimento.”\n\nTentativas:\n1ª tentativa: mesmo dia.\n2ª tentativa: 2º dia após a primeira tentativa.\n3ª tentativa: 3º dia após a primeira tentativa.\n4ª tentativa: 7 dias após a primeira tentativa.\n5ª tentativa: 14 dias após a primeira tentativa.\n6ª tentativa: 21 dias após a primeira tentativa.\n\nRegras:\nSe agendar →  alterar status para Agendado na agenda, mover para Funil Agendados.\nSe não agendar → reiniciar ciclo com novo contato após 30 dias da última tentativa.\n",
                     active: true
                 }
@@ -685,16 +677,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             const canCustomize = currentUser?.is_super_admin || currentUser?.plan === 'Pro' || currentUser?.plan === 'Premium';
 
             let processedStages = crmSettings.funnel_stages.map(stage => {
-                // Auto-fix titles and icons on load to match "classic" standard
+                // Auto-fix titles and icons on load to match "standard/basic" standard
                 let title = stage.title;
                 let icon = stage.icon;
 
                 if (stage.id === 'new') { title = 'Novos Clientes'; icon = '⭐'; }
                 if (stage.id === 'scheduled') { title = 'Agendados'; icon = '✅'; }
                 if (stage.id === 'absent') { title = 'Faltantes'; icon = '❌'; }
-                if (stage.id === 'recurrent') { title = 'Recorrentes'; icon = '💎'; }
-                if (stage.id === 'inactive') { title = 'Inativos'; icon = '⏳'; }
-                if (stage.id === 'birthday') { title = 'Aniversariantes'; icon = '🎂'; }
+                if (stage.id === 'recurrent') { title = 'Recorrente'; icon = '💎'; }
+                if (stage.id === 'inactive') { title = 'Inativo'; icon = '⏳'; }
 
                 return {
                     ...stage,
@@ -704,20 +695,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                     deletable: canCustomize ? true : stage.deletable,
                     visible: stage.visible !== false // Default to true if undefined
                 };
-            });
-
-            // Ensure Aniversariantes (birthday) exists as it's a primary classic column
-            if (!processedStages.find(s => s.id === 'birthday')) {
-                processedStages.unshift({
-                    id: 'birthday',
-                    title: 'Aniversariantes',
-                    description: "Objetivo: Parabenizar o cliente e incentivar o agendamento.",
-                    icon: '🎂',
-                    visible: true,
-                    deletable: false,
-                    ai_actions: []
-                });
-            }
+            }).filter(stage => stage.id !== 'birthday'); // Specifically remove birthday if it was somehow persisted for a basic user
 
             setColumnsConfig(processedStages);
         }
