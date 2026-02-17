@@ -588,14 +588,14 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'new',
             title: 'Novos Clientes',
-            description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativos.",
+            description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativo.",
             icon: '⭐',
             visible: true,
             deletable: false,
             ai_actions: [
                 {
                     title: 'Funil Novo Clientes',
-                    description: "Objetivo: Converter novos contatos em agendamento.\n\nO cliente permanece neste funil até realizar o primeiro agendamento.\n\nFluxo:\nEnviar mensagem de boas-vindas.\n\nRealizar tentativas de agendamento:\n1ª tentativa: no mesmo dia do primeiro contato.\n2ª tentativa: 2º dia após o primeiro contato.\n3ª tentativa: 3º dia após o primeiro contato.\n4ª tentativa: 7 dias após o primeiro contato.\n5ª tentativa: 14 dias após o primeiro contato.\n6ª tentativa: 21 dias após o primeiro contato.\n\nRegras:\nSe o cliente agendar → alterar status na agenda para Agendado e mover para Funil Agendados.\nSe não responder ou não agendar após todas as tentativas → mover para Funil Inativos (60+ dias).\n",
+                    description: "Objetivo: Converter novos contatos em agendamento.\n\nO cliente permanece neste funil até realizar o primeiro agendamento.\n\nFluxo:\nEnviar mensagem de boas-vindas.\n\nRealizar tentativas de agendamento:\n1ª tentativa: no mesmo dia do primeiro contato.\n2ª tentativa: 2º dia após o primeiro contato.\n3ª tentativa: 3º dia após o primeiro contato.\n4ª tentativa: 7 dias após o primeiro contato.\n5ª tentativa: 14 dias após o primeiro contato.\n6ª tentativa: 21 dias após o primeiro contato.\n\nRegras:\nSe o cliente agendar → alterar status na agenda para Agendado e mover para Funil Agendados.\nSe não responder ou não agendar após todas as tentativas → mover para Funil Inativo.\n",
                     active: true
                 }
             ]
@@ -625,7 +625,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Faltantes',
-                    description: "Objetivo: Recuperar clientes que faltaram ou desmarcaram.\n\nEntram neste funil clientes com status Faltou na agenda.\n\nTentativas de reagendamento:\n1ª tentativa: no mesmo dia da falta.\n2ª tentativa: 2º dia após a falta.\n3ª tentativa: 3º dia após a falta.\n4ª tentativa: 7 dias após a falta.\n5ª tentativa: 14 dias após a falta.\n6ª tentativa: 21 dias após a falta.\n\nRegras:\nSe reagendar → alterar status para Agendado e mover para Funil Agendados.\n\nSe não responder ou não reagendar → mover para Funil Inativos (60+ dias).\n",
+                    description: "Objetivo: Recuperar clientes que faltaram ou desmarcaram.\n\nEntram neste funil clientes com status Faltou na agenda.\n\nTentativas de reagendamento:\n1ª tentativa: no mesmo dia da falta.\n2ª tentativa: 2º dia após a falta.\n3ª tentativa: 3º dia após a falta.\n4ª tentativa: 7 dias após a falta.\n5ª tentativa: 14 dias após a falta.\n6ª tentativa: 21 dias após a falta.\n\nRegras:\nSe reagendar → alterar status para Agendado e mover para Funil Agendados.\n\nSe não responder ou não reagendar → mover para Funil Inativo.\n",
                     active: true
                 }
             ]
@@ -640,7 +640,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Recorrente',
-                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, au completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativo.\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
+                    description: "Objetivo: Clientes ativos que costumam retornar.\n\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\n\nCaso o cliente fique 59 dias sem novo agendamento, ao completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativo.\n\nSe houver novo agendamento dentro do prazo, permanece como recorrente.\n",
                     active: true
                 }
             ]
@@ -687,10 +687,18 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 if (stage.id === 'recurrent') { title = 'Recorrente'; icon = '💎'; }
                 if (stage.id === 'inactive') { title = 'Inativo'; icon = '⏳'; }
 
+                // SELF-HEALING AI RULES: If standard rules are missing or empty, restore defaults
+                const defaultStage = columnsConfig.find(cs => cs.id === stage.id);
+                let ai_actions = stage.ai_actions;
+                if (!ai_actions || ai_actions.length === 0) {
+                    ai_actions = defaultStage?.ai_actions || [];
+                }
+
                 return {
                     ...stage,
                     title,
                     icon,
+                    ai_actions,
                     // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
                     deletable: canCustomize ? true : stage.deletable,
                     visible: stage.visible !== false // Default to true if undefined
