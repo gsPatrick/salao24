@@ -73,15 +73,34 @@ const Confetti: React.FC = () => (
 );
 
 
-const ClassificationBadge: React.FC<{ classification: string }> = ({ classification }) => {
+const ClassificationBadge: React.FC<{ classification: string; customIcon?: string; customText?: string }> = ({ classification, customIcon, customText }) => {
     const colors: { [key: string]: string } = {
         'Nova': 'bg-blue-100 text-blue-800',
+        'Novo': 'bg-blue-100 text-blue-800',
+        'Novos Clientes': 'bg-blue-100 text-blue-800',
         'Recorrente': 'bg-green-100 text-green-800',
+        'Recorrentes': 'bg-green-100 text-green-800',
+        'Recorrentes (Ativos)': 'bg-green-100 text-green-800',
         'VIP': 'bg-purple-100 text-purple-800',
         'Inativa': 'bg-yellow-100 text-yellow-800',
+        'Inativo': 'bg-yellow-100 text-yellow-800',
+        'Inativos': 'bg-yellow-100 text-yellow-800',
+        'Inativos (60+ dias)': 'bg-yellow-100 text-yellow-800',
+        'Agendado': 'bg-indigo-100 text-indigo-800',
+        'Agendados': 'bg-indigo-100 text-indigo-800',
+        'Faltou': 'bg-red-100 text-red-800',
+        'Faltantes': 'bg-red-100 text-red-800',
     };
-    const icons: { [key: string]: string } = { 'Nova': '👤', 'Recorrente': '💎', 'VIP': '👑', 'Inativa': '⏳' };
-    return <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${colors[classification]}`}>{icons[classification]} {classification}</span>;
+    const icons: { [key: string]: string } = { 'Nova': '⭐', 'Novo': '⭐', 'Recorrente': '💎', 'VIP': '👑', 'Inativa': '⏳', 'Inativo': '⏳', 'Agendado': '✅', 'Faltou': '❌' };
+
+    // Use custom text/icon if provided (from column), otherwise fallback to classification lookup
+    const displayText = customText || classification;
+    const displayIcon = customIcon || icons[classification] || '👤';
+
+    // Try to find color by exact match, or fallback to default
+    const colorClass = colors[displayText] || colors[classification] || 'bg-gray-100 text-gray-800';
+
+    return <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${colorClass}`}>{displayIcon} {displayText}</span>;
 };
 
 const ClientCard: React.FC<{
@@ -94,7 +113,9 @@ const ClientCard: React.FC<{
     appointments: any[];
     services: Service[];
     professionals: Professional[];
-}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals }) => {
+    columnIcon?: string;
+    columnTitle?: string;
+}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals, columnIcon, columnTitle }) => {
     const { isBirthdayMonth, classification: calculatedClassification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
     // Prioritize explicit classification (from drag/drop or DB) over calculated one
     const classification = client.classification || calculatedClassification;
@@ -125,7 +146,7 @@ const ClientCard: React.FC<{
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-1 mb-1">
                         <h3 className={`font-bold text-base truncate leading-tight ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
-                        <ClassificationBadge classification={classification} />
+                        <ClassificationBadge classification={classification} customIcon={columnIcon} customText={columnTitle} />
                     </div>
                     <div className={`text-xs space-y-1.5 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
                         <div className="flex items-center justify-between">
@@ -477,6 +498,8 @@ const KanbanColumn: React.FC<{
                         <ClientCard
                             key={client.id}
                             client={client}
+                            columnIcon={icon}
+                            columnTitle={title}
                             onClick={() => onCardClick(client)}
                             onDragStart={(e) => onDragStart(e, client.id)}
                             onDragEnd={onDragEnd}

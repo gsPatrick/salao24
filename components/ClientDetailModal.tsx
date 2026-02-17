@@ -704,7 +704,16 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
 
     const { classification } = useMemo(() => {
         if (!localClient) return { isBirthdayMonth: false, classification: '' };
-        return getClientStatus(localClient.birthdate, localClient.lastVisit, localClient.totalVisits);
+
+        // Determine status locally but allow override
+        const calculated = getClientStatus(localClient.birthdate, localClient.lastVisit, localClient.totalVisits);
+
+        // Prioritize: 
+        // 1. Explicit DB classification (if available and not empty)
+        // 2. Calculated classification
+        const finalClass = localClient.classification || calculated.classification;
+
+        return { isBirthdayMonth: calculated.isBirthdayMonth, classification: finalClass };
     }, [localClient]);
 
     const handleClose = () => {
@@ -1050,13 +1059,31 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''}${localClient.address.complement ? ' - ' + localClient.address.complement : ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
 
 
-    const classificationBadges: { [key: string]: { text: string, icon: string, classes: string } } = {
-        'Nova': { text: 'Nova', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
-        'Recorrente': { text: 'Recorrente', icon: '💎', classes: 'bg-green-100 text-green-800' },
-        'VIP': { text: 'VIP', icon: '👑', classes: 'bg-purple-100 text-purple-800' },
-        'Inativa': { text: 'Inativa', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
+    const getBadgeInfo = (cls: string) => {
+        const defaults: { [key: string]: { text: string, icon: string, classes: string } } = {
+            'Nova': { text: 'Nova', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
+            'Novo': { text: 'Novo', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
+            'Recorrente': { text: 'Recorrente', icon: '💎', classes: 'bg-green-100 text-green-800' },
+            'VIP': { text: 'VIP', icon: '👑', classes: 'bg-purple-100 text-purple-800' },
+            'Inativa': { text: 'Inativa', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
+            'Inativo': { text: 'Inativo', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
+            'Agendado': { text: 'Agendado', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
+            'Agendados': { text: 'Agendados', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
+            'Faltou': { text: 'Faltou', icon: '❌', classes: 'bg-red-100 text-red-800' },
+            'Faltantes': { text: 'Faltantes', icon: '❌', classes: 'bg-red-100 text-red-800' },
+        };
+
+        if (defaults[cls]) return defaults[cls];
+
+        // Fallback for custom tags
+        return {
+            text: cls,
+            icon: '🏷️',
+            classes: 'bg-gray-100 text-gray-800'
+        };
     };
-    const badgeInfo = classificationBadges[classification] || null;
+
+    const badgeInfo = getBadgeInfo(classification);
 
     const TabButton: React.FC<{ tabName: string; label: string; icon: React.ReactNode }> = ({ tabName, label, icon }) => (
         <button
