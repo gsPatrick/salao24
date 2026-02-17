@@ -952,6 +952,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
             // Optimization: Calculate existing IDs set ONCE (O(N)) instead of per column (O(C*N))
             const merged = { ...prev };
+
+            // Prune invalid columns (columns that no longer exist in config) from merged state
+            // This ensures clients in deleted columns are not "stuck" there and can be re-distributed
+            for (const colId in merged) {
+                if (!clientGroups[colId]) {
+                    delete merged[colId];
+                }
+            }
+
             const existingIds = new Set<string>();
             Object.values(merged).forEach((col: any) => {
                 if (Array.isArray(col)) {
