@@ -632,7 +632,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         },
         {
             id: 'recurrent',
-            title: 'Recorrentes (Ativos)',
+            title: 'Recorrentes',
             description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativos.",
             icon: '💎',
             visible: true,
@@ -647,7 +647,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         },
         {
             id: 'inactive',
-            title: 'Inativos (60+ dias)',
+            title: 'Inativos',
             description: "Objetivo: Reativar clientes antigos. Tentar contato para novo agendamento. Se agendar, mover para Agendados.",
             icon: '⏳',
             visible: true,
@@ -676,12 +676,20 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             // Determine if user can customize (delete) default columns
             const canCustomize = currentUser?.is_super_admin || currentUser?.plan === 'Pro' || currentUser?.plan === 'Premium';
 
-            const processedStages = crmSettings.funnel_stages.map(stage => ({
-                ...stage,
-                // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
-                deletable: canCustomize ? true : stage.deletable,
-                visible: stage.visible !== false // Default to true if undefined
-            }));
+            const processedStages = crmSettings.funnel_stages.map(stage => {
+                // Auto-fix titles on load
+                let title = stage.title;
+                if (title === 'Recorrentes (Ativos)') title = 'Recorrentes';
+                if (title === 'Inativos (60+ dias)') title = 'Inativos';
+
+                return {
+                    ...stage,
+                    title,
+                    // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
+                    deletable: canCustomize ? true : stage.deletable,
+                    visible: stage.visible !== false // Default to true if undefined
+                };
+            });
 
             setColumnsConfig(processedStages);
         }
