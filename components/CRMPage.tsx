@@ -768,9 +768,10 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         const todayKey = formatDateForLookup(today);
         const scheduledClientIds = new Set(appointments.filter(a => a.date === todayKey).map(a => a.clientId));
 
-        const groups: { [key: string]: any[] } = {
-            new: [], recurrent: [], birthday: [], scheduled: [], absent: [], rescheduled: [], inactive: []
-        };
+        const groups: { [key: string]: any[] } = {};
+        columnsConfig.forEach(col => {
+            groups[col.id] = [];
+        });
 
         const filteredClients = clients.filter(client => {
             // Completeness Filter (based on CPF)
@@ -805,7 +806,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 return appointments.some(appt => {
                     if (appt.clientId !== client.id) return false;
 
-                    const apptDate = new Date(appt.date + 'T00:00:00'); // Use T00:00:00 to avoid timezone issues
+                    const apptDate = new Date(appt.date + 'T00:00:00');
 
                     if (start && end) {
                         return apptDate >= start && apptDate <= end;
@@ -816,81 +817,89 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                     if (end) {
                         return apptDate <= end;
                     }
-                    return false; // Should not happen
+                    return false;
                 });
             })();
 
             return dateMatch;
         });
 
-
-
-
-
         filteredClients.forEach(client => {
-            // Debug client mapping
-            // console.log(`CRM Debug - Client ${client.name} (${client.id}) logic check`);
+            // Explicit crm_stage from backend takes precedence (for manual moves or saved automated ones)
+            if (client.crm_stage && groups[client.crm_stage]) {
+                groups[client.crm_stage].push(client);
+                return;
+            }
+
+            // Fallback: Automatic grouping for clients without a specific manual stage
+
             // Priority 1: Birthday
             if (client.birthdate) {
-                // Parse birthdate using string splitting to avoid timezone issues
                 const datePart = client.birthdate.split('T')[0];
                 const [, month, day] = datePart.split('-').map(Number);
-                const birthMonth = month - 1; // JS months are 0-indexed
+                const birthMonth = month - 1;
                 const birthDay = day;
                 if (birthDay === today.getDate() && birthMonth === today.getMonth()) {
-                    groups.birthday.push(client);
-                    return; // Client is classified, move to next
+                    if (groups.birthday) {
+                        groups.birthday.push(client);
+                        return;
+                    }
                 }
             }
 
             // Priority 2: Scheduled Today
             if (scheduledClientIds.has(client.id)) {
-                groups.scheduled.push(client);
-                return;
+                if (groups.scheduled) {
+                    groups.scheduled.push(client);
+                    return;
+                }
             }
 
-            // Priority 3: Specific Statuses
+            // Priority 3: Specific Statuses (Synced from Agenda)
             if (client.status === 'Faltante') {
-                groups.absent.push(client);
-                return;
+                if (groups.absent) {
+                    groups.absent.push(client);
+                    return;
+                }
             }
             if (client.status === 'Reagendado') {
-                groups.rescheduled.push(client);
-                return;
+                if (groups.rescheduled) {
+                    groups.rescheduled.push(client);
+                    return;
+                }
             }
 
             // Priority 3.5: Recurrent/Active Clients
             if (client.lastVisit) {
                 const lastVisitDate = new Date(client.lastVisit);
                 const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
-
-                // If they have history and are NOT inactive (<= 60 days), they are recurrent
                 if (daysSinceLastVisit <= 60 && client.totalVisits > 0) {
-                    groups.recurrent.push(client);
-                    return;
+                    if (groups.recurrent) {
+                        groups.recurrent.push(client);
+                        return;
+                    }
                 }
             }
 
-            // Priority 4: New Client (Unprocessed/Leads)
-            // Catch all for clients who don't have attended appointments yet and didn't fall into other categories
-            const isAttended = client.status === 'Atendido' || client.status === 'concluido' || (client.total_visits && client.total_visits > 0);
-
-            // LOG DE DEBUG PARA "NEW"
-            // if (!isAttended) console.log(`CRM Debug - Client ${client.name} assigned to NEW directly. Status: ${client.status}, TotalVisits: ${client.totalVisits}`);
-
-            if (!isAttended) {
-                groups.new.push(client);
-                return;
-            }
-
-            // Priority 5: Inactive Client
+            // Priority 4: Inactive Clients
             if (client.lastVisit) {
                 const lastVisitDate = new Date(client.lastVisit);
                 const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
                 if (daysSinceLastVisit > 60) {
-                    groups.inactive.push(client);
-                    return;
+                    if (groups.inactive) {
+                        groups.inactive.push(client);
+                        return;
+                    }
                 }
+            }
+
+            // Priority 5: New Client (Fallback)
+            if (groups.new) {
+                groups.new.push(client);
+            } else {
+                // If 'new' column doesn't exist, put in first visible column
+                const firstCol = columnsConfig.find(c => c.visible);
+                if (firstCol) groups[firstCol.id].push(client);
             }
         });
 
@@ -924,11 +933,32 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         }
 
         return groups;
-    }, [clients, appointments, searchQuery, startDate, endDate, sortOrder, completenessFilter]);
+    }, [clients, appointments, searchQuery, startDate, endDate, sortOrder, completenessFilter, columnsConfig]);
 
-    // Initialize/reset manual positions when automatic groups change.
+    // Initialize card positions on first load only.
+    // Do NOT reset on every clientGroups change — that would overwrite manual drag-and-drop state.
     useEffect(() => {
-        setCardPositions(clientGroups);
+        setCardPositions(prev => {
+            if (prev === null || prev === undefined) return clientGroups;
+            // Merge: keep manual positions but add any NEW clients that appeared
+            const merged = { ...prev };
+            for (const colId in clientGroups) {
+                if (!merged[colId]) merged[colId] = [];
+                // Add clients that exist in clientGroups but not in any column of merged
+                const allMergedIds = new Set(Object.values(merged).flat().map((c: any) => c.id));
+                clientGroups[colId].forEach((client: any) => {
+                    if (!allMergedIds.has(client.id)) {
+                        merged[colId].push(client);
+                    }
+                });
+            }
+            // Remove clients that no longer exist in the source data
+            const allSourceIds = new Set(Object.values(clientGroups).flat().map((c: any) => c.id));
+            for (const colId in merged) {
+                merged[colId] = merged[colId].filter((c: any) => allSourceIds.has(c.id));
+            }
+            return merged;
+        });
     }, [clientGroups]);
 
 
@@ -963,8 +993,12 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         const rawClientId = e.dataTransfer.getData('clientId');
         const clientId = rawClientId ? parseInt(rawClientId, 10) : null;
 
+        console.log(`[CRM] Handling drop for client ${clientId} into column ${targetColumnId}`);
+
+        if (!clientId) return;
+
         setCardPositions(currentPositions => {
-            if (!clientId || !currentPositions) return currentPositions;
+            if (!currentPositions) return currentPositions;
 
             let sourceColumnId: string | null = null;
             let draggedClient: any = null;
@@ -974,7 +1008,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 const clientIndex = currentPositions[colId].findIndex(c => c.id === clientId);
                 if (clientIndex !== -1) {
                     sourceColumnId = colId;
-                    draggedClient = currentPositions[colId][clientIndex];
+                    draggedClient = { ...currentPositions[colId][clientIndex] };
                     break;
                 }
             }
@@ -983,16 +1017,19 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 return currentPositions;
             }
 
-            // Sync tag: find the target column's icon and match it to a classification
-            const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
-            if (targetColumn) {
-                const matchingTag = classifications.find(cls => cls.icon === targetColumn.icon);
-                if (matchingTag) {
-                    draggedClient = { ...draggedClient, classification: matchingTag.text, classificationIcon: matchingTag.icon };
-                }
-            }
+            console.log(`[CRM] Moving client ${clientId} from ${sourceColumnId} to ${targetColumnId}`);
 
-            // Immutable update
+            // Sync tag logic
+            const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
+            const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
+
+            if (matchingTag) {
+                draggedClient.classification = matchingTag.text;
+                draggedClient.classificationIcon = matchingTag.icon;
+            }
+            // Update crm_stage optimistically so recalculations (snapping) respect this
+            draggedClient.crm_stage = targetColumnId;
+
             const newPositions = { ...currentPositions };
             newPositions[sourceColumnId] = (newPositions[sourceColumnId] || []).filter(c => c.id !== clientId);
             newPositions[targetColumnId] = [...(newPositions[targetColumnId] || []), draggedClient];
@@ -1001,15 +1038,19 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         });
 
         // Also persist the stage change to the backend
-        if (clientId) {
-            const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
-            const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
-            // Update client's crm_stage in backend
-            clientsAPI.update(Number(clientId), {
-                crm_stage: targetColumnId,
-                classification: matchingTag?.text || undefined
-            }).catch(err => console.error('[CRM] Error updating client stage:', err));
-        }
+        const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
+        const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
+
+        console.log(`[CRM] Sending API update for client ${clientId}: stage=${targetColumnId}`);
+
+        clientsAPI.update(clientId, {
+            crm_stage: targetColumnId,
+            classification: matchingTag?.text || undefined
+        }).then(response => {
+            console.log(`[CRM] API update success for client ${clientId}`, response);
+        }).catch(err => {
+            console.error('[CRM] API update failed:', err);
+        });
     };
 
     const columnsToRender = useMemo(() => {
