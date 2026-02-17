@@ -591,7 +591,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativos.",
             icon: '⭐',
             visible: true,
-            deletable: true,
+            deletable: false,
             ai_actions: [
                 {
                     title: 'Funil Novo Clientes',
@@ -636,7 +636,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativo.",
             icon: '💎',
             visible: true,
-            deletable: true,
+            deletable: false,
             ai_actions: [
                 {
                     title: 'Funil Recorrente',
