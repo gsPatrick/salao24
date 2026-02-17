@@ -539,6 +539,8 @@ interface CrmColumnConfig {
     icon: string;
     visible: boolean;
     deletable?: boolean;
+    description?: string;
+    compiled_rules?: any[];
     ai_actions?: AIAction[];
 }
 
@@ -586,6 +588,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'new',
             title: 'Novos Clientes',
+            description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativos.",
             icon: '⭐',
             visible: true,
             deletable: true,
@@ -600,6 +603,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'scheduled',
             title: 'Agendados',
+            description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente. Se confirmou, manter. Se faltou, mover para Faltantes. Se concluiu, mover para Recorrentes.",
             icon: '✅',
             visible: true,
             deletable: false,
@@ -614,6 +618,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'absent',
             title: 'Faltantes',
+            description: "Objetivo: Recuperar clientes que faltaram. Tentar reagendar. Se reagendar, mover para Agendados. Se não reagendar em 60 dias, mover para Inativos.",
             icon: '❌',
             visible: true,
             deletable: false,
@@ -628,6 +633,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'recurrent',
             title: 'Recorrentes (Ativos)',
+            description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativos.",
             icon: '💎',
             visible: true,
             deletable: true,
@@ -642,6 +648,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'inactive',
             title: 'Inativos (60+ dias)',
+            description: "Objetivo: Reativar clientes antigos. Tentar contato para novo agendamento. Se agendar, mover para Agendados.",
             icon: '⏳',
             visible: true,
             deletable: false,

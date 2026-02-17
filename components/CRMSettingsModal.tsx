@@ -217,7 +217,28 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
                       )}
                     </div>
                     <div className="col-span-10 sm:col-span-6">
-                      <input type="text" value={col.title} onChange={(e) => handleFieldChange(index, 'title', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                      <input type="text" value={col.title} onChange={(e) => handleFieldChange(index, 'title', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm mb-2" placeholder="Nome da Coluna" />
+                      <textarea
+                        value={col.description || ''}
+                        onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-xs"
+                        placeholder="Regras da IA (ex: Se 30 dias inativo, mover para Inativos)"
+                        rows={2}
+                      />
+                      {/* AI Visual Feedback */}
+                      {col.description && col.description.length > 5 && (
+                        <div className="mt-1">
+                          {col.compiled_rules && col.compiled_rules.length > 0 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              ✅ Automação Ativa ({col.compiled_rules.length} regras)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                              ⚠️ Regra pendente ou não reconhecida (Salve para processar)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="col-span-6 sm:col-span-3 flex items-center justify-center">
                       <label htmlFor={`visible-${col.id}`} className="relative inline-flex items-center cursor-pointer">
