@@ -679,7 +679,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             const processedStages = crmSettings.funnel_stages.map(stage => ({
                 ...stage,
                 // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
-                deletable: canCustomize ? true : stage.deletable
+                deletable: canCustomize ? true : stage.deletable,
+                visible: stage.visible !== false // Default to true if undefined
             }));
 
             setColumnsConfig(processedStages);
@@ -1124,7 +1125,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         const currentPositions = cardPositions || clientGroups;
         return columnsConfig.map(config => ({
             ...config,
-            clients: currentPositions[config.id] || [],
+            clients: (currentPositions && currentPositions[config.id]) ? currentPositions[config.id] : [],
         }));
     }, [columnsConfig, cardPositions, clientGroups]);
 
