@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+
 import Header from './components/Header';
 import Features from './components/Features';
 import AIAssistant from './components/AIAssistant';
@@ -60,6 +60,7 @@ const ComingSoonToast: React.FC<{ message: string; onClose: () => void }> = ({ m
 
 // mockData import removed - using DataContext for all data
 import { useData } from './contexts/DataContext';
+import { appointmentsAPI } from './lib/api';
 import { User, Client, Plan, Contract } from './types';
 
 // ... (Rest of imports are fine)
@@ -228,10 +229,26 @@ const App: React.FC = () => {
     // saveProfessional({ id, suspended: ... })
     console.log('Suspend Professional', id);
   };
+
   const handleArchiveProfessional = async (id: number) => {
     console.log('Archive Professional', id);
   };
 
+  const handleCreateAppointment = async (appointmentData: any) => {
+    console.log('[App] handleCreateAppointment called:', appointmentData);
+    try {
+      const response = await appointmentsAPI.create(appointmentData);
+      console.log('[App] appointmentsAPI.create response:', response);
+      if (response.success) {
+        // Refresh appointments or show success message
+        console.log('Agendamento criado com sucesso:', response.data);
+      } else {
+        console.error('Erro ao criar agendamento:', response.message);
+      }
+    } catch (error) {
+      console.error('Erro na requisição de agendamento:', error);
+    }
+  };
   const handleDeleteProduct = (id: number) => deleteProduct(id);
   const handleSuspendProduct = (id: number) => toggleSuspendProduct(id);
   const handleUpdateProductQuantity = (id: number, change: number) => updateStockQuantity(id, change);
