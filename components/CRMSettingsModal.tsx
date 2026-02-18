@@ -242,7 +242,7 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
                           />
                           <div className="mt-1 flex items-center justify-between">
                             <span className={`text-xs font-medium px-2 py-0.5 rounded ${col.ai_actions[0].active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {col.ai_actions[0].active ? '✅ IA Ativa' : '⏸️ IA Pausada'}
+                              {col.ai_actions[0].active ? `✅ Automação Ativa (${col.ai_actions.length} regras)` : '⏸️ Automação Pausada'}
                             </span>
                           </div>
                         </div>
