@@ -7,6 +7,8 @@ interface CrmColumnSettings {
   icon: string;
   visible: boolean;
   deletable?: boolean;
+  description?: string;
+  ai_actions?: { title: string; description: string; active: boolean }[];
 }
 
 interface Classification {
@@ -118,6 +120,14 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
     setEditableColumns(newColumns);
   };
 
+  const handleAiRuleChange = (index: number, value: string) => {
+    const newColumns = [...editableColumns];
+    if (newColumns[index].ai_actions && newColumns[index].ai_actions!.length > 0) {
+      newColumns[index].ai_actions![0].description = value;
+      setEditableColumns(newColumns);
+    }
+  };
+
   const handleAddColumn = () => {
     const newColumn: CrmColumnSettings = {
       id: `custom-${Date.now()}`,
@@ -219,6 +229,35 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
                     <div className="col-span-10 sm:col-span-6">
                       <input type="text" value={col.title} onChange={(e) => handleFieldChange(index, 'title', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Nome da Coluna" />
 
+                      {/* AI Rule Editor (Restored) */}
+                      {col.ai_actions && col.ai_actions.length > 0 ? (
+                        <div className="mt-2">
+                          <label className="text-xs text-gray-500 font-semibold">Regra de IA (Prompt):</label>
+                          <textarea
+                            value={col.ai_actions[0].description}
+                            onChange={(e) => handleAiRuleChange(index, e.target.value)}
+                            rows={3}
+                            className="w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                            placeholder="Descreva a regra para a IA..."
+                          />
+                          <div className="mt-1 flex items-center justify-between">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${col.ai_actions[0].active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                              {col.ai_actions[0].active ? '✅ IA Ativa' : '⏸️ IA Pausada'}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2">
+                          <label className="text-xs text-gray-500">Descrição (Resumo):</label>
+                          <textarea
+                            value={col.description || ''}
+                            onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
+                            rows={2}
+                            className="w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                            placeholder="Descrição da etapa..."
+                          />
+                        </div>
+                      )}
 
                     </div>
                     <div className="col-span-6 sm:col-span-3 flex items-center justify-center">
