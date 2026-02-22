@@ -283,6 +283,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 setDocuments(professionalToEdit.documents?.map((doc: any) => ({
                     title: doc.title,
                     fileName: doc.fileName,
+                    url: doc.url,
                     file: null
                 })) || []);
             } else {
@@ -652,13 +653,41 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                                                 <p className="text-xs text-gray-500 truncate" title={doc.fileName || doc.file?.name}>{doc.fileName || doc.file?.name}</p>
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveDocument(index)}
-                                            className="text-red-500 hover:text-red-700 font-bold p-1 rounded-full flex-shrink-0"
-                                        >
-                                            &times;
-                                        </button>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                            {(doc as any).url && (
+                                                <>
+                                                    <a
+                                                        href={(doc as any).url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-500 hover:text-blue-700 p-1.5 rounded-full hover:bg-blue-50 transition-colors"
+                                                        title="Visualizar documento"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </a>
+                                                    <a
+                                                        href={(doc as any).url}
+                                                        download={doc.fileName || doc.title || 'documento.pdf'}
+                                                        className="text-green-500 hover:text-green-700 p-1.5 rounded-full hover:bg-green-50 transition-colors"
+                                                        title="Baixar documento"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                        </svg>
+                                                    </a>
+                                                </>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveDocument(index)}
+                                                className="text-red-500 hover:text-red-700 font-bold p-1 rounded-full flex-shrink-0"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
