@@ -9,18 +9,24 @@ interface NewPackageModalProps {
     itemToEdit?: any | null;
     categories: string[];
     onAddCategory: (category: string) => void;
+    onUpdateCategory: (oldCategory: string, newCategory: string) => void;
+    onDeleteCategory: (category: string) => void;
     usageType?: string;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '', unit_id: '' };
 
-const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+
+const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, onUpdateCategory, onDeleteCategory, usageType }) => {
     const { t } = useLanguage();
     const { units } = useData();
     const [formData, setFormData] = useState(initialFormData);
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [isExiting, setIsExiting] = useState(false);
     const [newCategory, setNewCategory] = useState('');
+    const [editingCategory, setEditingCategory] = useState<{ index: number; name: string } | null>(null);
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
 
@@ -49,6 +55,7 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
 
     const handleClose = () => {
         setIsExiting(true);
+        setEditingCategory(null);
         setTimeout(() => { onClose(); setIsExiting(false); }, 300);
     };
 
@@ -85,6 +92,20 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
             setFormData(prev => ({ ...prev, category: trimmedCategory }));
             setIsCreatingCategory(false);
             setNewCategory('');
+        }
+    };
+
+    const handleStartEditing = (index: number, name: string) => {
+        setEditingCategory({ index, name });
+    };
+
+    const handleUpdateCategory = (originalCategoryName: string) => {
+        if (editingCategory) {
+            onUpdateCategory(originalCategoryName, editingCategory.name);
+            if (formData.category === originalCategoryName) {
+                setFormData(prev => ({ ...prev, category: editingCategory.name.trim() }));
+            }
+            setEditingCategory(null);
         }
     };
 
@@ -197,9 +218,37 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                 </div>
                             )}
                             <div>
+                                <h4 className="text-sm font-semibold text-gray-700 mb-2">Gerenciar Categorias</h4>
+                                <div className="space-y-2 max-h-32 overflow-y-auto border p-2 rounded-md bg-white">
+                                    {categories.map((cat, index) => (
+                                        <div key={index} className="flex items-center justify-between p-1 group">
+                                            {editingCategory?.index === index ? (
+                                                <input
+                                                    type="text"
+                                                    value={editingCategory.name}
+                                                    onChange={(e) => setEditingCategory({ index, name: e.target.value })}
+                                                    onBlur={() => handleUpdateCategory(cat)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUpdateCategory(cat); } }}
+                                                    className="text-sm p-1 border rounded w-full"
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm text-gray-800">{cat}</span>
+                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button type="button" onClick={() => handleStartEditing(index, cat)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
+                                                        <button type="button" onClick={() => onDeleteCategory(cat)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
                                 <select
                                     name="unit"
-                                    value={formData.unit_id || formData.unit}
+                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit === 'Ambas' ? 'Ambas' : '')}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === 'Ambas') {

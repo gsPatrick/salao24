@@ -236,6 +236,8 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                     itemToEdit={itemToEdit}
                     categories={serviceCategories}
                     onAddCategory={onAddServiceCategory}
+                    onUpdateCategory={onUpdateServiceCategory}
+                    onDeleteCategory={onDeleteServiceCategory}
                     usageType="Serviços"
                 />
             )}
@@ -247,6 +249,8 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                     itemToEdit={itemToEdit}
                     categories={serviceCategories}
                     onAddCategory={onAddServiceCategory}
+                    onUpdateCategory={onUpdateServiceCategory}
+                    onDeleteCategory={onDeleteServiceCategory}
                     usageType="Serviços"
                 />
             )}

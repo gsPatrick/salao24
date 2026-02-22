@@ -9,12 +9,17 @@ interface NewPlanModalProps {
     itemToEdit?: any | null;
     categories: string[];
     onAddCategory: (category: string) => void;
+    onUpdateCategory: (oldCategory: string, newCategory: string) => void;
+    onDeleteCategory: (category: string) => void;
     usageType?: string;
 }
 
 const initialFormData = { name: '', description: '', duration: '', price: '', sessions: '', category: '', unit: '', unit_id: '' };
 
-const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, usageType }) => {
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+
+const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, onUpdateCategory, onDeleteCategory, usageType }) => {
     const { t } = useLanguage();
     const { units } = useData();
     const [formData, setFormData] = useState(initialFormData);
@@ -22,6 +27,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [isExiting, setIsExiting] = useState(false);
     const [newCategory, setNewCategory] = useState('');
+    const [editingCategory, setEditingCategory] = useState<{ index: number; name: string } | null>(null);
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
 
@@ -50,6 +56,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
 
     const handleClose = () => {
         setIsExiting(true);
+        setEditingCategory(null);
         setTimeout(() => { onClose(); setIsExiting(false); }, 300);
     };
 
@@ -89,6 +96,20 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
         }
     };
 
+    const handleStartEditing = (index: number, name: string) => {
+        setEditingCategory({ index, name });
+    };
+
+    const handleUpdateCategory = (originalCategoryName: string) => {
+        if (editingCategory) {
+            onUpdateCategory(originalCategoryName, editingCategory.name);
+            if (formData.category === originalCategoryName) {
+                setFormData(prev => ({ ...prev, category: editingCategory.name.trim() }));
+            }
+            setEditingCategory(null);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // FIX: Refactored to iterate over a defined list of keys instead of using a for...in loop for improved type safety.
@@ -111,7 +132,11 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     };
 
     const isFormValid = useMemo(() => {
-        return Object.values(formData).every(value => !!value) && Object.values(errors).every(error => !error);
+        // Validation for required fields
+        const required = ['name', 'price', 'category', 'unit'];
+        const hasAllRequired = required.every(field => !!formData[field as keyof typeof formData]);
+        const hasNoErrors = Object.values(errors).every(error => !error);
+        return hasAllRequired && hasNoErrors;
     }, [formData, errors]);
 
     if (!isOpen && !isExiting) return null;
@@ -136,7 +161,35 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                             <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" required className="w-full p-2 border rounded" />
                             {renderInput('duration', 'Duração/Validade (ex: 15 dias)')}
                             {renderInput('price', 'Preço Mensal (ex: 180,00)')}
-                            {renderInput('sessions', 'Quantidade de Sessões (ex: Ilimitadas)')}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Quantidade de Vezes</label>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String(Math.max(1, (Number(prev.sessions) || 0) - 1)) }))}
+                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        name="sessions"
+                                        type="text"
+                                        value={formData.sessions}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        placeholder="ex: Ilimitadas ou 10"
+                                        className={`flex-grow p-2 border rounded-lg text-center font-semibold text-lg ${errors.sessions ? 'border-red-500' : 'border-gray-300'}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String((Number(prev.sessions) || 0) + 1) }))}
+                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
+                            </div>
                             <div>
                                 <select name="category" value={isCreatingCategory ? '__CREATE_NEW__' : formData.category} onChange={handleCategoryChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.category ? 'border-red-500' : 'border-gray-300'}`}>
                                     <option value="">Selecione a Categoria</option>
@@ -167,9 +220,37 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                 </div>
                             )}
                             <div>
+                                <h4 className="text-sm font-semibold text-gray-700 mb-2">Gerenciar Categorias</h4>
+                                <div className="space-y-2 max-h-32 overflow-y-auto border p-2 rounded-md bg-white">
+                                    {categories.map((cat, index) => (
+                                        <div key={index} className="flex items-center justify-between p-1 group">
+                                            {editingCategory?.index === index ? (
+                                                <input
+                                                    type="text"
+                                                    value={editingCategory.name}
+                                                    onChange={(e) => setEditingCategory({ index, name: e.target.value })}
+                                                    onBlur={() => handleUpdateCategory(cat)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUpdateCategory(cat); } }}
+                                                    className="text-sm p-1 border rounded w-full"
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm text-gray-800">{cat}</span>
+                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button type="button" onClick={() => handleStartEditing(index, cat)} className="text-blue-500 hover:text-blue-700"><EditIcon /></button>
+                                                        <button type="button" onClick={() => onDeleteCategory(cat)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
                                 <select
                                     name="unit"
-                                    value={formData.unit_id || formData.unit}
+                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit === 'Ambas' ? 'Ambas' : '')}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === 'Ambas') {
