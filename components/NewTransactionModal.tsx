@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import CurrencyInput from './common/CurrencyInput';
+import { parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -28,14 +30,12 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
     }
     if (!value.trim()) {
       newErrors.value = t('errorRequired');
-    } else if (!/^\d+([,.]\d{1,2})?$/.test(value)) {
-      newErrors.value = t('errorInvalidCurrency');
     }
     return newErrors;
   };
 
   const isFormValid = useMemo(() => {
-    return description.trim() && value.trim() && /^\d+([,.]\d{1,2})?$/.test(value);
+    return description.trim() && value.trim();
   }, [description, value]);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
     const saveData: any = {
       id: transactionToEdit?.id,
       description,
-      amount: parseFloat(value.replace(',', '.')) || 0,
+      amount: parseFloat(parseCurrencyToNumber(value)) || 0,
       date,
       type: transactionType,
       status,
@@ -126,10 +126,13 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
                 <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição" required className={`w-full p-2 border rounded ${errors.description ? 'border-red-500' : 'border-gray-300'}`} />
                 {errors.description && <p className="text-xs text-red-600 mt-1">{errors.description}</p>}
               </div>
-              <div>
-                <input type="text" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Valor (ex: 50,00)" required className={`w-full p-2 border rounded ${errors.value ? 'border-red-500' : 'border-gray-300'}`} />
-                {errors.value && <p className="text-xs text-red-600 mt-1">{errors.value}</p>}
-              </div>
+              <CurrencyInput
+                value={value}
+                onChange={(val) => setValue(val)}
+                label="Valor"
+                placeholder="R$ 0,00"
+                error={errors.value}
+              />
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full p-2 border rounded" />
               <select value={status} onChange={(e) => setStatus(e.target.value as any)} required className="w-full p-2 border rounded">
                 <option value="Pago">Pago</option>

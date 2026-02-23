@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { displayCurrency } from '../lib/formatUtils';
 
 interface User {
     name: string;
@@ -364,9 +365,9 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
         }
 
         setData({
-            faturamento: `R$ ${faturamentoVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            faturamento: displayCurrency(faturamentoVal),
             atendimentos: atendimentosVal.toString(),
-            ticketMedio: `R$ ${ticketMedioVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            ticketMedio: displayCurrency(ticketMedioVal),
             clientes: clientesVal.toString(),
             chartLabels: labels,
             chartData: chartDataObj,
@@ -607,7 +608,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
                                 <tr key={t.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{t.description}</td>
                                     <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${t.type === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {t.type === 'despesa' && '- '}R$ {t.amount}
+                                        {t.type === 'despesa' && '- '}{displayCurrency(t.amount)}
                                     </td>
                                 </tr>
                             ))}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { NumericFormat, PatternFormat } from 'react-number-format';
+import { PatternFormat } from 'react-number-format';
+import CurrencyInput from './common/CurrencyInput';
 import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewPlanModalProps {
@@ -257,25 +258,15 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                     <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Quantidade de Sessões</p>
                                 </div>
                                 <div>
-                                    <NumericFormat
+                                    <CurrencyInput
                                         name="price"
                                         value={formData.price}
-                                        onValueChange={(values) => {
-                                            setFormData(prev => ({ ...prev, price: values.value }));
-                                        }}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, price: val }))}
+                                        label="Valor do Plano"
                                         placeholder="R$ 0,00"
-                                        thousandSeparator="."
-                                        decimalSeparator=","
-                                        prefix="R$ "
-                                        decimalScale={2}
-                                        fixedDecimalScale={false}
-                                        isNumericString={true}
-                                        allowDecimalSeparator={true}
+                                        error={errors.price}
                                         disabled={isReadOnly}
-                                        className={`w-full p-2 border rounded border-gray-300 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : ''}`}
                                     />
-                                    <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor do Plano</p>
-                                    {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
                                 </div>
                             </div>
                             <div>

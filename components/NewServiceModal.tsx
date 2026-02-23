@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { NumericFormat, PatternFormat } from 'react-number-format';
+import { PatternFormat } from 'react-number-format';
+import CurrencyInput from './common/CurrencyInput';
 import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 // Props for the modal
@@ -220,27 +221,15 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                 <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Tempo (HH:mm)</p>
                                 {errors.duration && <p className="text-xs text-red-600 mt-1">{errors.duration}</p>}
                             </div>
-                            <div>
-                                <NumericFormat
-                                    name="price"
-                                    value={formData.price}
-                                    onValueChange={(values) => {
-                                        setFormData(prev => ({ ...prev, price: values.value }));
-                                    }}
-                                    placeholder="R$ 0,00"
-                                    thousandSeparator="."
-                                    decimalSeparator=","
-                                    prefix="R$ "
-                                    decimalScale={2}
-                                    fixedDecimalScale={false}
-                                    isNumericString={true}
-                                    allowDecimalSeparator={true}
-                                    disabled={isReadOnly}
-                                    className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
-                                />
-                                <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor do Serviço</p>
-                                {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
-                            </div>
+                            <CurrencyInput
+                                name="price"
+                                value={formData.price}
+                                onChange={(val) => setFormData(prev => ({ ...prev, price: val }))}
+                                label="Valor do Serviço"
+                                placeholder="R$ 0,00"
+                                error={errors.price}
+                                disabled={isReadOnly}
+                            />
                             <div>
                                 <select
                                     name="category"

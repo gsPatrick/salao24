@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import NewProductModal from './NewProductModal';
 import { useData, Product } from '../contexts/DataContext';
+import { displayCurrency } from '../lib/formatUtils';
 
 interface StockPageProps {
     onBack?: () => void;
@@ -227,7 +228,7 @@ const StockPage: React.FC<StockPageProps> = ({
                                                 <div className="text-sm font-medium text-gray-900">{product.name}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {product.purchaseValue}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{displayCurrency(product.purchaseValue)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     <button

@@ -51,6 +51,7 @@ import { SuperAdminTenantsPage, SuperAdminBannersPage } from './SuperAdminDashbo
 import YouTubeCommentModeration from './YouTubeCommentModeration';
 import TranslationPage from './TranslationPage';
 import TestConnection from './TestConnection';
+import { displayCurrency } from '../lib/formatUtils';
 
 // Card Icons
 const DollarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0H8v1m4-1v-1m-4 5v1m-2-4h12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2z" /></svg>;
@@ -1840,7 +1841,7 @@ const MonthlyPackagesPage: React.FC<{
                                 </div>
 
                                 <h3 className="text-lg font-bold text-gray-800 mb-2">{pkg.name}</h3>
-                                <p className="text-2xl font-bold text-primary mb-2">R$ {pkg.price.toFixed(2)}</p>
+                                <p className="text-2xl font-bold text-primary mb-2">{displayCurrency(pkg.price)}</p>
                                 <p className="text-sm text-gray-600 mb-3">{pkg.description}</p>
                                 <p className="text-xs text-gray-500">Duração: {pkg.duration} meses</p>
 
@@ -2021,7 +2022,7 @@ const MonthlyPackagesPage: React.FC<{
                                         </div>
                                         <div>
                                             <p className="text-gray-500">Pacote:</p>
-                                            <p className="font-medium text-primary">{subscription.packageName} - R$ {subscription.packagePrice.toFixed(2)}</p>
+                                            <p className="font-medium text-primary">{subscription.packageName} - {displayCurrency(subscription.packagePrice)}</p>
                                         </div>
                                     </div>
 
@@ -2472,7 +2473,7 @@ const MonthlyPackagesPage: React.FC<{
                                                     <option value="">Selecione um pacote</option>
                                                     {monthlyPackages.filter(p => p.isActive).map(pkg => (
                                                         <option key={pkg.id} value={pkg.id}>
-                                                            {pkg.name} - R$ {pkg.price.toFixed(2)}
+                                                            {pkg.name} - {displayCurrency(pkg.price)}
                                                         </option>
                                                     ))}
                                                 </select>

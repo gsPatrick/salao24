@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import CurrencyInput from './common/CurrencyInput';
+import { parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewProductModalProps {
   isOpen: boolean;
@@ -28,12 +30,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSa
     if (isOpen) {
       if (itemToEdit) {
         setFormData({
-            name: itemToEdit.name || '',
-            category: itemToEdit.category || '',
-            purchaseValue: itemToEdit.purchaseValue || '',
-            quantity: String(itemToEdit.quantity || ''),
-            lowStockAlert: String(itemToEdit.lowStockAlert || ''),
-            status: itemToEdit.suspended ? 'Suspenso' : 'Ativo'
+          name: itemToEdit.name || '',
+          category: itemToEdit.category || '',
+          purchaseValue: itemToEdit.purchaseValue || '',
+          quantity: String(itemToEdit.quantity || ''),
+          lowStockAlert: String(itemToEdit.lowStockAlert || ''),
+          status: itemToEdit.suspended ? 'Suspenso' : 'Ativo'
         });
       } else {
         setFormData(initialFormData);
@@ -59,31 +61,32 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSa
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.value === '__CREATE_NEW__') {
-        setIsCreatingCategory(true);
+      setIsCreatingCategory(true);
     } else {
-        setIsCreatingCategory(false);
-        handleChange(e);
+      setIsCreatingCategory(false);
+      handleChange(e);
     }
   };
-  
+
   const handleCreateCategory = () => {
-      const trimmedCategory = newCategory.trim();
-      if (trimmedCategory) {
-          onAddCategory(trimmedCategory);
-          setFormData(prev => ({ ...prev, category: trimmedCategory }));
-          setNewCategory('');
-          setIsCreatingCategory(false);
-      }
+    const trimmedCategory = newCategory.trim();
+    if (trimmedCategory) {
+      onAddCategory(trimmedCategory);
+      setFormData(prev => ({ ...prev, category: trimmedCategory }));
+      setNewCategory('');
+      setIsCreatingCategory(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ 
-        ...itemToEdit, 
-        ...formData,
-        quantity: Number(formData.quantity) || 0,
-        lowStockAlert: Number(formData.lowStockAlert) || 0,
-        suspended: formData.status === 'Suspenso'
+    onSave({
+      ...itemToEdit,
+      ...formData,
+      purchaseValue: parseFloat(parseCurrencyToNumber(formData.purchaseValue)) || 0,
+      quantity: Number(formData.quantity) || 0,
+      lowStockAlert: Number(formData.lowStockAlert) || 0,
+      suspended: formData.status === 'Suspenso'
     });
     handleClose();
   };
@@ -109,26 +112,31 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSa
               </div>
               {isCreatingCategory && (
                 <div className="flex items-center gap-2 mt-2 p-3 bg-light rounded-md border animate-fade-in">
-                    <input
-                        type="text"
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
-                        placeholder="Nome da nova categoria"
-                        className="flex-grow p-2 border rounded"
-                        autoFocus
-                    />
-                    <button
-                        type="button"
-                        onClick={handleCreateCategory}
-                        disabled={!newCategory.trim()}
-                        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50"
-                    >
-                        Criar
-                    </button>
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
+                    placeholder="Nome da nova categoria"
+                    className="flex-grow p-2 border rounded"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={!newCategory.trim()}
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50"
+                  >
+                    Criar
+                  </button>
                 </div>
               )}
-              <input name="purchaseValue" value={formData.purchaseValue} onChange={handleChange} placeholder="Valor da Compra (ex: 25,00)" required className="w-full p-2 border rounded" />
+              <CurrencyInput
+                value={formData.purchaseValue}
+                onChange={(val) => setFormData(prev => ({ ...prev, purchaseValue: val }))}
+                label="Valor da Compra"
+                placeholder="R$ 0,00"
+              />
               <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantidade" required className="w-full p-2 border rounded" />
               <input name="lowStockAlert" type="number" value={formData.lowStockAlert} onChange={handleChange} placeholder="Alerta de Estoque Baixo (Qtd.)" required className="w-full p-2 border rounded" />
               <select name="status" value={formData.status} onChange={handleChange} required className="w-full p-2 border rounded bg-white text-gray-900">

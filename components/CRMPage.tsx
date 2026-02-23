@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser } from '../contexts/DataContext';
 import { Client, Professional, Service, Appointment } from '../types';
 import { clientsAPI } from '../lib/api';
+import { displayCurrency } from '../lib/formatUtils';
 
 // --- Helper Functions ---
 const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
@@ -1310,7 +1311,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                                     <div className="mt-1 text-xs space-y-0.5">
                                                         {client.history.slice(0, 2).map(h => (
                                                             <p key={h.id} className="truncate text-black">
-                                                                {new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR')}	{h.name}	{h.professional}	R$ {h.price}	{h.status}
+                                                                {new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR')}	{h.name}	{h.professional}	{displayCurrency(h.price)}	{h.status}
                                                             </p>
                                                         ))}
                                                     </div>
@@ -1385,7 +1386,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                         <td className="px-6 py-4 whitespace-nowrap text-black">{new Date(appt.date).toLocaleDateString('pt-BR')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-black">{appt.service}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-black">{appt.professionalName}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-black">R$ {appt.price}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-black">{displayCurrency(appt.price)}</td>
                                         <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${appt.status === 'Atendido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{appt.status}</span></td>
                                     </tr>
                                 ))}
