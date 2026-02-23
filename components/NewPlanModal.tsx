@@ -52,14 +52,24 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
 
     useEffect(() => {
         if (isOpen) {
-            setFormData(itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData);
+            let initialData = itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData;
+
+            // Robust unit resolution: if unit_id is missing but unit name is present, try to find the ID
+            if (initialData.unit && !initialData.unit_id && initialData.unit !== 'Ambas' && units.length > 0) {
+                const foundUnit = units.find(u => u.name === initialData.unit);
+                if (foundUnit) {
+                    initialData.unit_id = String(foundUnit.id);
+                }
+            }
+
+            setFormData(initialData);
             setIsFavorite(itemToEdit?.isFavorite || false);
             setErrors({});
         } else {
             setIsCreatingCategory(false);
             setNewCategory('');
         }
-    }, [isOpen, itemToEdit]);
+    }, [isOpen, itemToEdit, units]);
 
     const handleClose = () => {
         setIsExiting(true);
