@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { NumericFormat } from 'react-number-format';
+import { NumericFormat, PatternFormat } from 'react-number-format';
 import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 // Props for the modal
@@ -205,9 +205,9 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                 className="w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary"
                             />
                             <div>
-                                <NumericFormat
+                                <PatternFormat
                                     format="##:##"
-                                    placeholder="Duração (HH:mm)"
+                                    placeholder="00:00"
                                     mask="_"
                                     name="duration"
                                     value={formData.duration}

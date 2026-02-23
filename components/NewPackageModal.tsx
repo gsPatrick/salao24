@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { NumericFormat } from 'react-number-format';
+import { NumericFormat, PatternFormat } from 'react-number-format';
 import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewPackageModalProps {
@@ -220,9 +220,9 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                 className="w-full p-2 border rounded border-gray-300"
                             />
                             <div>
-                                <NumericFormat
+                                <PatternFormat
                                     format="##:##"
-                                    placeholder="Duração (HH:mm)"
+                                    placeholder="00:00"
                                     mask="_"
                                     name="duration"
                                     value={formData.duration}

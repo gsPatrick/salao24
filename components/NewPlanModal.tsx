@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { NumericFormat } from 'react-number-format';
+import { NumericFormat, PatternFormat } from 'react-number-format';
 import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewPlanModalProps {
@@ -209,9 +209,9 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                             {renderInput('name', 'Nome do Plano')}
                             <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" required className="w-full p-2 border rounded" />
                             <div>
-                                <NumericFormat
+                                <PatternFormat
                                     format="##:##"
-                                    placeholder="Duração (HH:mm)"
+                                    placeholder="00:00"
                                     mask="_"
                                     name="duration"
                                     value={formData.duration}
