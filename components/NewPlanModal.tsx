@@ -21,8 +21,14 @@ const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w
 
 const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, onUpdateCategory, onDeleteCategory, usageType }) => {
     const { t } = useLanguage();
-    const { units } = useData();
+    const { units, refreshUnits } = useData();
     const [formData, setFormData] = useState(initialFormData);
+
+    useEffect(() => {
+        if (isOpen) {
+            refreshUnits();
+        }
+    }, [isOpen, refreshUnits]);
     // FIX: Broaden the type of the 'errors' state to 'any' for its values to resolve a TypeScript type error on assignment.
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [isExiting, setIsExiting] = useState(false);
@@ -31,12 +37,13 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
 
-    // FIX: Changed 'name' type from string to keyof typeof formData to prevent type errors when indexing.
+    // FIX: Restored selective validation to prevent the 'Save' button from being incorrectly disabled.
     const validateField = (name: keyof typeof formData, value: string) => {
         let error = '';
-        if (!value) {
+        const mandatoryFields = ['name', 'price', 'category', 'unit'];
+        if (!value && mandatoryFields.includes(name as string)) {
             error = t('errorRequired');
-        } else if (name === 'price' && !/^\d+([,.]\d{1,2})?$/.test(value)) {
+        } else if (name === 'price' && value && !/^\d+([,.]\d{1,2})?$/.test(value)) {
             error = t('errorInvalidCurrency');
         }
         return error;
@@ -116,7 +123,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
         const newErrors: Partial<Record<keyof typeof formData, string>> = {};
         const fieldsToValidate: (keyof typeof formData)[] = ['name', 'description', 'duration', 'price', 'sessions', 'category', 'unit'];
         fieldsToValidate.forEach(key => {
-            const error = validateField(key, formData[key]);
+            const val = key === 'unit' ? (formData.unit_id || formData.unit) : formData[key];
+            const error = validateField(key, val);
             if (error) {
                 newErrors[key] = error;
             }
@@ -134,7 +142,10 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
     const isFormValid = useMemo(() => {
         // Validation for required fields
         const required = ['name', 'price', 'category', 'unit'];
-        const hasAllRequired = required.every(field => !!formData[field as keyof typeof formData]);
+        const hasAllRequired = required.every(field => {
+            if (field === 'unit') return !!(formData.unit_id || formData.unit);
+            return !!formData[field as keyof typeof formData];
+        });
         const hasNoErrors = Object.values(errors).every(error => !error);
         return hasAllRequired && hasNoErrors;
     }, [formData, errors]);
@@ -250,7 +261,7 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                             <div>
                                 <select
                                     name="unit"
-                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit === 'Ambas' ? 'Ambas' : '')}
+                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit || '')}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === 'Ambas') {

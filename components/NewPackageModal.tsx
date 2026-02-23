@@ -21,8 +21,14 @@ const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w
 
 const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSave, itemToEdit, categories, onAddCategory, onUpdateCategory, onDeleteCategory, usageType }) => {
     const { t } = useLanguage();
-    const { units } = useData();
+    const { units, refreshUnits } = useData();
     const [formData, setFormData] = useState(initialFormData);
+
+    useEffect(() => {
+        if (isOpen) {
+            refreshUnits();
+        }
+    }, [isOpen, refreshUnits]);
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [isExiting, setIsExiting] = useState(false);
     const [newCategory, setNewCategory] = useState('');
@@ -114,7 +120,8 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
         const newErrors: Partial<Record<keyof typeof formData, string>> = {};
         const fieldsToValidate: (keyof typeof formData)[] = ['name', 'price', 'sessions', 'category', 'unit'];
         fieldsToValidate.forEach(key => {
-            const error = validateField(key, formData[key]);
+            const val = key === 'unit' ? (formData.unit_id || formData.unit) : formData[key];
+            const error = validateField(key, val);
             if (error) {
                 newErrors[key] = error;
             }
@@ -133,7 +140,10 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
     const isFormValid = useMemo(() => {
         // Validation for required fields
         const required = ['name', 'price', 'sessions', 'category', 'unit'];
-        const hasAllRequired = required.every(field => !!formData[field as keyof typeof formData]);
+        const hasAllRequired = required.every(field => {
+            if (field === 'unit') return !!(formData.unit_id || formData.unit);
+            return !!formData[field as keyof typeof formData];
+        });
         const hasNoErrors = Object.values(errors).every(error => !error);
         return hasAllRequired && hasNoErrors;
     }, [formData, errors]);
@@ -248,7 +258,7 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                             <div>
                                 <select
                                     name="unit"
-                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit === 'Ambas' ? 'Ambas' : '')}
+                                    value={formData.unit_id ? String(formData.unit_id) : (formData.unit || '')}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val === 'Ambas') {
