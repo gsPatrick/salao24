@@ -274,25 +274,16 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                         name="price"
                                         value={formData.price}
                                         onValueChange={(values) => {
-                                            // RTL Mode: treat input as cents
-                                            // If empty, allow clearing the field
-                                            if (values.value === '') {
-                                                setFormData(prev => ({ ...prev, price: '0.00' }));
-                                                return;
-                                            }
-                                            const rawValue = values.value.replace(/\D/g, '');
-                                            const cents = parseInt(rawValue, 10) || 0;
-                                            const scaledValue = (cents / 100).toFixed(2);
-                                            setFormData(prev => ({ ...prev, price: scaledValue }));
+                                            setFormData(prev => ({ ...prev, price: values.value }));
                                         }}
                                         placeholder="R$ 0,00"
                                         thousandSeparator="."
                                         decimalSeparator=","
                                         prefix="R$ "
                                         decimalScale={2}
-                                        fixedDecimalScale
+                                        fixedDecimalScale={false}
                                         isNumericString={true}
-                                        allowDecimalSeparator={false}
+                                        allowDecimalSeparator={true}
                                         disabled={isReadOnly}
                                         className={`w-full p-2 border rounded border-gray-300 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : ''}`}
                                     />
