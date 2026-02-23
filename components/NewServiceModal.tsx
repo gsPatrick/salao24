@@ -45,12 +45,19 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
 
+    const isReadOnly = !!itemToEdit;
+
     const validateField = (name: keyof typeof formData, value: string) => {
         let error = '';
         if (!value) {
             error = t('errorRequired');
-        } else if (name === 'price' && !/^\d+([,.]\d{1,2})?$/.test(value)) {
-            error = t('errorInvalidCurrency');
+        } else if (name === 'price' && value) {
+            // Updated regex to allow formats like "1.000,00", "1000,00", "1000.00" or just "1000"
+            // It allows optional dots as thousand separators and a comma or dot for decimals.
+            const currencyRegex = /^(\d{1,3}(\.\d{3})*|\d+)([,.]\d{1,2})?$/;
+            if (!currencyRegex.test(value)) {
+                error = t('errorInvalidCurrency');
+            }
         }
         return error;
     };
@@ -140,7 +147,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
             return;
         }
 
-        const sanitizedPrice = formData.price.replace(',', '.');
+        // Clean price: remove dots (thousands) and replace comma with dot (decimal)
+        const sanitizedPrice = formData.price.replace(/\./g, '').replace(',', '.');
         onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite });
         handleClose();
     };
@@ -153,9 +161,18 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
 
     const title = itemToEdit ? 'Editar Serviço' : 'Novo Serviço';
 
-    const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text') => (
+    const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text', disabled = false) => (
         <div>
-            <input name={name} value={formData[name as keyof typeof formData]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} required className={`w-full p-2 border rounded ${errors[name] ? 'border-red-500' : 'border-gray-300'}`} />
+            <input
+                name={name}
+                value={formData[name as keyof typeof formData]}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={placeholder}
+                required
+                disabled={disabled}
+                className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors[name] ? 'border-red-500' : 'border-gray-300'}`}
+            />
             {errors[name] && <p className="text-xs text-red-600 mt-1">{errors[name]}</p>}
         </div>
     );
@@ -168,11 +185,26 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                         <h3 className="text-xl font-bold text-secondary">{title}</h3>
                         <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                             {renderInput('name', 'Nome do Serviço')}
-                            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" required className="w-full p-2 border rounded" />
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                placeholder="Descrição"
+                                required
+                                className="w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary"
+                            />
                             {renderInput('duration', 'Duração (em minutos)')}
-                            {renderInput('price', 'Preço (ex: 100,00)')}
+                            {renderInput('price', 'Preço (ex: 1.000,00)', 'text', isReadOnly)}
                             <div>
-                                <select name="category" value={isCreatingCategory ? '__CREATE_NEW__' : formData.category} onChange={handleCategoryChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.category ? 'border-red-500' : 'border-gray-300'}`}>
+                                <select
+                                    name="category"
+                                    value={isCreatingCategory ? '__CREATE_NEW__' : formData.category}
+                                    onChange={handleCategoryChange}
+                                    onBlur={handleBlur}
+                                    required
+                                    disabled={isReadOnly}
+                                    className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
+                                >
                                     <option value="">Selecione a Categoria</option>
                                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                     <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar nova categoria --</option>
@@ -243,7 +275,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                     }}
                                     onBlur={handleBlur}
                                     required
-                                    className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
+                                    disabled={isReadOnly}
+                                    className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
                                 >
                                     <option value="">Selecione a Unidade</option>
                                     {units.map(u => (

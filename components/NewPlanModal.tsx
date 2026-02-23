@@ -43,8 +43,12 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
         const mandatoryFields = ['name', 'price', 'category', 'unit'];
         if (!value && mandatoryFields.includes(name as string)) {
             error = t('errorRequired');
-        } else if (name === 'price' && value && !/^\d+([,.]\d{1,2})?$/.test(value)) {
-            error = t('errorInvalidCurrency');
+        } else if (name === 'price' && value) {
+            // Updated regex to allow "1.000,00", "1000,00", "1500" etc.
+            const currencyRegex = /^(\d{1,3}(\.\d{3})*|\d+)([,.]\d{1,2})?$/;
+            if (!currencyRegex.test(value)) {
+                error = t('errorInvalidCurrency');
+            }
         }
         return error;
     };
@@ -151,7 +155,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             setErrors(newErrors);
             return;
         }
-        const sanitizedPrice = formData.price.replace(',', '.');
+        // Clean price: remove dots (thousands) and replace comma with dot (decimal)
+        const sanitizedPrice = formData.price.replace(/\./g, '').replace(',', '.');
         onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite, usageType: itemToEdit?.usageType || usageType || 'Serviços' });
         handleClose();
     };
