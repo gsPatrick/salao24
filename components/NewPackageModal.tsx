@@ -52,6 +52,12 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
         if (isOpen) {
             let initialData = itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData;
 
+            // Null safety: prevent null values from database from triggering validation errors
+            initialData.category = initialData.category || '';
+            initialData.unit = initialData.unit || '';
+            initialData.price = initialData.price ? String(initialData.price).replace('.', ',') : '';
+            initialData.sessions = initialData.sessions ? String(initialData.sessions) : '';
+
             // Robust unit resolution: if unit_id is missing but unit name is present, try to find the ID
             if (initialData.unit && !initialData.unit_id && initialData.unit !== 'Ambas' && units.length > 0) {
                 const foundUnit = units.find(u => u.name === initialData.unit);
@@ -94,11 +100,19 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
             setIsCreatingCategory(true);
         } else {
             setIsCreatingCategory(false);
-            handleChange(e);
+            const { name, value } = e.target;
+            setFormData(prev => ({ ...prev, [name]: value }));
         }
         if (errors.category) {
             setErrors(prev => ({ ...prev, category: '' }));
         }
+    };
+
+    const handleQuantityChange = (delta: number) => {
+        if (!!itemToEdit) return; // Prevent change if read-only
+        const current = Number(formData.sessions) || 0;
+        const next = Math.max(1, current + delta);
+        setFormData(prev => ({ ...prev, sessions: String(next) }));
     };
 
     const handleCreateCategory = () => {
@@ -158,13 +172,25 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
         return hasAllRequired && hasNoErrors;
     }, [formData, errors]);
 
+    const isReadOnly = !!itemToEdit;
+
     if (!isOpen && !isExiting) return null;
 
     const title = itemToEdit ? 'Editar Pacote' : 'Novo Pacote';
 
-    const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text') => (
+    const renderInput = (name: keyof typeof formData, placeholder: string, type = 'text', disabled = false) => (
         <div>
-            <input name={name} type={type} value={formData[name as keyof typeof formData]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} required className={`w-full p-2 border rounded ${errors[name] ? 'border-red-500' : 'border-gray-300'}`} />
+            <input
+                name={name}
+                type={type}
+                value={formData[name as keyof typeof formData]}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={placeholder}
+                required
+                disabled={disabled}
+                className={`w-full p-2 border rounded ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'} ${errors[name] ? 'border-red-500' : 'border-gray-300'}`}
+            />
             {errors[name] && <p className="text-xs text-red-600 mt-1">{errors[name]}</p>}
         </div>
     );
@@ -177,42 +203,66 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                         <h3 className="text-xl font-bold text-secondary">{title}</h3>
                         <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                             {renderInput('name', 'Nome do Pacote')}
-                            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" className="w-full p-2 border rounded" />
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                placeholder="Descrição"
+                                className="w-full p-2 border rounded border-gray-300"
+                            />
                             {renderInput('duration', 'Duração (por sessão)')}
-                            {renderInput('price', 'Preço do Pacote (ex: 100,00)')}
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium text-gray-700">Quantidade de Sessões</label>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String(Math.max(1, (Number(prev.sessions) || 0) - 1)) }))}
-                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
-                                    >
-                                        -
-                                    </button>
-                                    <input
-                                        name="sessions"
-                                        type="number"
-                                        value={formData.sessions}
-                                        onChange={handleChange}
-                                        onBlur={handleBlur}
-                                        className={`flex-grow p-2 border rounded-lg text-center font-semibold text-lg ${errors.sessions ? 'border-red-500' : 'border-gray-300'}`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, sessions: String((Number(prev.sessions) || 0) + 1) }))}
-                                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-xl font-bold transition-colors"
-                                    >
-                                        +
-                                    </button>
+                            <div className="flex items-center gap-2">
+                                <div className="flex-grow">
+                                    <div className="flex items-center border border-gray-300 rounded overflow-hidden">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuantityChange(-1)}
+                                            disabled={isReadOnly}
+                                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="text"
+                                            name="sessions"
+                                            value={formData.sessions}
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            placeholder="Sessões"
+                                            required
+                                            disabled={isReadOnly}
+                                            className={`w-full p-2 text-center border-none focus:ring-0 ${isReadOnly ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuantityChange(1)}
+                                            disabled={isReadOnly}
+                                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Quantidade de Sessões</p>
+                                    {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
                                 </div>
-                                {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
+                                <div className="w-1/3">
+                                    {renderInput('price', 'Preço', 'text', isReadOnly)}
+                                    <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor R$</p>
+                                </div>
                             </div>
                             <div>
-                                <select name="category" value={isCreatingCategory ? '__CREATE_NEW__' : formData.category} onChange={handleCategoryChange} onBlur={handleBlur} required className={`w-full p-2 border rounded ${errors.category ? 'border-red-500' : 'border-gray-300'}`}>
+                                <select
+                                    name="category"
+                                    value={isCreatingCategory ? '__CREATE_NEW__' : formData.category}
+                                    onChange={handleCategoryChange}
+                                    onBlur={handleBlur}
+                                    required
+                                    disabled={isReadOnly}
+                                    className={`w-full p-2 border rounded ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'} ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
+                                >
                                     <option value="">Selecione a Categoria</option>
                                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                    <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar nova categoria --</option>
+                                    {!isReadOnly && <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar nova categoria --</option>}
                                 </select>
                                 {errors.category && <p className="text-xs text-red-600 mt-1">{errors.category}</p>}
                             </div>
@@ -280,13 +330,14 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                     }}
                                     onBlur={handleBlur}
                                     required
-                                    className={`w-full p-2 border rounded ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
+                                    disabled={isReadOnly}
+                                    className={`w-full p-2 border rounded ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'} ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
                                 >
                                     <option value="">Selecione a Unidade</option>
-                                    <option value="Ambas">Ambas as unidades</option>
                                     {units.map(u => (
                                         <option key={u.id} value={String(u.id)}>{u.name}</option>
                                     ))}
+                                    <option value="Ambas">Ambas</option>
                                 </select>
                                 {errors.unit && <p className="text-xs text-red-600 mt-1">{errors.unit}</p>}
                             </div>
@@ -306,8 +357,14 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                         </div>
                     </div>
                     <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-                        <button type="submit" disabled={!isFormValid} className="px-4 py-2 bg-primary text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed">Salvar</button>
-                        <button type="button" onClick={handleClose} className="px-4 py-2 bg-white text-gray-700 border rounded-md mr-2">Cancelar</button>
+                        <button
+                            type="submit"
+                            disabled={!isFormValid}
+                            className={`px-4 py-2 text-white rounded-md transition-colors ${isFormValid ? 'bg-primary hover:bg-primary-dark' : 'bg-gray-400 cursor-not-allowed'}`}
+                        >
+                            Salvar
+                        </button>
+                        <button type="button" onClick={handleClose} className="px-4 py-2 bg-white text-gray-700 border rounded-md mr-2 hover:bg-gray-50 transition-colors">Cancelar</button>
                     </div>
                 </form>
             </div>
