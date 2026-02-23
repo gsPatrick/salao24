@@ -226,6 +226,11 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                     value={formData.price}
                                     onValueChange={(values) => {
                                         // RTL Mode: treat input as cents
+                                        // If empty, allow clearing the field
+                                        if (values.value === '') {
+                                            setFormData(prev => ({ ...prev, price: '0.00' }));
+                                            return;
+                                        }
                                         const rawValue = values.value.replace(/\D/g, '');
                                         const cents = parseInt(rawValue, 10) || 0;
                                         const scaledValue = (cents / 100).toFixed(2);
@@ -237,6 +242,8 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                     prefix="R$ "
                                     decimalScale={2}
                                     fixedDecimalScale
+                                    isNumericString={true}
+                                    allowDecimalSeparator={false}
                                     disabled={isReadOnly}
                                     className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
                                 />
