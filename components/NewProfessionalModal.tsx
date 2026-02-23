@@ -282,7 +282,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 }
                 setDocuments(professionalToEdit.documents?.map((doc: any) => ({
                     title: doc.title,
-                    fileName: doc.fileName,
+                    fileName: doc.fileName || doc.title,
                     url: doc.url,
                     file: null
                 })) || []);
@@ -408,16 +408,21 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         try {
             const uploadedDocs = await Promise.all(documents.map(async doc => {
                 if (doc.file) {
-                    const response = await uploadAPI.upload(doc.file, 'professional_docs');
-                    return {
-                        title: doc.title,
-                        fileName: doc.file.name,
-                        url: response.data.url
-                    };
+                    try {
+                        const response = await uploadAPI.upload(doc.file, 'professional_docs');
+                        return {
+                            title: doc.title,
+                            fileName: doc.file.name,
+                            url: response.data.url
+                        };
+                    } catch (uploadError) {
+                        console.error(`Upload failed for ${doc.title}:`, uploadError);
+                        throw new Error(`Falha no upload do arquivo ${doc.title}`);
+                    }
                 }
                 return {
                     title: doc.title,
-                    fileName: doc.fileName,
+                    fileName: doc.fileName || doc.title,
                     url: (doc as any).url // Keep existing URL if any
                 };
             }));
@@ -436,9 +441,12 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             };
             onSave(finalData);
             handleClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving professional:', error);
-            alert('Erro ao salvar profissional. Verifique os documentos e tente novamente.');
+            // Capture more detail if available in the error response
+            const msg = error.response?.data?.message || error.message || 'Erro desconhecido';
+            console.error('Detailed Error:', msg);
+            alert(`Erro ao salvar profissional: ${msg}. Verifique os documentos e tente novamente.`);
         } finally {
             setIsSaving(false);
         }
@@ -662,6 +670,14 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                                                         rel="noopener noreferrer"
                                                         className="text-blue-500 hover:text-blue-700 p-1.5 rounded-full hover:bg-blue-50 transition-colors"
                                                         title="Visualizar documento"
+                                                        onClick={(e) => {
+                                                            // For direct URLs that might not open well in some browsers, ensure target _blank
+                                                            if (!(doc as any).url.startsWith('http')) {
+                                                                e.preventDefault();
+                                                                const win = window.open();
+                                                                if (win) win.document.write(`<iframe src="${(doc as any).url}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                                                            }
+                                                        }}
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -671,6 +687,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                                                     <a
                                                         href={(doc as any).url}
                                                         download={doc.fileName || doc.title || 'documento.pdf'}
+                                                        target="_blank"
                                                         className="text-green-500 hover:text-green-700 p-1.5 rounded-full hover:bg-green-50 transition-colors"
                                                         title="Baixar documento"
                                                     >
@@ -720,7 +737,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             </button>
                         </div>
                     </div>
-                </CollapsibleSection>
+                </CollapsibleSection >
             </>
         );
     };
