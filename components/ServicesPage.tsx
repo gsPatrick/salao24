@@ -4,6 +4,7 @@ import NewPackageModal from './NewPackageModal';
 import NewPlanModal from './NewPlanModal';
 import { useData } from '../contexts/DataContext';
 import { Service as ContextService, Package, SalonPlan as Plan } from '../types';
+import { displayCurrency, displayDuration } from '../lib/formatUtils';
 
 // Props for the main page
 interface ServicesPageProps {
@@ -108,9 +109,9 @@ const ServicesPage: React.FC<ServicesPageProps> = ({
                                 {item.suspended && <span className="ml-3 text-xs font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">SUSPENSO</span>}
                             </p>
                             <p className="text-sm text-gray-500">
-                                {type === 'service' && `${item.duration} - R$ ${item.price}`}
-                                {type === 'package' && `${item.sessions} sessões - R$ ${item.price}`}
-                                {type === 'plan' && `${item.duration} - R$ ${item.price}`}
+                                {type === 'service' && `${displayDuration(item.duration)} - ${displayCurrency(item.price)}`}
+                                {type === 'package' && `${item.sessions} sessões - ${displayCurrency(item.price)}`}
+                                {type === 'plan' && `${displayDuration(item.duration)} - ${displayCurrency(item.price)}`}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">

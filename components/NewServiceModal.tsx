@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
+import { NumericFormat } from 'react-number-format';
+import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 // Props for the modal
 interface NewServiceModalProps {
@@ -64,7 +66,15 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
 
     useEffect(() => {
         if (isOpen) {
-            setFormData(itemToEdit ? { ...initialFormData, ...itemToEdit } : initialFormData);
+            if (itemToEdit) {
+                setFormData({
+                    ...initialFormData,
+                    ...itemToEdit,
+                    duration: displayDuration(itemToEdit.duration),
+                });
+            } else {
+                setFormData(initialFormData);
+            }
             setIsFavorite(itemToEdit?.isFavorite || false);
             setErrors({});
         }
@@ -148,8 +158,9 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
         }
 
         // Clean price: remove dots (thousands) and replace comma with dot (decimal)
-        const sanitizedPrice = formData.price.replace(/\./g, '').replace(',', '.');
-        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite });
+        const sanitizedPrice = parseCurrencyToNumber(formData.price);
+        const sanitizedDuration = parseDurationToMinutes(formData.duration);
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, duration: sanitizedDuration, isFavorite });
         handleClose();
     };
 
@@ -193,8 +204,40 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                 required
                                 className="w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary"
                             />
-                            {renderInput('duration', 'Duração (em minutos)')}
-                            {renderInput('price', 'Preço (ex: 1.000,00)', 'text', isReadOnly)}
+                            <div>
+                                <NumericFormat
+                                    format="##:##"
+                                    placeholder="Duração (HH:mm)"
+                                    mask="_"
+                                    name="duration"
+                                    value={formData.duration}
+                                    onValueChange={(values) => {
+                                        setFormData(prev => ({ ...prev, duration: values.formattedValue }));
+                                    }}
+                                    className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary ${errors.duration ? 'border-red-500' : 'border-gray-300'}`}
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Tempo (HH:mm)</p>
+                                {errors.duration && <p className="text-xs text-red-600 mt-1">{errors.duration}</p>}
+                            </div>
+                            <div>
+                                <NumericFormat
+                                    name="price"
+                                    value={formData.price}
+                                    onValueChange={(values) => {
+                                        setFormData(prev => ({ ...prev, price: values.value }));
+                                    }}
+                                    placeholder="Preço (ex: 1.500,00)"
+                                    thousandSeparator="."
+                                    decimalSeparator=","
+                                    prefix="R$ "
+                                    decimalScale={2}
+                                    fixedDecimalScale
+                                    disabled={isReadOnly}
+                                    className={`w-full p-2 border rounded shadow-sm focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor do Serviço</p>
+                                {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
+                            </div>
                             <div>
                                 <select
                                     name="category"

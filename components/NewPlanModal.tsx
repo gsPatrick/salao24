@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
+import { NumericFormat } from 'react-number-format';
+import { displayDuration, parseDurationToMinutes, parseCurrencyToNumber } from '../lib/formatUtils';
 
 interface NewPlanModalProps {
     isOpen: boolean;
@@ -61,7 +63,8 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             // Null safety: prevent null values from database from triggering validation errors
             initialData.category = initialData.category || '';
             initialData.unit = initialData.unit || '';
-            initialData.price = initialData.price ? String(initialData.price).replace('.', ',') : '';
+            initialData.price = initialData.price ? String(initialData.price) : '';
+            initialData.duration = initialData.duration ? displayDuration(initialData.duration) : '';
             initialData.sessions = initialData.sessions ? String(initialData.sessions) : '';
 
             // Robust unit resolution: if unit_id is missing but unit name is present, try to find the ID
@@ -156,8 +159,9 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
             return;
         }
         // Clean price: remove dots (thousands) and replace comma with dot (decimal)
-        const sanitizedPrice = formData.price.replace(/\./g, '').replace(',', '.');
-        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, isFavorite, usageType: itemToEdit?.usageType || usageType || 'Serviços' });
+        const sanitizedPrice = parseCurrencyToNumber(formData.price);
+        const sanitizedDuration = parseDurationToMinutes(formData.duration);
+        onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, duration: sanitizedDuration, isFavorite, usageType: itemToEdit?.usageType || usageType || 'Serviços' });
         handleClose();
     };
 
@@ -204,7 +208,21 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                         <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                             {renderInput('name', 'Nome do Plano')}
                             <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descrição" required className="w-full p-2 border rounded" />
-                            {renderInput('duration', 'Duração/Validade (ex: 15 dias)')}
+                            <div>
+                                <NumericFormat
+                                    format="##:##"
+                                    placeholder="Duração (HH:mm)"
+                                    mask="_"
+                                    name="duration"
+                                    value={formData.duration}
+                                    onValueChange={(values) => {
+                                        setFormData(prev => ({ ...prev, duration: values.formattedValue }));
+                                    }}
+                                    className={`w-full p-2 border rounded border-gray-300 ${errors.duration ? 'border-red-500' : ''}`}
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Tempo por Sessão (HH:mm)</p>
+                                {errors.duration && <p className="text-xs text-red-600 mt-1">{errors.duration}</p>}
+                            </div>
                             <div className="flex items-center gap-2">
                                 <div className="flex-grow">
                                     <div className="flex items-center border border-gray-300 rounded overflow-hidden">
@@ -239,8 +257,22 @@ const NewPlanModal: React.FC<NewPlanModalProps> = ({ isOpen, onClose, onSave, it
                                     {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
                                 </div>
                                 <div className="w-1/3">
-                                    {renderInput('price', 'Preço', 'text', isReadOnly)}
-                                    <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor R$</p>
+                                    <NumericFormat
+                                        name="price"
+                                        value={formData.price}
+                                        onValueChange={(values) => {
+                                            setFormData(prev => ({ ...prev, price: values.value }));
+                                        }}
+                                        placeholder="Valor R$"
+                                        thousandSeparator="."
+                                        decimalSeparator=","
+                                        prefix="R$ "
+                                        decimalScale={2}
+                                        fixedDecimalScale
+                                        disabled={isReadOnly}
+                                        className={`w-full p-2 border rounded ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'} ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
+                                    />
+                                    <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor do Plano</p>
                                 </div>
                             </div>
                             <div>

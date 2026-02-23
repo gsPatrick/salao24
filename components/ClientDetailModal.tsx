@@ -6,6 +6,7 @@ import { useData, Client as DataContextClient, mapClientFromAPI } from '../conte
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
 import ScheduleInternalModal from './ScheduleInternalModal';
+import { displayCurrency, displayDuration } from '../lib/formatUtils';
 
 // ... existing icons ...
 const CheckCircleIcon = ({ className = "h-5 w-5" }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
@@ -479,8 +480,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         const averageTicket = totalVisits > 0 ? totalSpent / totalVisits : totalSpent;
 
         return {
-            totalSpent,
-            averageTicket,
+            totalSpent: displayCurrency(totalSpent),
+            averageTicket: displayCurrency(averageTicket),
             mostFrequentService: localClient.mostFrequentService || t('noServicesYet')
         };
     }, [localClient, t]);
@@ -576,8 +577,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 theme: 'grid',
                 headStyles: { fillColor: [240, 240, 240], textColor: 20 },
                 body: [
-                    [t('totalSpent'), financialSummary.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
-                    [t('averageTicket'), financialSummary.averageTicket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
+                    [t('totalSpent'), financialSummary.totalSpent],
+                    [t('averageTicket'), financialSummary.averageTicket],
                     [t('mostFrequentService'), financialSummary.mostFrequentService],
                 ],
                 styles: { fontSize: 10 },
@@ -617,7 +618,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         h.name,
                         h.professional,
                         h.status,
-                        `R$ ${h.price}`
+                        displayCurrency(h.price)
                     ]),
                     theme: 'striped',
                     headStyles: { fillColor: [16, 185, 129] },
@@ -2046,7 +2047,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                                 </div>
                                                                                 <div className="flex items-center gap-1">
                                                                                     <span className="font-medium text-gray-900">
-                                                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(latest.price || '0'))}
+                                                                                        {displayCurrency(latest.price)}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
@@ -2141,7 +2142,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                         </div>
                                                                         <p className="text-sm text-gray-500 mt-1">Data: {dateDisplay} às {item.time}</p>
                                                                         <p className="text-sm text-gray-500">Profissional: {item.professional}</p>
-                                                                        {item.price && <p className="text-sm text-gray-500 font-medium">Valor: R$ {item.price}</p>}
+                                                                        {item.price && <p className="text-sm text-gray-500 font-medium">Valor: {displayCurrency(item.price)}</p>}
                                                                     </div>
                                                                     <span className={`text-sm font-medium px-2 py-1 rounded-full capitalize ${statusClass}`}>
                                                                         {displayStatus}

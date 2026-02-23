@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentsAPI, unitsAPI } from '../lib/api';
 import { Service, Professional, Unit, Package, SalonPlan } from '../types';
+import { displayCurrency, displayDuration } from '../lib/formatUtils';
 
 // --- Constants ---
 const anyProfessional: Professional = {
@@ -309,9 +310,9 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                         <button key={service.id} onClick={() => select('service', service)} className="w-full p-4 bg-white rounded-xl shadow-lg hover:shadow-primary/20 hover:border-primary border-2 border-transparent transition-all duration-300 flex justify-between items-center text-left">
                                             <div>
                                                 <p className="font-bold text-secondary">{service.name}</p>
-                                                <p className="text-sm text-gray-500">{service.duration} min</p>
+                                                <p className="text-sm text-gray-500">{displayDuration(service.duration)}</p>
                                             </div>
-                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(service.price || 0)).toFixed(2)}</p>
+                                            <p className="text-lg font-semibold text-primary">{displayCurrency(service.price)}</p>
                                         </button>
                                     ))
                                 ) : (
@@ -327,7 +328,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                                 <p className="font-bold text-secondary">{pkg.name}</p>
                                                 <p className="text-sm text-gray-500">{pkg.sessions} sessões</p>
                                             </div>
-                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(pkg.price || 0)).toFixed(2)}</p>
+                                            <p className="text-lg font-semibold text-primary">{displayCurrency(pkg.price)}</p>
                                         </button>
                                     ))
                                 ) : (
@@ -343,7 +344,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                                                 <p className="font-bold text-secondary">{plan.name}</p>
                                                 <p className="text-sm text-gray-500">Recorrência mensal</p>
                                             </div>
-                                            <p className="text-lg font-semibold text-primary">R$ {parseFloat(String(plan.price || 0)).toFixed(2)}</p>
+                                            <p className="text-lg font-semibold text-primary">{displayCurrency(plan.price)}</p>
                                         </button>
                                     ))
                                 ) : (
@@ -486,7 +487,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                             </div>
                             <div className="flex justify-between items-center pt-4">
                                 <span className="text-xl font-medium text-gray-500">Total:</span>
-                                <span className="text-2xl font-extrabold text-primary">R$ {itemPrice}</span>
+                                <span className="text-2xl font-extrabold text-primary">{displayCurrency(selectedItem?.price)}</span>
                             </div>
                         </div>
                         <div className="mt-8 space-y-4">
