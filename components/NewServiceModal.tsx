@@ -158,6 +158,7 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
         }
 
         // Clean price: remove dots (thousands) and replace comma with dot (decimal)
+        // Sanitizing values
         const sanitizedPrice = parseCurrencyToNumber(formData.price);
         const sanitizedDuration = parseDurationToMinutes(formData.duration);
         onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, duration: sanitizedDuration, isFavorite });
@@ -224,9 +225,13 @@ export const NewServiceModal: React.FC<NewServiceModalProps> = ({ isOpen, onClos
                                     name="price"
                                     value={formData.price}
                                     onValueChange={(values) => {
-                                        setFormData(prev => ({ ...prev, price: values.value }));
+                                        // RTL Mode: treat input as cents
+                                        const rawValue = values.value.replace(/\D/g, '');
+                                        const cents = parseInt(rawValue, 10) || 0;
+                                        const scaledValue = (cents / 100).toFixed(2);
+                                        setFormData(prev => ({ ...prev, price: scaledValue }));
                                     }}
-                                    placeholder="Preço (ex: 1.500,00)"
+                                    placeholder="R$ 0,00"
                                     thousandSeparator="."
                                     decimalSeparator=","
                                     prefix="R$ "

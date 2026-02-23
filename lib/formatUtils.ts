@@ -31,16 +31,28 @@ export const displayDuration = (value: number | string | null | undefined): stri
  * If input is "01:30", returns 90.
  */
 export const parseDurationToMinutes = (value: string): number => {
-    if (!value || !value.includes(':')) return parseInt(value, 10) || 0;
-    const [hours, minutes] = value.split(':').map(v => parseInt(v, 10) || 0);
+    if (!value) return 0;
+    const cleanValue = value.replace(/_/g, '0');
+    if (!cleanValue.includes(':')) return parseInt(cleanValue, 10) || 0;
+    const [hours, minutes] = cleanValue.split(':').map(v => parseInt(v, 10) || 0);
     return (hours * 60) + minutes;
 };
 
 /**
  * Parses a BRL currency string (e.g. "1.234,56") into a numeric string (e.g. "1234.56").
+ * It is now smart enough to detect if the string is already a clean numeric string.
  */
-export const parseCurrencyToNumber = (value: string): string => {
-    if (!value) return '0';
+export const parseCurrencyToNumber = (value: string | number): string => {
+    if (value === null || value === undefined || value === '') return '0';
+    if (typeof value === 'number') return String(value);
+
+    // If it's already a clean numeric string (no formatting except decimal dot), return it
+    if (/^\d+(\.\d+)?$/.test(value)) return value;
+
     // Remove dots (thousands) and replace comma with dot (decimal)
-    return value.replace(/\./g, '').replace(',', '.');
+    let clean = value.replace(/R\$/g, '').trim();
+    if (clean.includes(',')) {
+        clean = clean.replace(/\./g, '').replace(',', '.');
+    }
+    return clean;
 };

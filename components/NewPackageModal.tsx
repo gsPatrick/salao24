@@ -164,6 +164,7 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
         }
 
         // Clean price: remove dots (thousands) and replace comma with dot (decimal)
+        // Sanitizing values
         const sanitizedPrice = parseCurrencyToNumber(formData.price);
         const sanitizedDuration = parseDurationToMinutes(formData.duration);
         onSave({ ...itemToEdit, ...formData, price: sanitizedPrice, duration: sanitizedDuration, sessions: Number(formData.sessions) || formData.sessions, isFavorite, usageType: itemToEdit?.usageType || usageType || 'Serviços' });
@@ -268,23 +269,28 @@ const NewPackageModal: React.FC<NewPackageModalProps> = ({ isOpen, onClose, onSa
                                     <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Quantidade de Sessões</p>
                                     {errors.sessions && <p className="text-xs text-red-600 mt-1">{errors.sessions}</p>}
                                 </div>
-                                <div className="w-1/3">
+                                <div>
                                     <NumericFormat
                                         name="price"
                                         value={formData.price}
                                         onValueChange={(values) => {
-                                            setFormData(prev => ({ ...prev, price: values.value }));
+                                            // RTL Mode: treat input as cents
+                                            const rawValue = values.value.replace(/\D/g, '');
+                                            const cents = parseInt(rawValue, 10) || 0;
+                                            const scaledValue = (cents / 100).toFixed(2);
+                                            setFormData(prev => ({ ...prev, price: scaledValue }));
                                         }}
-                                        placeholder="Valor R$"
+                                        placeholder="R$ 0,00"
                                         thousandSeparator="."
                                         decimalSeparator=","
                                         prefix="R$ "
                                         decimalScale={2}
                                         fixedDecimalScale
                                         disabled={isReadOnly}
-                                        className={`w-full p-2 border rounded ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'} ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
+                                        className={`w-full p-2 border rounded border-gray-300 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${errors.price ? 'border-red-500' : ''}`}
                                     />
                                     <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase font-bold tracking-wider">Valor do Pacote</p>
+                                    {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
                                 </div>
                             </div>
                             <div>
