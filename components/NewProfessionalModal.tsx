@@ -153,7 +153,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const isDragging = useRef(false);
     const lastDragPos = useRef({ x: 0, y: 0 });
     const [newSpecialty, setNewSpecialty] = useState('');
-    const [documents, setDocuments] = useState<{ title: string; file: File | null; fileName?: string }[]>([]);
+    const [documents, setDocuments] = useState<{ title: string; file: File | null; fileName?: string; url?: string }[]>([]);
     const [newDocTitle, setNewDocTitle] = useState('');
     const [newDocFile, setNewDocFile] = useState<File | null>(null);
     const docFileInputRef = useRef<HTMLInputElement>(null);
@@ -240,6 +240,11 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         setAllowOvertime(false);
         setOpenSchedule(true);
         if (showCamera) handleStopCamera();
+        documents.forEach(doc => {
+            if (doc.url && doc.url.startsWith('blob:')) {
+                URL.revokeObjectURL(doc.url);
+            }
+        });
         setDocuments([]);
         setNewDocTitle('');
         setNewDocFile(null);
@@ -380,7 +385,8 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
 
     const handleAddDocument = () => {
         if (newDocTitle.trim() && newDocFile) {
-            setDocuments(prev => [...prev, { title: newDocTitle, file: newDocFile }]);
+            const url = URL.createObjectURL(newDocFile);
+            setDocuments(prev => [...prev, { title: newDocTitle, file: newDocFile, url }]);
             setNewDocTitle('');
             setNewDocFile(null);
             if (docFileInputRef.current) {
@@ -392,7 +398,13 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     };
 
     const handleRemoveDocument = (indexToRemove: number) => {
-        setDocuments(prev => prev.filter((_, index) => index !== indexToRemove));
+        setDocuments(prev => {
+            const docToRemove = prev[indexToRemove];
+            if (docToRemove?.url && docToRemove.url.startsWith('blob:')) {
+                URL.revokeObjectURL(docToRemove.url);
+            }
+            return prev.filter((_, index) => index !== indexToRemove);
+        });
     };
 
     const [isSaving, setIsSaving] = useState(false);
@@ -661,41 +673,40 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                                                 <p className="text-xs text-gray-500 truncate" title={doc.fileName || doc.file?.name}>{doc.fileName || doc.file?.name}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                            {(doc as any).url && (
-                                                <>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {doc.url && (
+                                                <div className="flex items-center gap-1">
                                                     <a
-                                                        href={(doc as any).url}
+                                                        href={doc.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-blue-500 hover:text-blue-700 p-1.5 rounded-full hover:bg-blue-50 transition-colors"
+                                                        className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10 transition-colors flex items-center justify-center"
                                                         title="Visualizar documento"
                                                         onClick={(e) => {
-                                                            // For direct URLs that might not open well in some browsers, ensure target _blank
-                                                            if (!(doc as any).url.startsWith('http')) {
-                                                                e.preventDefault();
-                                                                const win = window.open();
-                                                                if (win) win.document.write(`<iframe src="${(doc as any).url}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                                                            if (doc.url?.startsWith('blob:')) {
+                                                                // For blob URLs, standard target="_blank" usually works, 
+                                                                // but some browsers might block it. This ensures it opens correctly.
+                                                                return;
                                                             }
                                                         }}
                                                     >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                         </svg>
                                                     </a>
                                                     <a
-                                                        href={(doc as any).url}
+                                                        href={doc.url}
                                                         download={doc.fileName || doc.title || 'documento.pdf'}
                                                         target="_blank"
-                                                        className="text-green-500 hover:text-green-700 p-1.5 rounded-full hover:bg-green-50 transition-colors"
+                                                        className="text-green-600 hover:text-green-700 p-2 rounded-full hover:bg-green-50 transition-colors flex items-center justify-center"
                                                         title="Baixar documento"
                                                     >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                         </svg>
                                                     </a>
-                                                </>
+                                                </div>
                                             )}
                                             <button
                                                 type="button"

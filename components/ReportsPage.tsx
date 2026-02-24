@@ -78,6 +78,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
     const { t } = useLanguage();
     const { clients, professionals, services, appointments, transactions } = useData();
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [currentReport, setCurrentReport] = useState<{ title: string; description: string; data: any, initialFilters?: any } | null>(null);
 
     const [filters, setFilters] = useState({
@@ -88,19 +89,19 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
     });
 
     const reportOptions = [
-        { key: 'MyAgenda', icon: <MyAgendaIcon />, generate: (t: any) => generateMyAgendaReport(t, appointments, professionals) },
-        { key: 'Scheduling', icon: <CalendarIcon />, generate: (t: any) => generateSchedulingReport(t, appointments) },
-        { key: 'Clients', icon: <UsersIcon />, generate: (t: any) => generateClientReport(t, clients) },
-        { key: 'Crm', icon: <CrmIcon />, generate: (t: any) => generateCrmReport(t, clients) },
-        { key: 'Service', icon: <ServicesIcon />, generate: (t: any) => generateServiceReport(t, appointments, services, clients, professionals) },
-        { key: 'Sales', icon: <SalesIcon />, generate: (t: any) => generateSalesReport(t) },
-        { key: 'Marketing', icon: <MarketingIcon />, generate: (t: any) => generateMarketingReport(t) },
-        { key: 'Referrals', icon: <ShareIcon />, generate: (t: any) => generateReferralReport(t) },
-        { key: 'ConversionRate', icon: <PercentageIcon />, generate: (t: any) => generateConversionRateReport(t) },
-        { key: 'TimeClock', icon: <ClockIcon />, generate: (t: any) => generateTimeClockReport(t) },
-        { key: 'Financial', icon: <FinanceIcon />, generate: (t: any) => generateFinancialReport(t, transactions) },
-        { key: 'Payment', icon: <PaymentIcon />, generate: (t: any) => generatePaymentReport(t) },
-        { key: 'Contracts', icon: <ContractIcon />, generate: (t: any) => generateContractReport(t, clients) },
+        { key: 'MyAgenda', icon: <MyAgendaIcon />, generate: (t: any, data: any) => generateMyAgendaReport(t, data.appointments, data.professionals) },
+        { key: 'Scheduling', icon: <CalendarIcon />, generate: (t: any, data: any) => generateSchedulingReport(t, data.appointments, data.clients, data.professionals) },
+        { key: 'Clients', icon: <UsersIcon />, generate: (t: any, data: any) => generateClientReport(t, data.clients) },
+        { key: 'Crm', icon: <CrmIcon />, generate: (t: any, data: any) => generateCrmReport(t, data.clients) },
+        { key: 'Service', icon: <ServicesIcon />, generate: (t: any, data: any) => generateServiceReport(t, data.appointments, data.services, data.clients, data.professionals) },
+        { key: 'Sales', icon: <SalesIcon />, generate: (t: any, data: any) => generateSalesReport(t) },
+        { key: 'Marketing', icon: <MarketingIcon />, generate: (t: any, data: any) => generateMarketingReport(t) },
+        { key: 'Referrals', icon: <ShareIcon />, generate: (t: any, data: any) => generateReferralReport(t) },
+        { key: 'ConversionRate', icon: <PercentageIcon />, generate: (t: any, data: any) => generateConversionRateReport(t) },
+        { key: 'TimeClock', icon: <ClockIcon />, generate: (t: any, data: any) => generateTimeClockReport(t) },
+        { key: 'Financial', icon: <FinanceIcon />, generate: (t: any, data: any) => generateFinancialReport(t, data.transactions) },
+        { key: 'Payment', icon: <PaymentIcon />, generate: (t: any, data: any) => generatePaymentReport(t) },
+        { key: 'Contracts', icon: <ContractIcon />, generate: (t: any, data: any) => generateContractReport(t, data.clients) },
     ];
 
     // Use hardcoded units for now as we assumed single tenant context
@@ -132,16 +133,55 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
         });
     };
 
-    const handleGenerateReport = (reportKey: string) => {
+    const handleGenerateReport = async (reportKey: string) => {
         const reportOption = reportOptions.find(opt => opt.key === reportKey);
         if (!reportOption) return;
 
-        const title = t(`reportTitle${reportKey}`);
-        const description = t(`reportDesc${reportKey}`);
-        const data = reportOption.generate(t);
+        setIsGenerating(true);
 
-        setCurrentReport({ title, description, data, initialFilters: filters });
-        setIsReportModalOpen(true);
+        // Simulate a small delay for UX so user sees the change
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        try {
+            // Apply Filters to data
+            const filteredAppts = appointments.filter(a => {
+                const dateMatch = (!filters.startDate || a.date >= filters.startDate) &&
+                    (!filters.endDate || a.date <= filters.endDate);
+                const profMatch = filters.professional === 'todos' || a.professionalName === filters.professional;
+                const unitMatch = filters.unit === 'todas' || a.unit === filters.unit;
+                return dateMatch && profMatch && unitMatch;
+            });
+
+            const filteredTransactions = transactions.filter(t => {
+                const dateMatch = (!filters.startDate || t.date >= filters.startDate) &&
+                    (!filters.endDate || t.date <= filters.endDate);
+                // Professional/Unit filter for transactions might need different logic depending on schema
+                return dateMatch;
+            });
+
+            const filteredClients = clients.filter(c => {
+                // Clients might not have date/prof directly, but we can filter by unit if available
+                return filters.unit === 'todas' || c.unit === filters.unit;
+            });
+
+            const title = t(`reportTitle${reportKey}`);
+            const description = t(`reportDesc${reportKey}`);
+            const data = reportOption.generate(t, {
+                appointments: filteredAppts,
+                professionals,
+                clients: filteredClients,
+                services,
+                transactions: filteredTransactions
+            });
+
+            setCurrentReport({ title, description, data, initialFilters: filters });
+            setIsReportModalOpen(true);
+        } catch (error) {
+            console.error("Error generating report:", error);
+            alert("Erro ao gerar o relatório. Verifique os dados e tente novamente.");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleCloseModal = () => {
@@ -198,7 +238,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
                 </div>
 
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
+                    {isGenerating && (
+                        <div className="absolute inset-0 bg-white/50 z-20 flex items-center justify-center rounded-2xl">
+                            <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                                <p className="text-secondary font-bold">Processando dados...</p>
+                            </div>
+                        </div>
+                    )}
                     {reportOptions.map((report, index) => (
                         <ReportCard
                             key={index}

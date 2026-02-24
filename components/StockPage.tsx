@@ -206,7 +206,7 @@ const StockPage: React.FC<StockPageProps> = ({
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produto</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Categoria</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Compra</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative group">
                                         Qtd.
@@ -227,7 +227,7 @@ const StockPage: React.FC<StockPageProps> = ({
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm font-medium text-gray-900">{product.name}</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 min-w-[150px]">{product.category || '--'}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{displayCurrency(product.purchaseValue)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
@@ -287,6 +287,7 @@ const StockPage: React.FC<StockPageProps> = ({
                 itemToEdit={productToEdit}
                 categories={productCategories}
                 onAddCategory={handleAddCategory}
+                onDeleteCategory={handleCategoryDelete}
             />
         </>
     );

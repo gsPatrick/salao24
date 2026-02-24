@@ -31,7 +31,7 @@ export const generateMyAgendaReport = (t: (key: string) => string, appointments:
     };
 };
 
-export const generateSchedulingReport = (t: (key: string) => string, appointments: any[]) => {
+export const generateSchedulingReport = (t: (key: string) => string, appointments: any[], clients: any[] = [], professionals: any[] = []) => {
     const total = appointments.length;
     const canceled = appointments.filter(a => a.status === 'Cancelado').length;
     const noShow = appointments.filter(a => a.status === 'No-show' || a.status === 'no_show').length;
@@ -47,8 +47,8 @@ export const generateSchedulingReport = (t: (key: string) => string, appointment
         details: appointments.slice(0, 50).map(appt => ({
             [t('reportHeaderDate')]: appt.date,
             [t('reportHeaderTime')]: appt.time,
-            [t('reportHeaderClient')]: appt.clientName,
-            [t('reportHeaderProfessional')]: appt.professionalName,
+            [t('reportHeaderClient')]: appt.clientName || clients.find(c => c.id === appt.clientId)?.name || '--',
+            [t('reportHeaderProfessional')]: appt.professionalName || professionals.find(p => p.id === appt.professionalId)?.name || '--',
             [t('reportHeaderService')]: appt.service,
             [t('reportHeaderStatus')]: appt.status
         }))
@@ -144,7 +144,7 @@ export const generateFinancialReport = (t: (key: string) => string, transactions
     };
 };
 
-export const generateContractReport = (t: (key: string) => string, clients: any[]) => {
+export const generateContractReport = (t: (key: string) => string, clients: any[] = []) => {
     // Assuming clients structure has documents/contracts
     return {
         summary: {
