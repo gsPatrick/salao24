@@ -130,10 +130,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSa
                           + Nova
                         </button>
                       </div>
-                      {categories.map((cat) => (
+                      {categories.filter(cat => cat.trim() !== '').map((cat) => (
                         <div
                           key={cat}
-                          className="flex justify-between items-center p-2 hover:bg-gray-100 cursor-pointer group"
+                          className="flex justify-between items-center p-2 hover:bg-gray-100 cursor-pointer group border-b border-gray-50 last:border-0"
                           onClick={() => {
                             setFormData(prev => ({ ...prev, category: cat }));
                             setShowCategoryManager(false);
@@ -149,7 +149,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSa
                                 if (formData.category === cat) setFormData(prev => ({ ...prev, category: '' }));
                               }
                             }}
-                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors flex-shrink-0"
                             title="Excluir categoria"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
