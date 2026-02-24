@@ -384,16 +384,17 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     };
 
     const handleAddDocument = () => {
-        if (newDocTitle.trim() && newDocFile) {
+        const titleToUse = newDocTitle.trim() || (newDocFile ? newDocFile.name : '');
+        if (titleToUse && newDocFile) {
             const url = URL.createObjectURL(newDocFile);
-            setDocuments(prev => [...prev, { title: newDocTitle, file: newDocFile, url }]);
+            setDocuments(prev => [...prev, { title: titleToUse, file: newDocFile, url }]);
             setNewDocTitle('');
             setNewDocFile(null);
             if (docFileInputRef.current) {
                 docFileInputRef.current.value = '';
             }
         } else {
-            alert('Por favor, preencha o título e selecione um arquivo PDF.');
+            alert('Por favor, selecione um arquivo PDF.');
         }
     };
 
@@ -730,21 +731,42 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             />
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Buscar Documento (PDF)</label>
-                                <input
-                                    ref={docFileInputRef}
-                                    type="file"
-                                    accept=".pdf"
-                                    onChange={handleNewDocFileChange}
-                                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                />
+                                <div className="mt-1 flex items-center gap-2">
+                                    <input
+                                        ref={docFileInputRef}
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={handleNewDocFileChange}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                                    />
+                                    {newDocFile && (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const url = URL.createObjectURL(newDocFile);
+                                                    window.open(url, '_blank');
+                                                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                                                }}
+                                                className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10"
+                                                title="Visualizar selecionado"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={handleAddDocument}
-                                className="w-full py-2 px-4 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
+                                className={`w-full py-2 px-4 border-2 border-dashed rounded-lg transition-colors flex items-center justify-center ${newDocFile ? 'border-primary text-primary bg-primary/5' : 'border-gray-300 text-gray-600 hover:border-primary hover:text-primary'}`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                Adicionar Documento
+                                {newDocFile ? 'Confirmar Anexo' : 'Adicionar Documento'}
                             </button>
                         </div>
                     </div>
