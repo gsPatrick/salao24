@@ -1676,6 +1676,33 @@ const MonthlyPackagesPage: React.FC<{
             }
         }, [isPromoModalOpen]);
 
+        // Currency Mask Logic
+        const [displayPrice, setDisplayPrice] = useState('');
+
+        useEffect(() => {
+            if (isPackageModalOpen) {
+                if (editingPackage && editingPackage.price) {
+                    setDisplayPrice(displayCurrency(editingPackage.price).replace('R$', '').trim());
+                } else {
+                    setDisplayPrice('');
+                }
+            }
+        }, [isPackageModalOpen, editingPackage]);
+
+        const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (!value) {
+                setDisplayPrice('');
+                return;
+            }
+            const numericValue = parseInt(value, 10) / 100;
+            const formatted = numericValue.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            setDisplayPrice(formatted);
+        };
+
 
         const activePackages = monthlyPackages.filter(p => p.isActive);
         const activeSubscriptions = packageSubscriptions.filter(s => s.isActive);
@@ -1987,7 +2014,7 @@ const MonthlyPackagesPage: React.FC<{
                                     <thead className="bg-gray-50 text-gray-500 font-semibold uppercase tracking-wider">
                                         <tr>
                                             <th className="px-4 py-3 text-left border-r border-gray-100">Cliente</th>
-                                            <th className="px-4 py-3 text-left border-r border-gray-100">Responsável / Unidade</th>
+                                            <th className="px-4 py-3 text-left border-r border-gray-100">Responsável / Contato</th>
                                             <th className="px-4 py-3 text-left border-r border-gray-100">Plano / Pacote</th>
                                             <th className="px-4 py-3 text-left border-r border-gray-100">Vencimento</th>
                                             <th className="px-4 py-3 text-left border-r border-gray-100">Sessões</th>
@@ -2009,7 +2036,7 @@ const MonthlyPackagesPage: React.FC<{
                                                     </td>
                                                     <td className="px-4 py-4 whitespace-nowrap border-r border-gray-100">
                                                         <div className="text-gray-700">{subscription.responsible}</div>
-                                                        <div className="text-xs text-gray-400">{subscription.unit || 'Matriz'}</div>
+                                                        <div className="text-xs text-primary font-bold">{subscription.phone || 'Sem telefone'}</div>
                                                     </td>
                                                     <td className="px-4 py-4 whitespace-nowrap border-r border-gray-100">
                                                         <div className="text-gray-900">{subscription.packageName || 'Assinatura'}</div>
@@ -2048,6 +2075,16 @@ const MonthlyPackagesPage: React.FC<{
                                                                 className="text-primary hover:text-primary/80 font-bold"
                                                             >
                                                                 Ver
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (window.confirm('Tem certeza que deseja excluir esta assinatura definitivamente?')) {
+                                                                        onDeleteSubscription(subscription.id);
+                                                                    }
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800 font-bold"
+                                                            >
+                                                                Excluir
                                                             </button>
                                                             <button
                                                                 onClick={() => onArchiveSubscription(subscription.id)}
@@ -2279,10 +2316,11 @@ const MonthlyPackagesPage: React.FC<{
                                     <form onSubmit={(e) => {
                                         e.preventDefault();
                                         const formData = new FormData(e.currentTarget);
+                                        const rawPrice = displayPrice.replace(/\./g, '').replace(',', '.');
 
                                         const pkg: any = {
                                             name: formData.get('name') as string,
-                                            price: parseFloat(formData.get('price') as string),
+                                            price: parseFloat(rawPrice) || 0,
                                             description: formData.get('description') as string,
                                             duration: parseInt(formData.get('duration') as string),
                                             usageType: editingPackage?.usageType || 'Promoção',
@@ -2307,13 +2345,13 @@ const MonthlyPackagesPage: React.FC<{
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
                                             <input
-                                                name="price"
-                                                type="number"
-                                                step="0.01"
+                                                name="price_display"
+                                                type="text"
                                                 required
-                                                defaultValue={editingPackage?.price || ''}
+                                                value={displayPrice}
+                                                onChange={handlePriceChange}
                                                 className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                                placeholder="Ex: 199.90"
+                                                placeholder="0,00"
                                             />
                                         </div>
 
