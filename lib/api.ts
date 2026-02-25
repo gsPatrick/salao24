@@ -261,7 +261,7 @@ export const financeAPI = {
         const response = await api.get('/finance/transactions');
         return response.data;
     },
-    getSummary: async (params?: { period?: string, startDate?: string, endDate?: string, unit?: string }) => {
+    getSummary: async (params?: { period?: string, startDate?: string, endDate?: string, unit?: string, unitId?: string | number }) => {
         const response = await api.get('/finance/summary', { params });
         return response.data;
     },
