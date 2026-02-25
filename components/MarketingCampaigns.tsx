@@ -101,83 +101,26 @@ interface MarketingCampaignsProps {
 }
 
 const getClientGroups = (clients: Client[], appointments: Appointment[], funnelStages: any[] = []) => {
-    const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-    const formatDateForLookup = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    const todayKey = formatDateForLookup(today);
-    const scheduledClientIds = new Set(appointments.filter(a => a.date === todayKey).map(a => a.clientId));
-
-    const groups: { [key: string]: Client[] } = {
-        'Todos os Clientes': clients,
-        'Novos Clientes (Últimos 7 dias)': [],
-        'Aniversariantes do Mês': [],
-        'Agendados Hoje': [],
-        'Faltantes': [],
-        'Reagendados': [],
-        'Inativos (60+ dias)': []
-    };
-
     // Initialize CRM Funnel stages from settings
-    const crmFunnels: { [key: string]: Client[] } = {};
+    const crmFunnels: { [key: string]: Client[] } = {
+        'Todos os Clientes': clients
+    };
+
     funnelStages.forEach(stage => {
         crmFunnels[stage.title] = [];
     });
 
     clients.forEach(client => {
         // CRM Stage mapping (ID based)
-        let crmMapped = false;
         if (client.crm_stage) {
             const stage = funnelStages.find(s => s.id === client.crm_stage);
             if (stage && crmFunnels[stage.title]) {
                 crmFunnels[stage.title].push(client);
-                crmMapped = true;
-            }
-        }
-
-        // Automatic groups
-        if (client.birthdate) {
-            const birthDate = new Date(client.birthdate);
-            if (birthDate.getMonth() === today.getMonth()) {
-                groups['Aniversariantes do Mês'].push(client);
-            }
-        }
-        if (scheduledClientIds.has(client.id)) {
-            groups['Agendados Hoje'].push(client);
-        }
-        if (client.status === 'Faltante') {
-            groups['Faltantes'].push(client);
-        }
-        if (client.status === 'Reagendado') {
-            groups['Reagendados'].push(client);
-        }
-        if (client.registrationDate) {
-            const regDate = new Date(client.registrationDate);
-            const diffTime = Math.abs(startOfToday.getTime() - regDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays <= 7) {
-                groups['Novos Clientes (Últimos 7 dias)'].push(client);
-            }
-        }
-        if (client.lastVisit) {
-            const lastVisitDate = new Date(client.lastVisit);
-            if (!isNaN(lastVisitDate.getTime())) {
-                const diffTime = Math.abs(startOfToday.getTime() - lastVisitDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays >= 60) {
-                    groups['Inativos (60+ dias)'].push(client);
-                }
             }
         }
     });
 
-    return { automatic: groups, crm: crmFunnels };
+    return crmFunnels;
 };
 
 
@@ -306,8 +249,7 @@ const NewCampaignModal: React.FC<{
                 const tagName = identifier.substring(4);
                 groupClients = clients.filter(client => client.tags && client.tags.includes(tagName));
             } else {
-                // Look in both automatic and CRM groups
-                groupClients = crmGroups.automatic[identifier] || crmGroups.crm[identifier] || [];
+                groupClients = crmGroups[identifier] || [];
             }
 
             // Apply Gender Filter
@@ -493,22 +435,10 @@ const NewCampaignModal: React.FC<{
                                                     <div className="p-2 pt-3 bg-gray-50 border-b">
                                                         <p className="text-xs font-bold text-gray-500 uppercase">Funis do CRM</p>
                                                     </div>
-                                                    {Object.entries(crmGroups.crm).map(([groupName, groupClients]) => (
+                                                    {Object.entries(crmGroups).map(([groupName, groupClients]) => (
                                                         <label key={`crm-${groupName}`} className="flex items-center justify-between p-2 hover:bg-gray-100 cursor-pointer">
                                                             <span className="text-black font-medium">
                                                                 {groupName} <span className="text-xs text-gray-500 font-normal">({(groupClients as any[]).length})</span>
-                                                            </span>
-                                                            <input type="checkbox" checked={publicoAlvo.includes(groupName)} onChange={() => handleAudienceChange(groupName, false)} className="h-4 w-4 text-primary rounded border-gray-300" />
-                                                        </label>
-                                                    ))}
-
-                                                    <div className="p-2 pt-3 bg-gray-50 border-y mt-2">
-                                                        <p className="text-xs font-bold text-gray-500 uppercase">Grupos Inteligentes</p>
-                                                    </div>
-                                                    {Object.entries(crmGroups.automatic).map(([groupName, groupClients]) => (
-                                                        <label key={`auto-${groupName}`} className="flex items-center justify-between p-2 hover:bg-gray-100 cursor-pointer">
-                                                            <span className="text-black">
-                                                                {groupName} <span className="text-xs text-gray-500">({(groupClients as any[]).length})</span>
                                                             </span>
                                                             <input type="checkbox" checked={publicoAlvo.includes(groupName)} onChange={() => handleAudienceChange(groupName, false)} className="h-4 w-4 text-primary rounded border-gray-300" />
                                                         </label>
