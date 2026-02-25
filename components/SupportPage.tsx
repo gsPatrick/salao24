@@ -473,7 +473,7 @@ const TicketContent: React.FC<{ tickets: Ticket[], setTickets: React.Dispatch<Re
         if (updatedResponse.success) {
           setTickets(updatedResponse.data.map((t: any) => ({
             ...t,
-            timestamp: new Date(t.created_at)
+            timestamp: t.created_at ? new Date(t.created_at) : new Date()
           })));
         }
       }
@@ -482,9 +482,15 @@ const TicketContent: React.FC<{ tickets: Ticket[], setTickets: React.Dispatch<Re
     }
   };
 
-  const handleResolveTicket = (id: number) => {
-    // This would now need a backend endpoint PATCH /support/tickets/:id/resolve
-    setTickets(prev => prev.map(ticket => ticket.id === id ? { ...ticket, status: 'Resolvido' } : ticket));
+  const handleResolveTicket = async (id: number) => {
+    try {
+      const response = await supportAPI.resolveTicket(id);
+      if (response.success) {
+        setTickets(prev => prev.map(ticket => ticket.id === id ? { ...ticket, status: 'Resolvido' } : ticket));
+      }
+    } catch (error) {
+      alert('Erro ao resolver chamado');
+    }
   };
 
   return (
@@ -731,7 +737,7 @@ const SupportPage: React.FC<SupportPageProps> = ({ onBack }) => {
       if (response.success) {
         setTickets(response.data.map((t: any) => ({
           ...t,
-          timestamp: new Date(t.created_at)
+          timestamp: t.created_at ? new Date(t.created_at) : new Date()
         })));
       }
     } catch (error) {

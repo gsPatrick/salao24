@@ -814,6 +814,10 @@ export const supportAPI = {
     getHistory: async () => {
         const response = await api.get('/support/history');
         return response.data;
+    },
+    resolveTicket: async (id: number) => {
+        const response = await api.patch(`/support/${id}/resolve`);
+        return response.data;
     }
 };
 
