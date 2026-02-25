@@ -123,7 +123,15 @@ const getClientGroups = (clients: Client[], appointments: Appointment[]) => {
         'Inativos (60+ dias)': []
     };
 
+    // Add CRM Pipeline groups dynamically
     clients.forEach(client => {
+        if (client.classification) {
+            if (!groups[client.classification]) {
+                groups[client.classification] = [];
+            }
+            groups[client.classification].push(client);
+        }
+
         if (client.birthdate) {
             const birthDate = new Date(client.birthdate);
             if (birthDate.getMonth() === today.getMonth()) {
@@ -149,9 +157,11 @@ const getClientGroups = (clients: Client[], appointments: Appointment[]) => {
         }
         if (client.lastVisit) {
             const lastVisitDate = new Date(client.lastVisit);
-            const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSinceLastVisit > 60) {
-                groups['Inativos (60+ dias)'].push(client);
+            if (!isNaN(lastVisitDate.getTime())) {
+                const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSinceLastVisit > 60) {
+                    groups['Inativos (60+ dias)'].push(client);
+                }
             }
         }
     });
@@ -224,6 +234,7 @@ const NewCampaignModal: React.FC<{
     const [sendLimit, setSendLimit] = useState(200);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [estimatedAudience, setEstimatedAudience] = useState<number | null>(null);
+    const [selectedGender, setSelectedGender] = useState<'Todos' | 'Masculino' | 'Feminino' | 'Outro'>('Todos');
 
     const [whatsappStatus, setWhatsappStatus] = useState<{ status: 'connected' | 'disconnected', phone: string | null } | null>(null);
     const [whatsappLoading, setWhatsappLoading] = useState(false);
@@ -275,7 +286,7 @@ const NewCampaignModal: React.FC<{
         let sum = 0;
 
         publicoAlvo.forEach(identifier => {
-            if (!identifier) return; // FIX: Skip if identifier is null or undefined
+            if (!identifier) return;
 
             let groupClients: Client[] = [];
             if (typeof identifier === 'string' && identifier.startsWith('tag:')) {
@@ -285,12 +296,17 @@ const NewCampaignModal: React.FC<{
                 groupClients = crmGroups[identifier];
             }
 
+            // Apply Gender Filter
+            if (selectedGender !== 'Todos') {
+                groupClients = groupClients.filter(c => c.gender === selectedGender);
+            }
+
             sum += groupClients.length;
             groupClients.forEach(client => clientSet.add(client));
         });
 
         return { audienceSum: sum, uniqueClientCount: clientSet.size };
-    }, [publicoAlvo, crmGroups, clients]);
+    }, [publicoAlvo, crmGroups, clients, selectedGender]);
 
     const resetForm = () => {
         setName('');
@@ -527,18 +543,34 @@ const NewCampaignModal: React.FC<{
                                     </div>
                                 </div>
 
-                                <div className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-between">
-                                    {whatsappStatus?.status === 'connected' && whatsappStatus.phone ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                            <span className="text-sm font-medium text-gray-800">WhatsApp Conectado: {whatsappStatus.phone}</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Filtrar por Sexo</label>
+                                        <select
+                                            value={selectedGender}
+                                            onChange={(e) => setSelectedGender(e.target.value as any)}
+                                            className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                                        >
+                                            <option value="Todos">Todos</option>
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Feminino">Feminino</option>
+                                            <option value="Outro">Outro</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-end">
+                                        <div className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-between h-[42px]">
+                                            {whatsappStatus?.status === 'connected' && whatsappStatus.phone ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                                    <span className="text-xs font-medium text-gray-800 truncate">WhatsApp: {whatsappStatus.phone}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 text-red-600">
+                                                    <span className="text-xs font-bold uppercase truncate">Desconectado</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2 text-red-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                                            <span className="text-sm font-bold uppercase tracking-tight">WhatsApp Desconectado</span>
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
                                 <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -657,8 +689,6 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                     <TabButton tabId="campanhas" label={t('marketingTabCampaigns')} />
                     <TabButton tabId="canal-aquisicao" label={t('marketingTabAcquisitionChannel')} />
                     <TabButton tabId="mala-direta" label={t('marketingTabDirectMail')} />
-                    <TabButton tabId="ai-chat" label="Conversas IA" />
-                    <TabButton tabId="servidor" label={t('marketingTabServer')} />
                 </nav>
             </div>
 
@@ -666,28 +696,8 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
                 {activeTab === 'campanhas' && <CampaignsTab {...props} />}
                 {activeTab === 'canal-aquisicao' && <AcquisitionChannelsTab {...props} />}
                 {activeTab === 'mala-direta' && <DirectMailTab {...props} />}
-                {activeTab === 'ai-chat' && <AIChatTab selectedUnitId={selectedUnitId} />}
-                {activeTab === 'servidor' && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                            </svg>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Servidor de E-mail</h3>
-                        <p className="text-gray-500 max-w-md mb-8">
-                            Configure suas credenciais SMTP para ter controle total sobre o envio de e-mails transacionais e marketing.
-                        </p>
-                        <button
-                            onClick={() => navigate?.('settings?tab=email-server')}
-                            className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
-                        >
-                            Configurar Servidor nas Configurações
-                        </button>
-                    </div>
-                )}
-
             </div>
+
         </div>
     );
 };

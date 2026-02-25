@@ -978,6 +978,19 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             </div>
             <InputField label={`${t('contactPhone')} *`} name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} type="tel" required maxLength={15} error={errors.phone} />
             <InputField label={t('email')} name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} type="email" error={errors.email} />
+            <SelectField
+              label="Sexo"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              options={[
+                { value: 'Masculino', label: 'Masculino' },
+                { value: 'Feminino', label: 'Feminino' },
+                { value: 'Outro', label: 'Outro' }
+              ]}
+              error={errors.gender}
+            />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('additionalContacts')}</label>
               <div className="space-y-3">

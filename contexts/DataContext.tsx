@@ -49,6 +49,7 @@ export interface Client {
     tags?: string[];
     reminders?: any[];
     relationships?: any[];
+    gender?: 'Masculino' | 'Feminino' | 'Outro';
     crmData?: any;
     additionalPhones?: { sector: string; number: string }[];
     isCompleteRegistration?: boolean;
