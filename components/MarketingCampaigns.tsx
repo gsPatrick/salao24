@@ -69,6 +69,7 @@ interface MarketingCampaignsProps {
     onArchiveCampaign: (id: number) => void;
     onUnarchiveCampaign: (id: number) => void;
     onDuplicateCampaign: (id: number) => void;
+    onDeleteCampaign: (id: number) => void;
     campaigns: Campaign[];
 
     onAddDirectMailCampaign: (data: Omit<DirectMailCampaignData, 'id' | 'status' | 'history' | 'roi'>) => void;
@@ -92,6 +93,7 @@ interface MarketingCampaignsProps {
     onSuspendAcquisitionChannel: (channelId: number, channelName: string, isSuspended?: boolean) => void;
     onArchiveAcquisitionChannel: (channelId: number, channelName: string) => void;
     onUnarchiveAcquisitionChannel: (channelId: number, channelName: string) => void;
+    onDeleteAcquisitionChannel: (channelId: number) => void;
     onOpenEditChannelModal: (channel: any | null) => void;
     isNewChannelModalOpen?: boolean;
     onCloseNewChannelModal?: () => void;
@@ -627,7 +629,7 @@ const NewCampaignModal: React.FC<{
 // FIX: Changed to a named export to resolve module resolution errors.
 export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => {
     const { t } = useLanguage();
-    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, selectedUnitId } = props;
+    const { onComingSoon, onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, onDeleteCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, selectedUnitId } = props;
     const [activeTab, setActiveTab] = useState('campanhas');
 
     const TabButton: React.FC<{ tabId: string; label: string }> = ({ tabId, label }) => (
@@ -663,7 +665,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
 
 // --- Tab Components ---
 
-const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, unitPhone }) => {
+const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, onDeleteCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, unitPhone }) => {
     const { t } = useLanguage();
     const [isUpsertModalOpen, setIsUpsertModalOpen] = useState(false);
     const [campaignToEdit, setCampaignToEdit] = useState<Campaign | null>(null);
@@ -681,6 +683,12 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
     const handleArchive = (e: React.MouseEvent, campaignId: number) => { e.stopPropagation(); onArchiveCampaign?.(campaignId); };
     const handleUnarchive = (e: React.MouseEvent, campaignId: number) => { e.stopPropagation(); onUnarchiveCampaign?.(campaignId); };
     const handleDuplicate = (e: React.MouseEvent, campaignId: number) => { e.stopPropagation(); onDuplicateCampaign?.(campaignId); };
+    const handleDelete = (e: React.MouseEvent, campaignId: number, name: string) => {
+        e.stopPropagation();
+        if (window.confirm(`Tem certeza que deseja excluir a campanha "${name}" permanentemente?`)) {
+            onDeleteCampaign?.(campaignId);
+        }
+    };
     const handleEdit = (e: React.MouseEvent, campaign: Campaign) => { e.stopPropagation(); setCampaignToEdit(campaign); setIsUpsertModalOpen(true); };
     const handleAddNew = () => { setCampaignToEdit(null); setIsUpsertModalOpen(true); };
 
@@ -797,6 +805,7 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
                                 ) : (
                                     <button onClick={(e) => handleUnarchive(e, campaign.id)} className="text-sm font-semibold text-green-600 hover:text-green-800">{t('unarchive')}</button>
                                 )}
+                                <button onClick={(e) => handleDelete(e, campaign.id, campaign.name)} className="text-sm font-semibold text-red-600 hover:text-red-800">Excluir</button>
                             </div>
                         </div>
                     ))}
@@ -851,6 +860,7 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
     onSuspendAcquisitionChannel,
     onArchiveAcquisitionChannel,
     onUnarchiveAcquisitionChannel,
+    onDeleteAcquisitionChannel,
     isNewChannelModalOpen,
     onCloseNewChannelModal,
     channelToEdit,
@@ -930,6 +940,16 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
                                         ) : (
                                             <button onClick={() => onUnarchiveAcquisitionChannel?.(channel.id, channel.name)} className="text-gray-500 hover:underline">{t('unarchive')}</button>
                                         )}
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm(`Tem certeza que deseja excluir o canal "${channel.name}" permanentemente?`)) {
+                                                    onDeleteAcquisitionChannel?.(channel.id);
+                                                }
+                                            }}
+                                            className="text-red-600 hover:underline"
+                                        >
+                                            Excluir
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

@@ -3544,6 +3544,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
     };
 
+    const handleDeleteMarketingCampaign = async (campaignId: number) => {
+        try {
+            await marketingAPI.deleteCampaign(campaignId);
+            setMarketingCampaigns(prev => prev.filter(c => c.id !== campaignId));
+        } catch (error) {
+            console.error("Error deleting campaign:", error);
+            alert("Erro ao excluir campanha.");
+        }
+    };
+
     // --- Direct Mail Handlers (API) ---
     const handleAddDirectMailCampaign = async (data: any) => {
         try {
@@ -3698,6 +3708,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
             }
         } catch (error) {
             console.error("Error unarchiving channel:", error);
+        }
+    };
+
+    const handleDeleteAcquisitionChannel = async (channelId: number) => {
+        try {
+            await marketingAPI.deleteChannel(channelId);
+            setAcquisitionChannels(prev => prev.filter(c => c.id !== channelId));
+        } catch (error) {
+            console.error("Error deleting channel:", error);
+            alert("Erro ao excluir canal de aquisição.");
         }
     };
 
@@ -4372,6 +4392,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onArchiveCampaign={handleArchiveCampaign}
                 onUnarchiveCampaign={handleUnarchiveCampaign}
                 onDuplicateCampaign={handleDuplicateCampaign}
+                onDeleteCampaign={handleDeleteMarketingCampaign}
                 campaigns={marketingCampaigns}
                 onAddDirectMailCampaign={handleAddDirectMailCampaign}
                 onUpdateDirectMailCampaign={handleUpdateDirectMailCampaign}
@@ -4391,6 +4412,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onSuspendAcquisitionChannel={handleSuspendAcquisitionChannel}
                 onArchiveAcquisitionChannel={handleArchiveAcquisitionChannel}
                 onUnarchiveAcquisitionChannel={handleUnarchiveAcquisitionChannel}
+                onDeleteAcquisitionChannel={handleDeleteAcquisitionChannel}
                 onOpenEditChannelModal={handleOpenEditChannelModal}
                 isNewChannelModalOpen={isNewChannelModalOpen}
                 onCloseNewChannelModal={() => setIsNewChannelModalOpen(false)}

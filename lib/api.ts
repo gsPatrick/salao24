@@ -562,6 +562,9 @@ export const marketingAPI = {
         const response = await api.put(`/marketing/channels/${id}`, data);
         return response.data;
     },
+    deleteChannel: async (id: number) => {
+        await api.delete(`/marketing/channels/${id}`);
+    },
 
     // Direct Mail Campaigns
     listDirectMail: async () => {
