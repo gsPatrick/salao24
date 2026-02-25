@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { supportAPI, trainingAPI } from '../lib/api';
+import { supportAPI, trainingAPI, communityIdeaAPI } from '../lib/api';
 
 // --- Interfaces ---
 interface User {
@@ -33,6 +33,19 @@ interface Ticket {
   message: string;
   timestamp: Date;
   status: 'Em Aberto' | 'Resolvido';
+}
+
+interface Suggestion {
+  id: number;
+  user_id: number;
+  title: string;
+  description: string;
+  votes_count: number;
+  author: {
+    name: string;
+    avatar_url: string;
+  };
+  votes: { user_id: number }[];
 }
 
 
@@ -552,26 +565,79 @@ const TicketContent: React.FC<{ tickets: Ticket[], setTickets: React.Dispatch<Re
   );
 };
 
-const ContributionsContent = () => {
-  const [suggestions, setSuggestions] = useState([
-    { id: 1, title: 'Integração com Instagram DMs para agendamentos', description: 'Permitir que a IA responda e agende diretamente pelas DMs do Instagram.', votes: 128, voted: false },
-    { id: 2, title: 'Relatório de Aniversariantes do Mês', description: 'Uma lista fácil de visualizar com todos os clientes que fazem aniversário no mês atual para ações de marketing.', votes: 97, voted: false },
-    { id: 3, title: 'App para o cliente final agendar e ver histórico', description: 'Um aplicativo dedicado para o cliente poder marcar horários, ver seus pacotes e histórico de serviços.', votes: 75, voted: false },
-  ]);
+const ContributionsContent: React.FC<{ isSuperAdmin: boolean, currentUserId?: number }> = ({ isSuperAdmin, currentUserId }) => {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleVote = (id: number) => {
-    setSuggestions(suggestions.map(s => s.id === id && !s.voted ? { ...s, votes: s.votes + 1, voted: true } : s));
+  useEffect(() => {
+    fetchIdeas();
+  }, []);
+
+  const fetchIdeas = async () => {
+    try {
+      const response = await communityIdeaAPI.list();
+      if (response.success) {
+        setSuggestions(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching ideas:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleIdeaSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleVote = async (id: number) => {
+    try {
+      const response = await communityIdeaAPI.toggleVote(id);
+      if (response.success) {
+        setSuggestions(prev => prev.map(s => {
+          if (s.id === id) {
+            const hasVoted = s.votes.some(v => v.user_id === currentUserId);
+            const newVotes = hasVoted
+              ? s.votes.filter(v => v.user_id !== currentUserId)
+              : [...s.votes, { user_id: currentUserId! }];
+
+            return {
+              ...s,
+              votes_count: response.votesCount,
+              votes: newVotes
+            };
+          }
+          return s;
+        }));
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+    }
+  };
+
+  const handleDeleteIdea = async (id: number) => {
+    if (window.confirm('Excluir esta ideia?')) {
+      try {
+        await communityIdeaAPI.delete(id);
+        setSuggestions(prev => prev.filter(s => s.id !== id));
+      } catch (error) {
+        alert('Erro ao excluir ideia');
+      }
+    }
+  };
+
+  const handleIdeaSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const title = (form.elements.namedItem('ideaTitle') as HTMLInputElement).value;
     const description = (form.elements.namedItem('ideaDescription') as HTMLTextAreaElement).value;
 
     if (title && description) {
-      setSuggestions(prev => [{ id: Date.now(), title, description, votes: 1, voted: true }, ...prev]);
-      form.reset();
+      try {
+        const response = await communityIdeaAPI.create({ title, description });
+        if (response.success) {
+          fetchIdeas();
+          form.reset();
+        }
+      } catch (error) {
+        alert('Erro ao enviar sugestão');
+      }
     }
   };
 
@@ -594,24 +660,53 @@ const ContributionsContent = () => {
 
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-secondary text-center">Ideias da Comunidade</h3>
-        {suggestions.sort((a, b) => b.votes - a.votes).map(suggestion => (
-          <div key={suggestion.id} className="bg-white p-4 rounded-lg shadow-md flex items-start gap-4">
-            <div className="flex-shrink-0 text-center">
-              <button
-                onClick={() => handleVote(suggestion.id)}
-                disabled={suggestion.voted}
-                className={`flex flex-col items-center p-2 border rounded-md transition-colors ${suggestion.voted ? 'bg-primary/20 border-primary cursor-not-allowed' : 'hover:bg-gray-100 border-gray-300'}`}
-              >
-                <span className="font-bold text-lg text-primary">{suggestion.votes}</span>
-                <span className="text-xs text-gray-500">votos</span>
-              </button>
-            </div>
-            <div>
-              <h4 className="font-semibold text-secondary">{suggestion.title}</h4>
-              <p className="text-sm text-gray-600">{suggestion.description}</p>
-            </div>
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ))}
+        ) : suggestions.length > 0 ? (
+          suggestions.map(suggestion => {
+            const hasVoted = suggestion.votes.some(v => v.user_id === currentUserId);
+            const canDelete = isSuperAdmin || suggestion.user_id === currentUserId;
+
+            return (
+              <div key={suggestion.id} className="bg-white p-4 rounded-lg shadow-md flex items-start gap-4 relative">
+                <div className="flex-shrink-0 text-center">
+                  <button
+                    onClick={() => handleVote(suggestion.id)}
+                    className={`flex flex-col items-center p-2 border rounded-md transition-colors ${hasVoted ? 'bg-primary/20 border-primary' : 'hover:bg-gray-100 border-gray-300'}`}
+                  >
+                    <span className="font-bold text-lg text-primary">{suggestion.votes_count}</span>
+                    <span className="text-xs text-gray-500">votos</span>
+                  </button>
+                </div>
+                <div className="flex-grow">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-semibold text-secondary">{suggestion.title}</h4>
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteIdea(suggestion.id)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        title="Excluir ideia"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <img src={suggestion.author.avatar_url || 'https://i.pravatar.cc/150'} alt="" className="w-5 h-5 rounded-full" />
+                    <span>Por {suggestion.author.name}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-center text-gray-500 py-10">Nenhuma ideia postada ainda. Seja o primeiro!</p>
+        )}
       </div>
     </div>
   );
@@ -679,7 +774,7 @@ const SupportPage: React.FC<SupportPageProps> = ({ onBack }) => {
       <div className="animate-fade-in">
         {activeTab === 'ticket' && <TicketContent tickets={tickets} setTickets={setTickets} hasOpenTicket={hasOpenTicket} />}
         {activeTab === 'training' && <TrainingContent isSuperAdmin={isSuperAdmin} />}
-        {activeTab === 'contributions' && <ContributionsContent />}
+        {activeTab === 'contributions' && <ContributionsContent isSuperAdmin={isSuperAdmin} currentUserId={user?.id} />}
       </div>
     </div>
   );

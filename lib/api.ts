@@ -847,4 +847,23 @@ export const auditLogsAPI = {
     }
 };
 
+export const communityIdeaAPI = {
+    list: async () => {
+        const response = await api.get('/community-ideas');
+        return response.data;
+    },
+    create: async (data: { title: string; description: string }) => {
+        const response = await api.post('/community-ideas', data);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/community-ideas/${id}`);
+        return response.data;
+    },
+    toggleVote: async (id: number) => {
+        const response = await api.post(`/community-ideas/${id}/vote`);
+        return response.data;
+    }
+};
+
 export default api;
