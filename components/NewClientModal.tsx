@@ -978,19 +978,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             </div>
             <InputField label={`${t('contactPhone')} *`} name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} type="tel" required maxLength={15} error={errors.phone} />
             <InputField label={t('email')} name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} type="email" error={errors.email} />
-            <SelectField
-              label="Sexo"
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              options={[
-                { value: 'Masculino', label: 'Masculino' },
-                { value: 'Feminino', label: 'Feminino' },
-                { value: 'Outro', label: 'Outro' }
-              ]}
-              error={errors.gender}
-            />
             <div className="md:col-span-2 mt-4 pt-4 border-t">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('additionalContacts')}</label>
               <div className="space-y-3">
@@ -1064,8 +1051,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <input
                     type="radio"
                     name="gender"
-                    value="masculino"
-                    checked={formData.gender === 'masculino'}
+                    value="Masculino"
+                    checked={formData.gender === 'Masculino'}
                     onChange={handleChange}
                     className="w-4 h-4 text-primary focus:ring-primary border-gray-300 transition-colors cursor-pointer"
                   />
@@ -1075,12 +1062,23 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <input
                     type="radio"
                     name="gender"
-                    value="feminino"
-                    checked={formData.gender === 'feminino'}
+                    value="Feminino"
+                    checked={formData.gender === 'Feminino'}
                     onChange={handleChange}
                     className="w-4 h-4 text-primary focus:ring-primary border-gray-300 transition-colors cursor-pointer"
                   />
                   <span className="ml-2 text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">Feminino</span>
+                </label>
+                <label className="flex items-center cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="Outro"
+                    checked={formData.gender === 'Outro'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 transition-colors cursor-pointer"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 group-hover:text-primary transition-colors font-medium">Outro</span>
                 </label>
               </div>
             </div>
