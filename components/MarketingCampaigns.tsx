@@ -5,6 +5,7 @@ import { NewDirectMailModal } from './NewDirectMailModal';
 // FIX: Changed to a default import as DirectMailDetailsModal will be changed to a default export.
 import DirectMailDetailsModal from './DirectMailDetailsModal';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData } from '../contexts/DataContext';
 import { Client, DirectMailCampaignData } from '../types';
 import ScheduleSettingsModal, { Schedule } from './ScheduleSettingsModal';
 import { aiAPI, marketingAPI } from '../lib/api';
@@ -99,7 +100,7 @@ interface MarketingCampaignsProps {
     onComingSoon?: (featureName: string) => void;
 }
 
-const getClientGroups = (clients: Client[], appointments: Appointment[]) => {
+const getClientGroups = (clients: Client[], appointments: Appointment[], funnelStages: any[] = []) => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -123,15 +124,24 @@ const getClientGroups = (clients: Client[], appointments: Appointment[]) => {
         'Inativos (60+ dias)': []
     };
 
-    // Add CRM Pipeline groups dynamically
+    // Initialize CRM Funnel stages from settings
+    const crmFunnels: { [key: string]: Client[] } = {};
+    funnelStages.forEach(stage => {
+        crmFunnels[stage.title] = [];
+    });
+
     clients.forEach(client => {
-        if (client.classification) {
-            if (!groups[client.classification]) {
-                groups[client.classification] = [];
+        // CRM Stage mapping (ID based)
+        let crmMapped = false;
+        if (client.crm_stage) {
+            const stage = funnelStages.find(s => s.id === client.crm_stage);
+            if (stage && crmFunnels[stage.title]) {
+                crmFunnels[stage.title].push(client);
+                crmMapped = true;
             }
-            groups[client.classification].push(client);
         }
 
+        // Automatic groups
         if (client.birthdate) {
             const birthDate = new Date(client.birthdate);
             if (birthDate.getMonth() === today.getMonth()) {
@@ -158,15 +168,16 @@ const getClientGroups = (clients: Client[], appointments: Appointment[]) => {
         if (client.lastVisit) {
             const lastVisitDate = new Date(client.lastVisit);
             if (!isNaN(lastVisitDate.getTime())) {
-                const daysSinceLastVisit = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24));
-                if (daysSinceLastVisit > 60) {
+                const diffTime = Math.abs(startOfToday.getTime() - lastVisitDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays >= 60) {
                     groups['Inativos (60+ dias)'].push(client);
                 }
             }
         }
     });
 
-    return groups;
+    return { automatic: groups, crm: crmFunnels };
 };
 
 
@@ -248,7 +259,9 @@ const NewCampaignModal: React.FC<{
     const [scheduleSettings, setScheduleSettings] = useState<Schedule[]>([]);
     const [isImprovingText, setIsImprovingText] = useState(false);
 
-    const crmGroups = useMemo(() => getClientGroups(clients, appointments), [clients, appointments]);
+    const { crmSettings } = useData();
+
+    const crmGroups = useMemo(() => getClientGroups(clients, appointments, crmSettings?.funnel_stages || []), [clients, appointments, crmSettings]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -292,8 +305,9 @@ const NewCampaignModal: React.FC<{
             if (typeof identifier === 'string' && identifier.startsWith('tag:')) {
                 const tagName = identifier.substring(4);
                 groupClients = clients.filter(client => client.tags && client.tags.includes(tagName));
-            } else if (crmGroups[identifier]) {
-                groupClients = crmGroups[identifier];
+            } else {
+                // Look in both automatic and CRM groups
+                groupClients = crmGroups.automatic[identifier] || crmGroups.crm[identifier] || [];
             }
 
             // Apply Gender Filter
@@ -476,8 +490,23 @@ const NewCampaignModal: React.FC<{
                                             </button>
                                             {isAudienceDropdownOpen && (
                                                 <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border max-h-60 overflow-y-auto">
-                                                    {Object.entries(crmGroups).map(([groupName, groupClients]) => (
-                                                        <label key={groupName} className="flex items-center justify-between p-2 hover:bg-gray-100 cursor-pointer">
+                                                    <div className="p-2 pt-3 bg-gray-50 border-b">
+                                                        <p className="text-xs font-bold text-gray-500 uppercase">Funis do CRM</p>
+                                                    </div>
+                                                    {Object.entries(crmGroups.crm).map(([groupName, groupClients]) => (
+                                                        <label key={`crm-${groupName}`} className="flex items-center justify-between p-2 hover:bg-gray-100 cursor-pointer">
+                                                            <span className="text-black font-medium">
+                                                                {groupName} <span className="text-xs text-gray-500 font-normal">({(groupClients as any[]).length})</span>
+                                                            </span>
+                                                            <input type="checkbox" checked={publicoAlvo.includes(groupName)} onChange={() => handleAudienceChange(groupName, false)} className="h-4 w-4 text-primary rounded border-gray-300" />
+                                                        </label>
+                                                    ))}
+
+                                                    <div className="p-2 pt-3 bg-gray-50 border-y mt-2">
+                                                        <p className="text-xs font-bold text-gray-500 uppercase">Grupos Inteligentes</p>
+                                                    </div>
+                                                    {Object.entries(crmGroups.automatic).map(([groupName, groupClients]) => (
+                                                        <label key={`auto-${groupName}`} className="flex items-center justify-between p-2 hover:bg-gray-100 cursor-pointer">
                                                             <span className="text-black">
                                                                 {groupName} <span className="text-xs text-gray-500">({(groupClients as any[]).length})</span>
                                                             </span>
