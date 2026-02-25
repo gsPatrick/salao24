@@ -4020,7 +4020,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             const fetchSummary = async () => {
                 setLoadingSummary(true);
                 try {
-                    const response = await financeAPI.getSummary({ period: derivedPeriod, unit: selectedUnit });
+                    const response = await financeAPI.getSummary({ period: derivedPeriod, unitId: selectedUnitId });
                     if (response.success) {
                         setSummary(response.data);
                     }
