@@ -715,7 +715,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         settingsTitle: 'Configurações',
         settingsSubtitle: 'Gerencie as preferências e configurações do seu espaço e conta.',
         settingsTabSpace: 'Espaço',
-        settingsTabAccountData: 'Dados da Conta',
+        settingsTabAccountData: 'Plano',
         settingsTabUser: 'Usuário',
         settingsTabUnit: 'Unidade',
         settingsTabPlan: 'Plano',

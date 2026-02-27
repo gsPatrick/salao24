@@ -475,7 +475,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 return (
                     <div className="animate-fade-in space-y-8">
                         <div>
-                            <h2 className="text-xl font-bold text-secondary">Dados da Conta</h2>
+                            <h2 className="text-xl font-bold text-secondary">{t('settingsTabAccountData')}</h2>
                             <p className="text-gray-500 text-sm">Gerencie sua assinatura, informações de faturamento e dados da empresa.</p>
                         </div>
 
@@ -707,7 +707,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
                         {tabOrder.map(tabName => {
                             const tabLabels: Record<string, string> = {
-                                'conta': 'Dados da Conta',
+                                'conta': t('settingsTabAccountData'),
                                 'unidade': t('settingsTabUnit'),
                                 'usuario': t('settingsTabUser'),
                                 'email-server': 'Servidor de E-mail',

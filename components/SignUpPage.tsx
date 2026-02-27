@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../lib/api';
+import { formatCPFOrCNPJ, cleanMask } from '../lib/maskUtils';
 
 interface SignUpPageProps {
   navigate: (page: string) => void;
@@ -166,6 +167,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [validation, setValidation] = useState({ length: false, uppercase: false, lowercase: false, number: false, special: false });
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [cnpjCpf, setCnpjCpf] = useState('');
 
   const [selectedPlan, setSelectedPlan] = useState<'Individual' | 'Empresa' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -185,7 +187,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
     else setPasswordsMatch(true);
   }, [password, confirmPassword]);
 
-  const isStep1Valid = Object.values(validation).every(Boolean) && passwordsMatch && confirmPassword !== '' && email !== '' && phone !== '' && (userType === 'client' ? userName !== '' : (establishmentName !== '' && userName !== ''));
+  const isStep1Valid = Object.values(validation).every(Boolean) && passwordsMatch && confirmPassword !== '' && email !== '' && phone !== '' && (userType === 'client' ? userName !== '' : (establishmentName !== '' && userName !== '' && cnpjCpf.replace(/\D/g, '').length >= 11));
 
   const handleNext = () => setStep(prev => prev + 1);
   const handlePrev = () => setStep(prev => prev - 1);
@@ -195,13 +197,14 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
     setIsLoading(true);
     try {
       await authAPI.register({
-        name: userName,
-        establishment_name: establishmentName,
+        userName,
+        tenantName: establishmentName,
         email,
         phone,
         password,
         plan: selectedPlan || 'Individual',
-        user_type: userType
+        userType,
+        cnpj_cpf: cleanMask(cnpjCpf)
       });
       setIsLoading(false);
       setStep(4); // Move to success step
@@ -294,6 +297,18 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
                   placeholder="(00) 00000-0000"
                 />
               </div>
+              {userType === 'salon' && (
+                <div className="md:col-span-2">
+                  <label className="block text-[13px] font-bold text-secondary/60 ml-2 mb-2 uppercase tracking-wider">CNPJ ou CPF</label>
+                  <input
+                    required
+                    value={cnpjCpf}
+                    onChange={(e) => setCnpjCpf(formatCPFOrCNPJ(e.target.value))}
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all outline-none font-medium"
+                    placeholder="00.000.000/0001-00 ou 000.000.000-00"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
