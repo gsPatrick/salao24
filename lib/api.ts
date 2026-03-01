@@ -4,9 +4,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://salao-api.rdwhjt.easypa
 
 const api = axios.create({
     baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 export const getImageUrl = (path: string | undefined | null) => {
@@ -112,11 +109,7 @@ export const uploadAPI = {
     upload: async (file: File, type: string = 'general') => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post(`/upload?type=${type}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post(`/upload?type=${type}`, formData);
         return response.data;
     },
 };
