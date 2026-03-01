@@ -143,6 +143,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const unitObj = units.find(u => u.id === selectedUnitId);
     const primaryColor = unitObj?.primaryColor || unitObj?.primary_color || '#10b981';
+    const logoUrl = unitObj?.logo || unitObj?.logo_url || '';
 
     // Helper to darken color for hover (very simplified)
     const darkenColor = (hex: string, percent: number) => {
@@ -334,7 +335,7 @@ const App: React.FC = () => {
   useEffect(() => {
     // Priority: Specific Unit Branding > Tenant Branding > Default
     const unitBranding = currentUnitData.unitDetails;
-    const themeColor = unitBranding?.primary_color || currentUser?.tenant?.primary_color || '#10b981';
+    const themeColor = unitBranding?.primaryColor || unitBranding?.primary_color || currentUser?.tenant?.primary_color || '#10b981';
 
     document.documentElement.style.setProperty('--primary-color', themeColor);
     document.documentElement.style.setProperty('--primary-dark', themeColor); // Could be improved with a darken utility

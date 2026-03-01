@@ -13,7 +13,9 @@ export const getImageUrl = (path: string | undefined | null) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
     const baseUrl = API_URL.replace(/\/api$/, '');
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+    const url = `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+    // Add cache buster for local paths to ensure new uploads show up
+    return `${url}${url.includes('?') ? '&' : '?'}v=${new Date().getTime()}`;
 };
 
 // Request interceptor to add token and unit context

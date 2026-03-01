@@ -4563,9 +4563,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="min-h-screen bg-light flex">
             <aside className={`w-64 bg-secondary text-white p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
                 <div className="mb-8 px-4 flex justify-between items-center">
-                    {(allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url) ? (
+                    {(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url) ? (
                         <img
-                            src={allData[selectedUnit]?.unitDetails?.logo_url ? getImageUrl(allData[selectedUnit].unitDetails.logo_url) : getImageUrl(currentUser!.tenant!.logo_url)}
+                            src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url)}
                             alt={allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Logo'}
                             className="h-10 mx-auto object-contain"
                         />
@@ -4722,8 +4722,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                         : 'border-gray-50 hover:border-primary/30 hover:bg-gray-50'}`}
                                             >
                                                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 mr-4 flex-shrink-0 border border-gray-100">
-                                                    {unit?.logo_url ? (
-                                                        <img src={getImageUrl(unit.logo_url)} alt={unitName} className="w-full h-full object-cover" />
+                                                    {(unit?.logo || unit?.logo_url) ? (
+                                                        <img src={getImageUrl(unit.logo || unit.logo_url)} alt={unitName} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xl">
                                                             {unitName.charAt(0)}
