@@ -191,6 +191,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
     const [draggedTab, setDraggedTab] = useState<string | null>(null);
+    const [isEditingSMTP, setIsEditingSMTP] = useState(false);
+    const [isTestingConnection, setIsTestingConnection] = useState(false);
 
     const currentPlanName = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
 
@@ -274,6 +276,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         } catch (error: any) {
             console.error('Error saving unit:', error);
             alert('Erro ao salvar unidade: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleSMTPSave = async (unitData: any) => {
+        try {
+            await saveUnit(unitData);
+            showNotification('Configurações de e-mail salvas com sucesso!');
+            setIsEditingSMTP(false);
+        } catch (error: any) {
+            console.error('Error saving SMTP settings:', error);
+            alert('Erro ao salvar configurações de e-mail: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -548,84 +561,153 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 const activeUnit = units.find(u => u.name === selectedUnit) || units[0];
                 return (
                     <div className="animate-fade-in space-y-6">
-                        <div>
-                            <h2 className="text-xl font-bold text-secondary">Configuração de E-mail (SMTP)</h2>
-                            <p className="text-gray-500 text-sm">Configure seu próprio servidor de e-mail para envios de Mala Direta e notificações.</p>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold text-secondary">Configuração de E-mail (SMTP)</h2>
+                                <p className="text-gray-500 text-sm">Configure seu próprio servidor de e-mail para envios de Mala Direta e notificações.</p>
+                            </div>
+                            {activeUnit && activeUnit.smtp_settings?.host && !isEditingSMTP && (
+                                <button
+                                    onClick={() => setIsEditingSMTP(true)}
+                                    className="text-primary hover:text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center transition-colors border border-primary"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Editar
+                                </button>
+                            )}
                         </div>
 
                         {activeUnit ? (
                             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Servidor SMTP (Host)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="smtp.exemplo.com"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
-                                                defaultValue={activeUnit.smtp_settings?.host || ''}
-                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, host: e.target.value } })}
-                                            />
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const updatedSettings = {
+                                        host: formData.get('host') as string,
+                                        port: parseInt(formData.get('port') as string),
+                                        user: formData.get('user') as string,
+                                        pass: formData.get('pass') as string,
+                                    };
+                                    handleSMTPSave({ ...activeUnit, smtp_settings: updatedSettings });
+                                }}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Servidor SMTP (Host)</label>
+                                                <input
+                                                    type="text"
+                                                    name="host"
+                                                    placeholder="smtp.exemplo.com"
+                                                    disabled={!isEditingSMTP && !!activeUnit.smtp_settings?.host}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                                                    defaultValue={activeUnit.smtp_settings?.host || ''}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Porta</label>
+                                                <input
+                                                    type="number"
+                                                    name="port"
+                                                    placeholder="587"
+                                                    disabled={!isEditingSMTP && !!activeUnit.smtp_settings?.host}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                                                    defaultValue={activeUnit.smtp_settings?.port || 587}
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Porta</label>
-                                            <input
-                                                type="number"
-                                                placeholder="587"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
-                                                defaultValue={activeUnit.smtp_settings?.port || 587}
-                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, port: parseInt(e.target.value) } })}
-                                            />
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Usuário / E-mail</label>
+                                                <input
+                                                    type="text"
+                                                    name="user"
+                                                    placeholder="contato@seudominio.com"
+                                                    disabled={!isEditingSMTP && !!activeUnit.smtp_settings?.host}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                                                    defaultValue={activeUnit.smtp_settings?.user || ''}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Senha</label>
+                                                <input
+                                                    type="password"
+                                                    name="pass"
+                                                    placeholder="********"
+                                                    disabled={!isEditingSMTP && !!activeUnit.smtp_settings?.host}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                                                    defaultValue={activeUnit.smtp_settings?.pass || ''}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Usuário / E-mail</label>
-                                            <input
-                                                type="text"
-                                                placeholder="contato@seudominio.com"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
-                                                defaultValue={activeUnit.smtp_settings?.user || ''}
-                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, user: e.target.value } })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Senha</label>
-                                            <input
-                                                type="password"
-                                                placeholder="********"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
-                                                defaultValue={activeUnit.smtp_settings?.pass || ''}
-                                                onBlur={(e) => handleUnitSave({ ...activeUnit, smtp_settings: { ...activeUnit.smtp_settings, pass: e.target.value } })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const { marketingAPI } = require('../lib/api');
-                                                const result = await marketingAPI.testSMTP(activeUnit.smtp_settings);
-                                                if (result.success) {
-                                                    alert('Teste realizado com sucesso! ' + result.message);
+                                    <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
+                                        <button
+                                            type="button"
+                                            disabled={isTestingConnection}
+                                            onClick={async (e) => {
+                                                const form = (e.currentTarget.closest('form') as HTMLFormElement);
+                                                const formData = new FormData(form);
+                                                const testSettings = {
+                                                    host: formData.get('host') as string,
+                                                    port: parseInt(formData.get('port') as string),
+                                                    user: formData.get('user') as string,
+                                                    pass: formData.get('pass') as string,
+                                                };
+
+                                                if (!testSettings.host || !testSettings.user) {
+                                                    alert('Preencha Host e Usuário para testar.');
+                                                    return;
                                                 }
-                                            } catch (error: any) {
-                                                alert('Falha no teste: ' + (error.response?.data?.error || error.message));
-                                            }
-                                        }}
-                                        className="bg-secondary hover:bg-secondary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
-                                    >
-                                        Testar Conexão
-                                    </button>
-                                    <button
-                                        onClick={() => handleUnitSave(activeUnit)}
-                                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
-                                    >
-                                        Salvar SMTP
-                                    </button>
-                                </div>
+
+                                                setIsTestingConnection(true);
+                                                try {
+                                                    const { marketingAPI } = require('../lib/api');
+                                                    const result = await marketingAPI.testSMTP(testSettings);
+                                                    if (result.success) {
+                                                        alert('Teste realizado com sucesso! Conexão estabelecida.');
+                                                    } else {
+                                                        alert('Falha no teste: ' + result.message);
+                                                    }
+                                                } catch (error: any) {
+                                                    alert('Erro de conexão: ' + (error.response?.data?.error || error.message));
+                                                } finally {
+                                                    setIsTestingConnection(false);
+                                                }
+                                            }}
+                                            className="bg-secondary hover:bg-secondary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm disabled:bg-gray-400 flex items-center"
+                                        >
+                                            {isTestingConnection ? (
+                                                <>
+                                                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Testando...
+                                                </>
+                                            ) : 'Testar Conexão'}
+                                        </button>
+                                        {(isEditingSMTP || !activeUnit.smtp_settings?.host) && (
+                                            <button
+                                                type="submit"
+                                                className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
+                                            >
+                                                Salvar SMTP
+                                            </button>
+                                        )}
+                                        {isEditingSMTP && activeUnit.smtp_settings?.host && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsEditingSMTP(false)}
+                                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg transition-colors text-sm"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
                             </div>
                         ) : (
                             <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
