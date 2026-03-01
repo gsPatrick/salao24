@@ -2033,6 +2033,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 updateTenant,
                 uploadTenantLogo,
                 saveUnit,
+                uploadUnitLogo,
                 deleteUnit,
                 saveProduct,
                 deleteProduct,
