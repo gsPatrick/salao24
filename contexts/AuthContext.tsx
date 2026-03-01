@@ -21,6 +21,7 @@ interface AuthUser {
     name: string;
     email: string;
     avatarUrl?: string;
+    cargo?: string;
     role: 'admin' | 'gerente' | 'recepcao' | 'profissional' | 'cliente' | 'Administrador' | 'Gerente' | 'Profissional' | 'Concierge';
     tenant_id: number | null;
     is_super_admin: boolean;
@@ -96,6 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 name: apiUser.name,
                                 email: apiUser.email,
                                 avatarUrl: apiUser.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+                                cargo: apiUser.cargo,
                                 role: apiUser.role,
                                 tenant_id: apiUser.tenant_id,
                                 is_super_admin: apiUser.is_super_admin || false,
@@ -153,6 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: apiUser.name,
                     email: apiUser.email,
                     avatarUrl: apiUser.avatar_url || `https://i.pravatar.cc/150?u=${apiUser.email}`,
+                    cargo: apiUser.cargo,
                     role: apiUser.role,
                     tenant_id: apiUser.tenant_id,
                     is_super_admin: apiUser.is_super_admin || false,

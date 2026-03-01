@@ -11,7 +11,8 @@ interface Appointment {
   date: string;
   time: string;
   service: string;
-  status: 'Agendado' | 'Em Espera' | 'Atendido' | 'concluido' | 'atendido';
+  status: 'Agendado' | 'Em Espera' | 'Atendido' | 'concluido' | 'atendido' | 'Cancelado';
+  unit_id?: number;
 }
 
 interface ClientAppPageProps {
@@ -317,6 +318,46 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
 
+  const [units, setUnits] = useState<any[]>([]);
+
+  // Fetch units to get cancellation settings
+  useEffect(() => {
+    const fetchUnits = async () => {
+      try {
+        const response = await api.get('/units');
+        setUnits(response.data || []);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+      }
+    };
+    fetchUnits();
+  }, []);
+
+  const handleCancelAppointment = async (appt: Appointment) => {
+    const unit = units.find(u => u.id === appt.unit_id);
+    const cancelNoticeHours = unit?.settings?.cancelNoticeHours || 24;
+
+    const appointmentDateTime = new Date(`${appt.date}T${appt.time}`);
+    const now = new Date();
+    const hoursDiff = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (hoursDiff < cancelNoticeHours) {
+      alert(t('cancelLimitReached', { hours: cancelNoticeHours }));
+      return;
+    }
+
+    if (window.confirm(t('confirmCancelAppointment'))) {
+      try {
+        await appointmentsAPI.cancel(appt.id, 'Cancelado pelo cliente');
+        setClientAppointments(prev => prev.map(a => a.id === appt.id ? { ...a, status: 'Cancelado' } : a));
+        showNotification(t('appointmentCancelledSuccess'));
+      } catch (error) {
+        console.error('Error cancelling appointment:', error);
+        alert(t('errorCancellingAppointment'));
+      }
+    }
+  };
+
   // Fetch client's own appointments directly (DataContext doesn't load for client users)
   useEffect(() => {
     const fetchClientAppointments = async () => {
@@ -471,15 +512,27 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                         key={appt.id}
                         className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-primary"
                       >
-                        <p className="font-bold text-secondary">{appt.service}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(appt.date + 'T00:00:00').toLocaleDateString('pt-BR', {
-                            weekday: 'long',
-                            day: '2-digit',
-                            month: 'long',
-                          })}
-                        </p>
-                        <p className="text-lg font-semibold text-primary">{appt.time}</p>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-secondary">{appt.service}</p>
+                            <p className="text-sm text-gray-600">
+                              {new Date(appt.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+                                weekday: 'long',
+                                day: '2-digit',
+                                month: 'long',
+                              })}
+                            </p>
+                            <p className="text-lg font-semibold text-primary">{appt.time}</p>
+                          </div>
+                          {appt.status !== 'Cancelado' && (
+                            <button
+                              onClick={() => handleCancelAppointment(appt)}
+                              className="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

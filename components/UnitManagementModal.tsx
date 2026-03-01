@@ -148,7 +148,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
         setFormData({
           name: unitToEdit.name,
           shortDescription: (unitToEdit as any).shortDescription || '',
-          phone: Array.isArray(unitToEdit.phone) ? unitToEdit.phone[0] : (unitToEdit.phone || ''),
+          phone: typeof unitToEdit.phone === 'string' ? unitToEdit.phone : (Array.isArray(unitToEdit.phone) ? unitToEdit.phone[0] : ''),
           cep: unitToEdit.address.cep,
           street: unitToEdit.address.street,
           number: unitToEdit.address.number,
@@ -287,7 +287,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
       id: unitToEdit?.id,
       name: formData.name,
       shortDescription: formData.shortDescription,
-      phone: Array.isArray(unitToEdit?.phone) ? [formData.phone, ...unitToEdit.phone.slice(1)] : [formData.phone],
+      phone: formData.phone,
       address: {
         cep: formData.cep,
         street: formData.street,

@@ -368,6 +368,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                     <img className="h-10 w-10 rounded-full" src={user.avatarUrl} alt={user.name} />
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                                        <div className="text-xs text-secondary font-semibold">{user.cargo}</div>
                                                         <div className="text-sm text-gray-500">{user.email}</div>
                                                     </div>
                                                 </div>
@@ -439,7 +440,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 <p className="text-xs text-gray-500">{unit.address.street}, {unit.address.number}</p>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                <p>{unit.phone}</p>
+                                                <p>{formatPhone(Array.isArray(unit.phone) ? unit.phone[0] : unit.phone)}</p>
                                                 {unit.additionalPhones && unit.additionalPhones.length > 0 && <p className="text-xs text-gray-500">+ {t('additionalPhones', { count: unit.additionalPhones.length })}</p>}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">

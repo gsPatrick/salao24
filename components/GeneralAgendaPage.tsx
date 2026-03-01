@@ -576,7 +576,17 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
       return (
         <div className="flex space-x-6 overflow-x-auto pb-4">
           {professionalsToDisplay.map(prof => {
-            const unit = contextUnits.find(u => u.name === prof.unit);
+            const unit = contextUnits.find(u => u.id === selectedUnitId) || contextUnits.find(u => u.name === prof.unit);
+
+            // Get working hours for current day
+            const dayOfWeek = currentDate.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
+            const dayInfo = unit?.workingHours?.find((h: any) => h.day.toLowerCase() === dayOfWeek);
+
+            const unitStart = dayInfo?.start || '08:00';
+            const unitEnd = dayInfo?.end || '18:00';
+            const interval = unit?.settings?.appointmentInterval || 30;
+            const ppm = interval === 15 ? 8.52 : (interval === 45 ? 2.84 : (interval === 60 ? 2.13 : 4.26));
+
             return (
               <ProfessionalColumn
                 key={prof.id}
@@ -599,8 +609,10 @@ const GeneralAgendaPage: React.FC<GeneralAgendaPageProps> = ({ onBack, currentUs
                 isDraggable={canDragAndDrop}
                 draggedAppointmentId={draggedAppointmentId}
                 onOpenNewAppointment={handleOpenNewAppointment}
-                openingTime={prof.start_time || prof.startTime || '08:00'}
-                closingTime={prof.end_time || prof.endTime || '18:00'}
+                openingTime={unitStart}
+                closingTime={unitEnd}
+                slotDuration={interval}
+                pixelsPerMinute={ppm}
               />
             );
           })}

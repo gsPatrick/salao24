@@ -1800,9 +1800,10 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                                 </div>
                             )}
                         </div>
-                        {(currentUser?.role === 'admin' || currentUser?.role === 'Administrador' || currentUser?.role === 'Gerente') && (
+                        {(currentUser?.role === 'admin' || currentUser?.role === 'Administrador' || currentUser?.is_super_admin) && (
                             <div className="relative group">
                                 <button
+                                    id="crm-settings-btn"
                                     onClick={() => setIsSettingsModalOpen(true)}
                                     className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 p-2 rounded-lg flex items-center transition-colors duration-300 flex-shrink-0">
                                     <SettingsIcon />

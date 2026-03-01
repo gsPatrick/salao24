@@ -84,6 +84,7 @@ const App: React.FC = () => {
     clients, professionals, services, appointments, transactions, units, products, promotions,
     notifications: contextNotifications,
     refreshAll,
+    selectedUnitId,
     setSelectedUnitId,
     packages,
     salonPlans
@@ -138,6 +139,34 @@ const App: React.FC = () => {
     }
   };
 
+  // Dynamic Theming Effect
+  useEffect(() => {
+    const unitObj = units.find(u => u.id === selectedUnitId);
+    const primaryColor = unitObj?.primaryColor || unitObj?.primary_color || '#10b981';
+
+    // Helper to darken color for hover (very simplified)
+    const darkenColor = (hex: string, percent: number) => {
+      try {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) - amt;
+        const G = (num >> 8 & 0x00FF) - amt;
+        const B = (num & 0x0000FF) - amt;
+        return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+      } catch (e) {
+        return hex;
+      }
+    };
+
+    const primaryDark = darkenColor(primaryColor, 10);
+
+    document.documentElement.style.setProperty('--primary-color', primaryColor);
+    document.documentElement.style.setProperty('--primary-dark', primaryDark);
+
+    // Add a slightly transparent version for rings/backgrounds
+    document.documentElement.style.setProperty('--primary-light', `${primaryColor}20`); // Hex + 20 for ~12% opacity
+  }, [selectedUnitId, units]);
+
   // Sync selectedUnit and allData with real units from DataContext
   useEffect(() => {
     if (Array.isArray(units) && units.length > 0) {
@@ -182,7 +211,7 @@ const App: React.FC = () => {
         setSelectedUnit('Unidade Principal');
       }
     }
-  }, [units, clients, professionals, services, products, transactions, appointments, packages, salonPlans]);
+  }, [units, clients, professionals, services, products, transactions, appointments, packages, salonPlans, selectedUnit, selectedUnitId, setSelectedUnitId]);
 
   const currentUnitData = allData[selectedUnit] || {
     clients: [], professionals: [], services: [], packages: [], plans: [], products: [],
@@ -303,18 +332,13 @@ const App: React.FC = () => {
 
   // Dynamic Visual Identity Injection
   useEffect(() => {
-    if (currentUser?.tenant?.primary_color) {
-      document.documentElement.style.setProperty('--primary-color', currentUser.tenant.primary_color);
+    // Priority: Specific Unit Branding > Tenant Branding > Default
+    const unitBranding = currentUnitData.unitDetails;
+    const themeColor = unitBranding?.primary_color || currentUser?.tenant?.primary_color || '#10b981';
 
-      // Calculate a darker shade for hover states provided simple logic or use the same
-      // Ideally we would darken the color hex here. For simplicity, we can use the same or a fixed darken logic.
-      // Let's implement a simple darken function or just use the same for now to ensure consistency.
-      // A simple way to get a "dark" variant is to assume the backend sends it or we compute it.
-      // For now, let's just set primary-dark to the same or slightly adjusted if we had a util.
-      // We will set it to the same color to avoid breakage, or improved later.
-      document.documentElement.style.setProperty('--primary-dark', currentUser.tenant.primary_color);
-    }
-  }, [currentUser]);
+    document.documentElement.style.setProperty('--primary-color', themeColor);
+    document.documentElement.style.setProperty('--primary-dark', themeColor); // Could be improved with a darken utility
+  }, [selectedUnit, currentUser, currentUnitData]);
 
   useEffect(() => {
     // Prevent browser from trying to restore scroll position on back/forward
@@ -671,6 +695,7 @@ const App: React.FC = () => {
           currentUser={currentUser}
           onLogout={handleLogout}
           notifications={notifications}
+          logo={currentUnitData.unitDetails?.logo_url || currentUser?.tenant?.logo_url}
         />
         <main>
           {renderHomePage()}

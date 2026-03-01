@@ -14,16 +14,17 @@ interface HeaderProps {
   currentUser: User | null;
   onLogout: () => void;
   notifications?: { appointments: number; messages: number };
+  logo?: string | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifications }) => {
+const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifications, logo }) => {
   const { t } = useLanguage();
 
   return (
     <header className="bg-secondary text-white relative">
       <div className={`container mx-auto px-4 sm:px-6 text-center transition-all duration-500 ${currentUser ? 'py-8 sm:py-12 md:py-16' : 'py-12 sm:py-16 md:py-24'}`}>
-        {currentUser?.tenant?.logo_url ? (
-          <img src={currentUser.tenant.logo_url} alt={currentUser.tenant.name || 'Logo'} className="h-16 md:h-20 mx-auto mb-4 object-contain animate-pulse-logo" />
+        {logo ? (
+          <img src={logo} alt={currentUser?.tenant?.name || 'Logo'} className="h-16 md:h-20 mx-auto mb-4 object-contain animate-pulse-logo" />
         ) : (
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4 break-words">
             {currentUser?.tenant?.name || 'Salão24h'}

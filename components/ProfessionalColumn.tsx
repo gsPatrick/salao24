@@ -79,6 +79,8 @@ const ProfessionalColumn: React.FC<{
     onOpenNewAppointment: (professional: any, time: string) => void;
     openingTime?: string;
     closingTime?: string;
+    slotDuration?: number;
+    pixelsPerMinute?: number;
 }> = ({
     professional,
     appointments,
@@ -101,6 +103,8 @@ const ProfessionalColumn: React.FC<{
     onOpenNewAppointment,
     openingTime = '08:00',
     closingTime = '18:00',
+    slotDuration = 30,
+    pixelsPerMinute = 4.26,
 }) => {
         const { t } = useLanguage();
         const { services: apiServices, packages: apiPackages, salonPlans: apiSalonPlans } = useData();
@@ -160,12 +164,11 @@ const ProfessionalColumn: React.FC<{
             }))
         ].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-        const PIXELS_PER_MINUTE = 4.26; // 128px / 30min ~= 4.26
+        const PIXELS_PER_MINUTE = pixelsPerMinute;
 
         const renderedItems: any[] = [];
         let currentTime = timeToMinutes(openingTime);
         const endTime = timeToMinutes(closingTime);
-        const slotDuration = 30;
 
         while (currentTime < endTime) {
             const currentSlotTime = minutesToTime(currentTime);

@@ -45,6 +45,7 @@ const initialFormData = {
   name: '',
   email: '',
   role: 'Profissional' as User['role'],
+  cargo: '',
 };
 
 const EyeIcon = () => (
@@ -100,8 +101,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       category: t('permCategoryClients'),
       items: [
         { id: 'clientes', label: t('permItemClients') },
-        { id: 'crm', label: t('permItemCRM') },
         { id: 'avaliacoes', label: t('permItemReviews') },
+      ]
+    },
+    {
+      category: t('permCategoryCRM') || 'CRM',
+      items: [
+        { id: 'crm', label: t('permItemCRM') },
+        { id: 'colunasCrm', label: 'Configurações do CRM' },
       ]
     },
     {
@@ -110,7 +117,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
         { id: 'marketing', label: t('permItemMarketing') },
         { id: 'canais', label: t('permItemChannels') },
         { id: 'malaDireta', label: t('permItemDirectMail') },
-        { id: 'automacoes', label: t('permItemAutomations') },
       ]
     },
     {
@@ -162,7 +168,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
 
   const rolePermissions: any = {
     Administrador: {
-      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess,
+      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess, colunasCrm: fullAccess,
       contratos: fullAccess, financeiro: fullAccess, estoque: fullAccess, servicos: fullAccess, profissionais: fullAccess,
       configuracoes: fullAccess, usuarios: fullAccess, registroPonto: fullAccess, relatorio: fullAccess,
       chat: fullAccess, avaliacoes: fullAccess, marketing: fullAccess, canais: fullAccess, malaDireta: fullAccess, automacoes: fullAccess,
@@ -170,7 +176,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       unidades: fullAccess, auditoria: fullAccess, assinatura: fullAccess, suporte: fullAccess, traducoes: fullAccess
     },
     Gerente: {
-      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess,
+      dashboard: fullAccess, agenda: fullAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: fullAccess, colunasCrm: noAccess,
       contratos: fullAccess, financeiro: readOnly, estoque: fullAccess, servicos: fullAccess, profissionais: fullAccess,
       configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: fullAccess,
       chat: fullAccess, avaliacoes: fullAccess, marketing: fullAccess, canais: fullAccess, malaDireta: fullAccess, automacoes: fullAccess,
@@ -178,7 +184,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       unidades: noAccess, auditoria: readOnly, assinatura: noAccess, suporte: fullAccess, traducoes: noAccess
     },
     Profissional: {
-      dashboard: noAccess, agenda: noAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: noAccess,
+      dashboard: noAccess, agenda: noAccess, minhaAgenda: fullAccess, clientes: fullAccess, crm: noAccess, colunasCrm: noAccess,
       contratos: noAccess, financeiro: noAccess, estoque: noAccess, servicos: noAccess, profissionais: noAccess,
       configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: noAccess,
       chat: fullAccess, avaliacoes: readOnly, marketing: noAccess, canais: noAccess, malaDireta: noAccess, automacoes: noAccess,
@@ -186,7 +192,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       unidades: noAccess, auditoria: noAccess, assinatura: noAccess, suporte: noAccess, traducoes: noAccess
     },
     Concierge: {
-      dashboard: readOnly, agenda: fullAccess, minhaAgenda: noAccess, clientes: fullAccess, crm: readOnly,
+      dashboard: readOnly, agenda: fullAccess, minhaAgenda: noAccess, clientes: fullAccess, crm: readOnly, colunasCrm: noAccess,
       contratos: noAccess, financeiro: noAccess, estoque: noAccess, servicos: noAccess, profissionais: noAccess,
       configuracoes: noAccess, usuarios: noAccess, registroPonto: fullAccess, relatorio: noAccess,
       chat: fullAccess, avaliacoes: readOnly, marketing: noAccess, canais: noAccess, malaDireta: noAccess, automacoes: noAccess,
@@ -208,9 +214,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
           name: userToEdit.name,
           email: userToEdit.email,
           role: userToEdit.role,
+          cargo: userToEdit.cargo || '',
         });
         setPhoto(userToEdit.avatarUrl);
         setPermissions(userToEdit.permissions || rolePermissions[userToEdit.role] || {});
+        setPassword('********');
+        setConfirmPassword('********');
 
         const linkedProf = professionals.find(p => p.email === userToEdit.email);
         setLinkedProfessionalId(linkedProf ? String(linkedProf.id) : '');
@@ -319,6 +328,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       }
     }
 
+    const finalPassword = (password === '********') ? undefined : password;
+
     setIsUploading(true);
 
     let avatarUrl = photo;
@@ -350,12 +361,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       name: formData.name,
       email: formData.email,
       role: formData.role,
+      cargo: formData.cargo,
       permissions,
       avatarUrl: avatarUrl || userToEdit?.avatarUrl,
     };
 
-    if (password) {
-      userData.password = password;
+    if (finalPassword) {
+      userData.password = finalPassword;
     }
 
     await onSave(userData); // onSave might be async now or we just wait for it to return if it returns promise
@@ -447,6 +459,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t('userModalLabelEmail')}</label>
                 <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled={!!linkedProfessionalId} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500" />
+              </div>
+              <div>
+                <label htmlFor="cargo" className="block text-sm font-medium text-gray-700">Função / Cargo</label>
+                <input type="text" id="cargo" name="cargo" value={formData.cargo} onChange={handleChange} placeholder="Ex: Recepcionista, Gerente, etc." className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
               </div>
 
               <hr className="my-4" />

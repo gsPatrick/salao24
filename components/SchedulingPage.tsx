@@ -44,6 +44,7 @@ interface SchedulingPageProps {
 
 interface Selection {
     unit: string | null;
+    unitId: number | null;
     service: Service | null;
     package: Package | null;
     plan: SalonPlan | null;
@@ -58,6 +59,7 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
     const [step, setStep] = useState(1);
     const [selection, setSelection] = useState<Selection>({
         unit: null,
+        unitId: null,
         service: null,
         package: null,
         plan: null,
@@ -101,7 +103,8 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
                     const response = await appointmentsAPI.getAvailability({
                         date: formattedDate,
                         professionalId: selection.professional.id,
-                        serviceId: selection.service?.id // Backend currently expects serviceId
+                        serviceId: selection.service?.id,
+                        unitId: selection.unitId || undefined
                     });
                     if (response.success) {
                         setSelection(prev => ({ ...prev, availableSlots: response.data.slots || [] }));
@@ -143,6 +146,10 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
         if (key === 'service') setSelection(prev => ({ ...prev, service: value, package: null, plan: null }));
         else if (key === 'package') setSelection(prev => ({ ...prev, service: null, package: value, plan: null }));
         else if (key === 'plan') setSelection(prev => ({ ...prev, service: null, package: null, plan: value }));
+        else if (key === 'unit') {
+            const unitObj = units.find(u => u.name === value);
+            setSelection(prev => ({ ...prev, unit: value, unitId: unitObj ? unitObj.id : null }));
+        }
         else setSelection(prev => ({ ...prev, [key]: value }));
         handleNextStep();
     };
@@ -166,12 +173,20 @@ const SchedulingPage: React.FC<SchedulingPageProps> = ({ navigate, goBack, isCli
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
+            const dayOfWeek = date.getDay();
+            const daysMap = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+            const dayOfWeekLabel = daysMap[dayOfWeek];
+
             const isPast = date < today;
             const isSelected = selectedDate.toDateString() === date.toDateString();
 
-            // In a real app, we might check if this specific date has ANY slots
-            // For now, let's just enable all future dates if a service is selected
-            let hasSlots = !isPast && (selection.service !== null || selection.package !== null || selection.plan !== null);
+            // Check if salon is open on this day according to workingHours settings
+            const unit = units.find(u => u.name === selection.unit);
+            const workingHours = unit?.working_hours || [];
+            const dayInfo = workingHours.find((h: any) => h.day.toLowerCase() === dayOfWeekLabel.toLowerCase());
+            const isOpen = dayInfo ? dayInfo.open : (dayOfWeek !== 0 && dayOfWeek !== 6); // Default fallback
+
+            let hasSlots = !isPast && isOpen && (selection.service !== null || selection.package !== null || selection.plan !== null);
 
             let buttonClasses = "w-10 h-10 rounded-full flex flex-col items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 relative pt-1";
             let dayIndicator;

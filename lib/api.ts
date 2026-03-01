@@ -222,12 +222,12 @@ export const appointmentsAPI = {
         const response = await api.put(`/appointments/${id}`, data);
         return response.data;
     },
-    updateStatus: async (id: number, status: string, sessionsConsumed?: number) => {
-        const response = await api.patch(`/appointments/${id}/status`, { status, sessionsConsumed });
+    updateStatus: async (id: number, status: string, sessionsConsumed?: number, bypassNotice: boolean = false) => {
+        const response = await api.patch(`/appointments/${id}/status`, { status, sessionsConsumed, bypassNotice });
         return response.data;
     },
-    cancel: async (id: number, reason?: string) => {
-        const response = await api.patch(`/appointments/${id}/cancel`, { reason });
+    cancel: async (id: number, reason?: string, bypassNotice: boolean = false) => {
+        const response = await api.patch(`/appointments/${id}/cancel`, { reason, bypassNotice });
         return response.data;
     },
     refund: async (id: number, reason: string) => {
@@ -238,7 +238,7 @@ export const appointmentsAPI = {
         const response = await api.delete(`/appointments/${id}`);
         return response.data;
     },
-    getAvailability: async (params: { date: string, professionalId: number, serviceId?: number }) => {
+    getAvailability: async (params: { date: string, professionalId: number, serviceId?: number, unitId?: number }) => {
         const response = await api.get('/appointments/availability', { params });
         return response.data;
     },

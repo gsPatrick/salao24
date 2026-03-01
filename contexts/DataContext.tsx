@@ -175,6 +175,7 @@ export interface SystemUser {
     email: string;
     role: 'admin' | 'gerente' | 'recepcao' | 'profissional' | 'Administrador' | 'Gerente' | 'Profissional' | 'Concierge';
     avatarUrl?: string;
+    cargo?: string;
     suspended?: boolean;
     permissions?: any;
     [key: string]: any;
@@ -389,7 +390,7 @@ export interface DataContextType {
     deleteServiceCategory: (category: string) => void;
 
     saveAppointment: (appointment: Partial<Appointment>) => Promise<Appointment | null>;
-    updateAppointmentStatus: (id: number, status: string) => Promise<Appointment | null>;
+    updateAppointmentStatus: (id: number, status: string, bypassNotice?: boolean) => Promise<Appointment | null>;
     cancelAppointment: (id: number) => Promise<boolean>;
     saveBlock: (block: Partial<TimeBlock>) => Promise<TimeBlock | null>;
     deleteBlock: (id: number) => Promise<boolean>;
@@ -556,6 +557,7 @@ export const mapProductFromAPI = (apiProduct: any): Product => ({
 export const mapUserFromAPI = (apiUser: any): SystemUser => ({
     ...apiUser,
     avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
+    cargo: apiUser.cargo,
     suspended: apiUser.is_active === false,
     lastLoginAt: apiUser.last_login_at || apiUser.lastLoginAt,
 });
@@ -585,18 +587,33 @@ export const mapTenantFromAPI = (apiTenant: any): Tenant => {
     return mapped;
 };
 
-export const mapUnitFromAPI = (apiUnit: any): Unit => ({
-    ...apiUnit,
-    suspended: apiUnit.is_suspended,
-    logo: apiUnit.logo_url || apiUnit.logo,
-    primaryColor: apiUnit.primary_color || apiUnit.primaryColor,
-    workingHours: apiUnit.working_hours || apiUnit.workingHours,
-    checkinMessage: apiUnit.checkin_message || apiUnit.checkinMessage,
-    admin_name: apiUnit.admin_name || apiUnit.adminName,
-    admin_phone: apiUnit.admin_phone || apiUnit.adminPhone,
-    cnpj_cpf: apiUnit.cnpj_cpf || apiUnit.cnpjCpf,
-    settings: apiUnit.settings || {},
-});
+export const mapUnitFromAPI = (apiUnit: any): Unit => {
+    let phone = apiUnit.phone;
+    if (typeof phone === 'string' && (phone.startsWith('[') || phone.startsWith('{'))) {
+        try {
+            const parsed = JSON.parse(phone);
+            phone = Array.isArray(parsed) ? parsed[0] : parsed;
+        } catch (e) {
+            console.error("Error parsing unit phone:", e);
+        }
+    } else if (Array.isArray(phone)) {
+        phone = phone[0];
+    }
+
+    return {
+        ...apiUnit,
+        phone: phone || '',
+        suspended: apiUnit.is_suspended,
+        logo: apiUnit.logo_url || apiUnit.logo,
+        primaryColor: apiUnit.primary_color || apiUnit.primaryColor,
+        workingHours: apiUnit.working_hours || apiUnit.workingHours,
+        checkinMessage: apiUnit.checkin_message || apiUnit.checkinMessage,
+        admin_name: apiUnit.admin_name || apiUnit.adminName,
+        admin_phone: apiUnit.admin_phone || apiUnit.adminPhone,
+        cnpj_cpf: apiUnit.cnpj_cpf || apiUnit.cnpjCpf,
+        settings: apiUnit.settings || {},
+    };
+};
 
 export const mapPackageFromAPI = (apiPackage: any): Package => ({
     ...apiPackage,
@@ -1476,17 +1493,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const updateAppointmentStatus = async (id: number, status: string): Promise<Appointment | null> => {
+    const updateAppointmentStatus = async (id: number, status: string, bypassNotice: boolean = true): Promise<Appointment | null> => {
         try {
             // Map frontend status to backend enum
             const statusMap: { [key: string]: string } = {
                 'Agendado': 'agendado',
                 'Confirmado': 'confirmado',
-                'Em Espera': 'em_atendimento', // Map to em_atendimento (waiting/in service)
+                'Em Espera': 'em_atendimento',
                 'Atendido': 'concluido',
                 'Falta': 'faltou',
                 'Cancelado': 'cancelado',
-                // Handle lowercase inputs just in case
                 'agendado': 'agendado',
                 'confirmado': 'confirmado',
                 'em espera': 'em_atendimento',
@@ -1496,14 +1512,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 'concluido': 'concluido',
                 'reagendado': 'reagendado'
             };
-
             const backendStatus = statusMap[status] || status.toLowerCase();
 
             // Final fallback for safety
             const validStatuses = ['agendado', 'confirmado', 'em_atendimento', 'concluido', 'faltou', 'cancelado', 'reagendado'];
             const finalStatus = validStatuses.includes(backendStatus) ? backendStatus : 'agendado';
 
-            const response = await appointmentsAPI.updateStatus(id, finalStatus);
+            const response = await appointmentsAPI.updateStatus(id, finalStatus, undefined, bypassNotice);
             await refreshAppointments();
 
             // Refresh transactions if completed
@@ -1520,11 +1535,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const cancelAppointment = async (id: number): Promise<boolean> => {
         try {
-            await appointmentsAPI.delete(id); // Delete completely instead of just updating status
+            await appointmentsAPI.cancel(id, 'Cancelado pelo administrador', true); // Pass bypassNotice: true
             await refreshAppointments();
             return true;
         } catch (error) {
-            console.error('Error deleting appointment:', error);
+            console.error('Error cancelling appointment:', error);
             return false;
         }
     };
