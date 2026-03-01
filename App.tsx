@@ -142,8 +142,14 @@ const App: React.FC = () => {
   // Dynamic Theming Effect
   useEffect(() => {
     const unitObj = units.find(u => u.id === selectedUnitId);
-    const primaryColor = unitObj?.primaryColor || unitObj?.primary_color || '#10b981';
-    const logoUrl = unitObj?.logo || unitObj?.logo_url || '';
+    // Restoration: Use default green for Landing Page, dynamic only for logged in users
+    const primaryColor = (currentUser || authUser)
+      ? (unitObj?.primaryColor || unitObj?.primary_color || authUser?.tenant?.primary_color || '#10b981')
+      : '#10b981';
+
+    const logoUrl = (currentUser || authUser)
+      ? (unitObj?.logo || unitObj?.logo_url || '')
+      : '';
 
     // Helper to darken color for hover (very simplified)
     const darkenColor = (hex: string, percent: number) => {
