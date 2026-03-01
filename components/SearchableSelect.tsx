@@ -54,7 +54,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     };
 
     return (
-        <div className={`relative ${className}`} ref={wrapperRef}>
+        <div className={`relative ${className} ${isOpen ? 'z-[1000]' : 'z-10'}`} ref={wrapperRef}>
             {label && (
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     {label} {required && <span className="text-red-500">*</span>}
@@ -77,7 +77,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden flex flex-col">
+                <div className="absolute z-[1001] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col transition-all duration-200 ease-out origin-top">
                     <div className="p-2 border-b border-gray-100 bg-gray-50/50">
                         <input
                             type="text"
