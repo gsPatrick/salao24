@@ -29,6 +29,18 @@ interface InternalChatProps {
     onClearUnread: (userId: number) => void;
 }
 
+const formatRole = (role: string) => {
+    if (!role) return '';
+    const lowRole = role.toLowerCase();
+    if (lowRole === 'recepcao' || lowRole === 'concierge') return 'Recepção';
+    if (lowRole === 'gerente') return 'Gerente';
+    if (lowRole === 'profissional') return 'Profissional';
+    if (lowRole === 'admin' || lowRole === 'administrador') return 'Administrador';
+
+    // Default: Capitalize first letter
+    return role.charAt(0).toUpperCase() + role.slice(1);
+};
+
 const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onClearUnread }) => {
     const [contactList, setContactList] = useState<User[]>([]);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -197,7 +209,7 @@ const InternalChat: React.FC<InternalChatProps> = ({ onClose, currentUser, onCle
                                             <span className="bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">{unreadCount}</span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-gray-500">{user.role}</p>
+                                    <p className="text-xs text-gray-500">{formatRole(user.role)}</p>
                                 </div>
                             </button>
                         );

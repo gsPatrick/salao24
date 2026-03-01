@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
 import { uploadAPI } from '../lib/api';
+import { SearchableSelect } from './SearchableSelect';
 
 interface NewProfessionalModalProps {
     isOpen: boolean;
@@ -594,27 +595,29 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                         <div className="md:col-span-1"><InputField label="Complemento" name="addressComplement" value={formData.addressComplement} onChange={handleChange} /></div>
                         <div className="md:col-span-2"><InputField label="Bairro *" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} required error={errors.neighborhood} /></div>
                         <div className="md:col-span-2">
-                            <SelectField
+                            <SearchableSelect
                                 label="Cidade *"
                                 name="city"
                                 value={formData.city}
                                 onChange={handleChange}
-                                onBlur={handleBlur}
-                                options={[
-                                    { value: '', label: isFetchingCities ? 'Carregando...' : 'Selecione' },
-                                    ...cities.map(c => ({ value: c, label: c }))
-                                ]}
+                                options={
+                                    isFetchingCities
+                                        ? [{ value: '', label: 'Carregando...' }]
+                                        : [
+                                            { value: '', label: 'Selecione' },
+                                            ...cities.map(c => ({ value: c, label: c }))
+                                        ]
+                                }
                                 required
                                 error={errors.city}
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <SelectField
+                            <SearchableSelect
                                 label="Estado *"
                                 name="state"
                                 value={formData.state}
                                 onChange={handleChange}
-                                onBlur={handleBlur}
                                 options={[
                                     { value: '', label: 'Selecione' },
                                     ...['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => ({ value: uf, label: uf }))

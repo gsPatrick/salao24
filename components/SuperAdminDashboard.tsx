@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { tenantsAPI, superAdminAPI } from '../lib/api';
+import { SearchableSelect } from './SearchableSelect';
 
 interface Tenant {
     id: number;
@@ -130,25 +131,27 @@ export const SuperAdminTenantsPage: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
-                    <select
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
+                    <SearchableSelect
+                        name="state"
                         value={filters.state}
                         onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                    >
-                        <option value="">Todos</option>
-                        {filterOptions.states.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                        options={[
+                            { value: '', label: 'Todos' },
+                            ...filterOptions.states.map(s => ({ value: s, label: s }))
+                        ]}
+                    />
                 </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Cidade</label>
-                    <select
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-primary focus:border-primary bg-white"
+                    <SearchableSelect
+                        name="city"
                         value={filters.city}
                         onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                    >
-                        <option value="">Todos</option>
-                        {filterOptions.cities.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                        options={[
+                            { value: '', label: 'Todos' },
+                            ...filterOptions.cities.map(c => ({ value: c, label: c }))
+                        ]}
+                    />
                 </div>
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bairro</label>
@@ -351,6 +354,7 @@ export const SuperAdminBannersPage: React.FC = () => {
     }, [isModalOpen]);
 
     const [selectedTargetState, setSelectedTargetState] = useState(editingBanner?.target_state || '');
+    const [selectedTargetCity, setSelectedTargetCity] = useState(editingBanner?.target_city || '');
     const [targetCities, setTargetCities] = useState<string[]>([]);
     const [isFetchingTargetCities, setIsFetchingTargetCities] = useState(false);
 
@@ -376,12 +380,14 @@ export const SuperAdminBannersPage: React.FC = () => {
             fetchCities();
         } else {
             setTargetCities([]);
+            setSelectedTargetCity('');
         }
     }, [selectedTargetState]);
 
     useEffect(() => {
         if (isModalOpen) {
             setSelectedTargetState(editingBanner?.target_state || '');
+            setSelectedTargetCity(editingBanner?.target_city || '');
         }
     }, [isModalOpen, editingBanner]);
 
@@ -691,36 +697,31 @@ export const SuperAdminBannersPage: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Estado</label>
-                                        <div className="relative">
-                                            <select
-                                                name="target_state"
-                                                value={selectedTargetState}
-                                                onChange={(e) => setSelectedTargetState(e.target.value)}
-                                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
-                                            >
-                                                <option value="">Todos os Estados</option>
-                                                {filterOptions.states.map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
-                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
-                                        </div>
+                                        <SearchableSelect
+                                            name="target_state"
+                                            value={selectedTargetState}
+                                            onChange={(e) => setSelectedTargetState(e.target.value)}
+                                            options={[
+                                                { value: '', label: 'Todos os Estados' },
+                                                ...filterOptions.states.map(s => ({ value: s, label: s }))
+                                            ]}
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cidade</label>
-                                        <div className="relative">
-                                            <select
-                                                name="target_city"
-                                                defaultValue={editingBanner?.target_city || ''}
-                                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
-                                            >
-                                                <option value="">{isFetchingTargetCities ? 'Carregando...' : 'Todas as Cidades'}</option>
-                                                {targetCities.map(c => <option key={c} value={c}>{c}</option>)}
-                                            </select>
-                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
-                                        </div>
+                                        <SearchableSelect
+                                            name="target_city"
+                                            value={selectedTargetCity}
+                                            onChange={(e) => setSelectedTargetCity(e.target.value)}
+                                            options={
+                                                isFetchingTargetCities
+                                                    ? [{ value: '', label: 'Carregando...' }]
+                                                    : [
+                                                        { value: '', label: 'Todas as Cidades' },
+                                                        ...targetCities.map(c => ({ value: c, label: c }))
+                                                    ]
+                                            }
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Bairro</label>

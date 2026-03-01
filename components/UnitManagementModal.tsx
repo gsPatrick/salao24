@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useLanguage } from '../contexts/LanguageContext';
 import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
 import { useData } from '../contexts/DataContext';
-import { getImageUrl } from '../lib/api';
+import { getImageUrl, uploadAPI } from '../lib/api';
 
 // --- Interfaces ---
 interface AdditionalPhone {
@@ -251,28 +251,30 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      if (unitToEdit?.id) {
-        setIsUploading(true);
-        try {
-          const urlRequest = await uploadUnitLogo(unitToEdit.id, file);
-          if (urlRequest) {
-            setLogo(urlRequest);
-          } else {
-            alert(t('errorUploadFailed') || 'Falha ao enviar a imagem. Tente novamente.');
-          }
-        } catch (err: any) {
-          console.error('Upload Error:', err);
-          const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-          const errStatus = err.response?.status || 'No status';
-          alert(`Falha no upload (Status: ${errStatus}): ${errMsg}`);
-        } finally {
-          setIsUploading(false);
-          if (logoInputRef.current) logoInputRef.current.value = '';
+      setIsUploading(true);
+      try {
+        let url: string | null = null;
+        if (unitToEdit?.id) {
+          url = await uploadUnitLogo(unitToEdit.id, file);
+        } else {
+          // For new units, use the general upload API
+          const response = await uploadAPI.upload(file, 'unit');
+          url = response.url || response.data?.url;
         }
-      } else {
-        const reader = new FileReader();
-        reader.onload = (event) => setLogo(event.target?.result as string);
-        reader.readAsDataURL(file);
+
+        if (url) {
+          setLogo(url);
+        } else {
+          alert(t('errorUploadFailed') || 'Falha ao enviar a imagem. Tente novamente.');
+        }
+      } catch (err: any) {
+        console.error('Upload Error:', err);
+        const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+        const errStatus = err.response?.status || 'No status';
+        alert(`Falha no upload (Status: ${errStatus}): ${errMsg}`);
+      } finally {
+        setIsUploading(false);
+        if (logoInputRef.current) logoInputRef.current.value = '';
       }
     }
   };

@@ -10,8 +10,8 @@ interface PermissionDetails {
   export: boolean;
 }
 
-import { SystemUser as User } from '../contexts/DataContext';
 import { uploadAPI, getImageUrl } from '../lib/api';
+import { useData, SystemUser as User } from '../contexts/DataContext';
 
 // --- Interfaces ---
 interface PermissionDetails {
@@ -64,11 +64,13 @@ const EyeOffIcon = () => (
 
 // --- Component ---
 const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClose, onSave, userToEdit, professionals, users }) => {
-  const { t } = useLanguage();
-  const [formData, setFormData] = useState(initialFormData);
-  const [permissions, setPermissions] = useState<{ [key: string]: PermissionDetails }>({});
   const [isExiting, setIsExiting] = useState(false);
+  const { t } = useLanguage();
+  const { occupations, tenant } = useData();
   const [linkedProfessionalId, setLinkedProfessionalId] = useState<string>('');
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [permissions, setPermissions] = useState<Record<string, PermissionDetails>>({});
 
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -225,7 +227,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
         setLinkedProfessionalId(linkedProf ? String(linkedProf.id) : '');
 
       } else {
-        setFormData(initialFormData);
+        setFormData({
+          ...initialFormData,
+          name: '',
+          email: '',
+          cargo: ''
+        });
         setPhoto(null);
         setPermissions(rolePermissions.Profissional);
         setLinkedProfessionalId('');
@@ -237,6 +244,25 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       setIsUploading(false);
     }
   }, [isOpen, userToEdit, professionals]);
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (linkedProfessionalId) return;
+
+    let newRole: User['role'] = 'Profissional';
+
+    if (['Administrador', 'Gerente', 'Concierge', 'Recepcionista', 'Profissional'].includes(value)) {
+      newRole = (value === 'Recepcionista' ? 'Concierge' : value) as User['role'];
+    } else {
+      newRole = 'Profissional';
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      role: newRole,
+      cargo: value
+    }));
+  };
 
   // Update permissions when role changes, but not if a professional is linked
   useEffect(() => {
@@ -458,22 +484,37 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t('userModalLabelEmail')}</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled={!!linkedProfessionalId} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500" />
+                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required disabled={!!linkedProfessionalId} autoComplete="email-new-user" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-500" />
               </div>
               <div>
-                <label htmlFor="cargo" className="block text-sm font-medium text-gray-700">Função / Cargo</label>
+                <label htmlFor="role-select" className="block text-sm font-medium text-gray-700">{t('userModalLabelRole') || 'Função / Cargo'}</label>
                 <select
-                  id="cargo"
-                  name="cargo"
-                  value={formData.cargo}
-                  onChange={handleChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  id="role-select"
+                  name="role-select"
+                  value={formData.cargo || formData.role}
+                  onChange={handleRoleChange}
+                  disabled={!!linkedProfessionalId}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-50 bg-white"
                 >
-                  <option value="">Selecione um cargo</option>
-                  <option value="Administrador">Administrador</option>
-                  <option value="Gerente">Gerente</option>
-                  <option value="Recepcionista">Recepcionista</option>
-                  <option value="Profissional">Profissional</option>
+                  <option value="">{t('selectRole') || 'Selecione uma função'}</option>
+                  <optgroup label="Cargos do Sistema">
+                    <option value="Administrador">Administrador</option>
+                    <option value="Gerente">Gerente</option>
+                    <option value="Recepcionista">Recepcionista</option>
+                    <option value="Profissional">Profissional</option>
+                  </optgroup>
+
+                  {/* Incluindo todas as ocupações cadastradas dinamicamente */}
+                  {occupations.length > 0 && (
+                    <optgroup label="Cargos de Profissionais">
+                      {occupations
+                        .filter(occ => !['Administrador', 'Gerente', 'Recepcionista', 'Concierge', 'Profissional'].includes(occ))
+                        .map(occ => (
+                          <option key={occ} value={occ}>{occ}</option>
+                        ))
+                      }
+                    </optgroup>
+                  )}
                 </select>
               </div>
 
@@ -492,8 +533,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
                     onChange={(e) => setPassword(e.target.value)}
                     required={!userToEdit}
                     minLength={6}
+                    autoComplete="new-password"
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary pr-10"
-                    placeholder={userToEdit ? "Deixe em branco para manter a atual" : "Digite a nova senha"}
+                    placeholder={userToEdit ? t('userModalLabelPasswordEdit') : t('userModalLabelPasswordNew')}
                   />
                   <button
                     type="button"
@@ -531,17 +573,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
 
               <hr className="my-4" />
 
-              {userToEdit && (
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">{t('userModalLabelRole')}</label>
-                  <select id="role" name="role" value={formData.role} onChange={handleChange} required disabled={!!linkedProfessionalId} className="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md disabled:bg-gray-100 disabled:text-gray-500">
-                    <option value="Administrador">{t('roleAdmin')}</option>
-                    <option value="Gerente">{t('roleManager')}</option>
-                    <option value="Profissional">{t('roleProfessional')}</option>
-                    <option value="Concierge">{t('roleConcierge')}</option>
-                  </select>
-                </div>
-              )}
+              {/* Removido duplicidade de seletor de role */}
 
               <div className="mt-4 pt-4 border-t">
                 <h4 className="text-md font-medium text-gray-800">{t('userModalSectionPermissions')}</h4>

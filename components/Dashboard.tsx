@@ -52,6 +52,7 @@ import YouTubeCommentModeration from './YouTubeCommentModeration';
 import TranslationPage from './TranslationPage';
 import TestConnection from './TestConnection';
 import { displayCurrency } from '../lib/formatUtils';
+import { SearchableSelect } from './SearchableSelect';
 
 // Card Icons
 const DollarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1h4v1m-4 0H8v1m4-1v-1m-4 5v1m-2-4h12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2z" /></svg>;
@@ -576,6 +577,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
     }, [isPromoModalOpen]);
 
     const [selectedState, setSelectedState] = useState(editingPromotion?.locationState || '');
+    const [selectedCity, setSelectedCity] = useState(editingPromotion?.locationCity || '');
     const [cities, setCities] = useState<string[]>([]);
     const [isFetchingCities, setIsFetchingCities] = useState(false);
 
@@ -588,6 +590,8 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                     if (response.ok) {
                         const data = await response.json();
                         setCities(data.map((c: any) => c.nome).sort());
+                        // If selectedCity is not in the new state's cities, it will naturally become invalid
+                        // We could reset it here, but waiting for the fetch to complete is safer if it's the initial load
                     } else {
                         setCities([]);
                     }
@@ -601,12 +605,14 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
             fetchCities();
         } else {
             setCities([]);
+            setSelectedCity('');
         }
     }, [selectedState]);
 
     useEffect(() => {
         if (isPromoModalOpen) {
             setSelectedState(editingPromotion?.locationState || '');
+            setSelectedCity(editingPromotion?.locationCity || '');
         }
     }, [isPromoModalOpen, editingPromotion]);
 
@@ -914,31 +920,32 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                                            <select
+                                            <SearchableSelect
+                                                label="Estado"
                                                 name="locationState"
                                                 value={selectedState}
                                                 onChange={(e) => setSelectedState(e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
-                                            >
-                                                <option value="">Todos os Estados</option>
-                                                {BRAZILIAN_STATES.map(uf => (
-                                                    <option key={uf} value={uf}>{uf}</option>
-                                                ))}
-                                            </select>
+                                                options={[
+                                                    { value: '', label: 'Todos os Estados' },
+                                                    ...BRAZILIAN_STATES.map(uf => ({ value: uf, label: uf }))
+                                                ]}
+                                            />
                                         </div>
                                         <div>
-                                            <label className="block text-xs text-gray-500 mb-1">Cidade</label>
-                                            <select
+                                            <SearchableSelect
+                                                label="Cidade"
                                                 name="locationCity"
-                                                defaultValue={editingPromotion?.locationCity || ''}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
-                                            >
-                                                <option value="">{isFetchingCities ? 'Carregando...' : 'Todas as Cidades'}</option>
-                                                {cities.map(city => (
-                                                    <option key={city} value={city}>{city}</option>
-                                                ))}
-                                            </select>
+                                                value={selectedCity}
+                                                onChange={(e) => setSelectedCity(e.target.value)}
+                                                options={
+                                                    isFetchingCities
+                                                        ? [{ value: '', label: 'Carregando...' }]
+                                                        : [
+                                                            { value: '', label: 'Todas as Cidades' },
+                                                            ...cities.map(c => ({ value: c, label: c }))
+                                                        ]
+                                                }
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">Bairro</label>
@@ -952,7 +959,6 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Banner Desktop</label>
@@ -1130,6 +1136,44 @@ const ExclusivePromotionsPage: React.FC<{
         const [mobileBannerFile, setMobileBannerFile] = useState<File | null>(null);
         const [mobileBannerPreviewUrl, setMobileBannerPreviewUrl] = useState<string | null>(null);
         const fileInputRef = useRef<HTMLInputElement>(null);
+
+        const [selectedState, setSelectedState] = useState(editingExclusive?.locationState || '');
+        const [selectedCity, setSelectedCity] = useState(editingExclusive?.locationCity || '');
+        const [cities, setCities] = useState<string[]>([]);
+        const [isFetchingCities, setIsFetchingCities] = useState(false);
+
+        useEffect(() => {
+            if (selectedState) {
+                const fetchCities = async () => {
+                    setIsFetchingCities(true);
+                    try {
+                        const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${selectedState}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            setCities(data.map((c: any) => c.nome).sort());
+                        } else {
+                            setCities([]);
+                        }
+                    } catch (error) {
+                        console.error("Erro ao buscar cidades:", error);
+                        setCities([]);
+                    } finally {
+                        setIsFetchingCities(false);
+                    }
+                };
+                fetchCities();
+            } else {
+                setCities([]);
+                setSelectedCity('');
+            }
+        }, [selectedState]);
+
+        useEffect(() => {
+            if (isExclusiveModalOpen) {
+                setSelectedState(editingExclusive?.locationState || '');
+                setSelectedCity(editingExclusive?.locationCity || '');
+            }
+        }, [isExclusiveModalOpen, editingExclusive]);
 
 
         const handleBannerSelect = (selectedFile: File | null) => {
@@ -1420,23 +1464,31 @@ const ExclusivePromotionsPage: React.FC<{
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                                                <input
+                                                <SearchableSelect
+                                                    label="Estado"
                                                     name="locationState"
-                                                    type="text"
-                                                    placeholder="Ex: SP"
-                                                    defaultValue={editingExclusive?.locationState || ''}
-                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                    value={selectedState}
+                                                    onChange={(e) => setSelectedState(e.target.value)}
+                                                    options={[
+                                                        { value: '', label: 'Todos os Estados' },
+                                                        ...BRAZILIAN_STATES.map(uf => ({ value: uf, label: uf }))
+                                                    ]}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs text-gray-500 mb-1">Cidade</label>
-                                                <input
+                                                <SearchableSelect
+                                                    label="Cidade"
                                                     name="locationCity"
-                                                    type="text"
-                                                    placeholder="Ex: São Paulo"
-                                                    defaultValue={editingExclusive?.locationCity || ''}
-                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                    value={selectedCity}
+                                                    onChange={(e) => setSelectedCity(e.target.value)}
+                                                    options={
+                                                        isFetchingCities
+                                                            ? [{ value: '', label: 'Carregando...' }]
+                                                            : [
+                                                                { value: '', label: 'Todas as Cidades' },
+                                                                ...cities.map(c => ({ value: c, label: c }))
+                                                            ]
+                                                    }
                                                 />
                                             </div>
                                             <div>
@@ -1678,6 +1730,44 @@ const MonthlyPackagesPage: React.FC<{
         const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
         const [mobileImagePreviewUrl, setMobileImagePreviewUrl] = useState<string | null>(null);
         const fileInputRef = useRef<HTMLInputElement>(null);
+
+        const [selectedState, setSelectedState] = useState(editingPromotion?.locationState || '');
+        const [selectedCity, setSelectedCity] = useState(editingPromotion?.locationCity || '');
+        const [cities, setCities] = useState<string[]>([]);
+        const [isFetchingCities, setIsFetchingCities] = useState(false);
+
+        useEffect(() => {
+            if (selectedState) {
+                const fetchCities = async () => {
+                    setIsFetchingCities(true);
+                    try {
+                        const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${selectedState}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            setCities(data.map((c: any) => c.nome).sort());
+                        } else {
+                            setCities([]);
+                        }
+                    } catch (error) {
+                        console.error("Erro ao buscar cidades:", error);
+                        setCities([]);
+                    } finally {
+                        setIsFetchingCities(false);
+                    }
+                };
+                fetchCities();
+            } else {
+                setCities([]);
+                setSelectedCity('');
+            }
+        }, [selectedState]);
+
+        useEffect(() => {
+            if (isPromoModalOpen) {
+                setSelectedState(editingPromotion?.locationState || '');
+                setSelectedCity(editingPromotion?.locationCity || '');
+            }
+        }, [isPromoModalOpen, editingPromotion]);
 
 
         const handleFileSelect = (selectedFile: File | null) => {
@@ -2797,26 +2887,31 @@ const MonthlyPackagesPage: React.FC<{
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                                                    <select
+                                                    <SearchableSelect
+                                                        label="Estado"
                                                         name="locationState"
-                                                        defaultValue={editingPromotion?.locationState || ''}
-                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
-                                                    >
-                                                        <option value="">Todos os Estados</option>
-                                                        {BRAZILIAN_STATES.map(uf => (
-                                                            <option key={uf} value={uf}>{uf}</option>
-                                                        ))}
-                                                    </select>
+                                                        value={selectedState}
+                                                        onChange={(e) => setSelectedState(e.target.value)}
+                                                        options={[
+                                                            { value: '', label: 'Todos os Estados' },
+                                                            ...BRAZILIAN_STATES.map(uf => ({ value: uf, label: uf }))
+                                                        ]}
+                                                    />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Cidade</label>
-                                                    <input
+                                                    <SearchableSelect
+                                                        label="Cidade"
                                                         name="locationCity"
-                                                        type="text"
-                                                        placeholder="Ex: São Paulo"
-                                                        defaultValue={editingPromotion?.locationCity || ''}
-                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                                                        value={selectedCity}
+                                                        onChange={(e) => setSelectedCity(e.target.value)}
+                                                        options={
+                                                            isFetchingCities
+                                                                ? [{ value: '', label: 'Carregando...' }]
+                                                                : [
+                                                                    { value: '', label: 'Todas as Cidades' },
+                                                                    ...cities.map(c => ({ value: c, label: c }))
+                                                                ]
+                                                        }
                                                     />
                                                 </div>
                                                 <div>

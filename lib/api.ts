@@ -8,12 +8,20 @@ const api = axios.create({
 
 export const getImageUrl = (path: string | undefined | null) => {
     if (!path) return '';
-    if (path.startsWith('http')) return path;
+    // If it's already a full URL or a relative data URL (base64)
+    if (path.startsWith('http') || path.startsWith('data:') || path.includes('base64')) return path;
+
+    // Normalize path (ensure leading slash if it doesn't have one and isn't a full URL)
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+    // Construct base URL from API_URL (removing /api at the end)
     const baseUrl = API_URL.replace(/\/api$/, '');
-    const url = `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+    const url = `${baseUrl}${normalizedPath}`;
+
     // Add cache buster for local paths to ensure new uploads show up
     return `${url}${url.includes('?') ? '&' : '?'}v=${new Date().getTime()}`;
 };
+
 
 // Request interceptor to add token and unit context
 api.interceptors.request.use((config) => {

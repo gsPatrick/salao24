@@ -786,7 +786,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         userModalLabelPassword: 'Senha de acesso',
         userModalLabelPasswordEdit: 'deixe em branco para manter atual',
         userModalLabelConfirmPassword: 'Confirmar senha',
-        userModalLabelRole: 'Função do usuário',
+        userModalLabelRole: 'Função / Nível de Acesso',
         userModalSectionPermissions: 'Permissões de acesso',
         userModalDescPermissions: 'Defina o que este usuário poderá visualizar e gerenciar dentro do sistema.',
         roleAdmin: 'Administrador',
