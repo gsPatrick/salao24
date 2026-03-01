@@ -8,6 +8,8 @@ const LoginIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w
 const AddIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>;
 const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m-4-4l4 4 4-4" /></svg>;
+const EraserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 
 interface AccessHistoryPageProps {
   logs: any[];
@@ -42,6 +44,13 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
     return users.find(u => u.id === userId)?.name || t('historyUserUnknown');
   };
 
+  const clearFilters = () => {
+    setUserFilter('todos');
+    setActionFilter('todas');
+    setStartDate('');
+    setEndDate('');
+  };
+
   const filteredLogs = useMemo(() => {
     return logs
       .filter(log => {
@@ -51,6 +60,8 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
         if (actionFilter !== 'todas' && getActionInfo(log.action).label !== actionFilter) {
           return false;
         }
+
+        // Fix Date Filtering logic with proper boundaries
         const logDate = new Date(log.timestamp);
         if (startDate) {
           const start = new Date(startDate + 'T00:00:00');
@@ -63,7 +74,7 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
         return true;
       })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [logs, userFilter, actionFilter, startDate, endDate, t]);
+  }, [logs, userFilter, actionFilter, startDate, endDate]);
 
   const handleDownload = () => {
     if (filteredLogs.length === 0) {
@@ -113,11 +124,11 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
   return (
     <div className="mt-6">
       <div className="bg-light p-4 rounded-lg mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-end gap-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full flex-grow">
             <div>
-              <label htmlFor="userFilter" className="block text-sm font-medium text-gray-700">{t('historyFilterUser')}</label>
-              <select id="userFilter" value={userFilter} onChange={e => setUserFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+              <label htmlFor="userFilter" className="block text-sm font-medium text-gray-700 font-inter">{t('historyFilterUser')}</label>
+              <select id="userFilter" value={userFilter} onChange={e => setUserFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md shadow-sm">
                 <option value="todos">{t('historyAllUsers')}</option>
                 {users.map(user => (
                   <option key={user.id} value={user.id}>{user.name}</option>
@@ -125,8 +136,8 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
               </select>
             </div>
             <div>
-              <label htmlFor="actionFilter" className="block text-sm font-medium text-gray-700">{t('historyFilterAction')}</label>
-              <select id="actionFilter" value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+              <label htmlFor="actionFilter" className="block text-sm font-medium text-gray-700 font-inter">{t('historyFilterAction')}</label>
+              <select id="actionFilter" value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md shadow-sm">
                 <option value="todas">{t('historyAllActions')}</option>
                 {allActionTypes.map(action => (
                   <option key={action} value={action}>{action}</option>
@@ -134,18 +145,26 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
               </select>
             </div>
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">{t('historyLabelStartDate')}</label>
-              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 font-inter">{t('historyLabelStartDate')}</label>
+              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">{t('historyLabelEndDate')}</label>
-              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 font-inter">{t('historyLabelEndDate')}</label>
+              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
             </div>
           </div>
-          <div className="flex-shrink-0 mt-4 sm:mt-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-white hover:bg-gray-50 flex items-center justify-center transition-all duration-200 text-sm font-medium h-10"
+              title="Limpar Filtros"
+            >
+              <EraserIcon />
+              <span className="ml-2 hidden lg:inline">Limpar</span>
+            </button>
             <button
               onClick={handleDownload}
-              className="p-2 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark flex items-center justify-center transition-colors"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark flex items-center justify-center transition-all duration-200 h-10"
               title={t('downloadHistory')}
               aria-label={t('downloadHistory')}
             >
@@ -155,7 +174,7 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -163,26 +182,39 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
         ) : filteredLogs.length > 0 ? (
           filteredLogs.map(log => {
             const actionInfo = getActionInfo(log.action);
+            const formattedDate = new Date(log.timestamp).toLocaleString('pt-BR', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+
             return (
-              <div key={log.id} className="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-primary/30 transition-colors">
-                <span className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${actionInfo.color}`}>
+              <div key={log.id} className="flex items-start space-x-4 p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-primary/40 transition-all duration-300 group">
+                <span className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${actionInfo.color} transition-transform group-hover:scale-110`}>
                   {actionInfo.icon}
                 </span>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <p className="text-sm text-gray-800">
+                    <p className="text-sm text-gray-800 leading-tight">
                       <span className="font-bold text-secondary">{log.userName || getUserName(log.userId)}</span> {log.details}
                     </p>
-                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 uppercase font-medium">
+                    <span className="text-[10px] bg-gray-50 px-2 py-1 rounded-full text-gray-500 uppercase font-semibold tracking-wider border border-gray-100 flex-shrink-0 ml-2">
                       {actionInfo.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <p className="text-xs text-gray-500">
-                      {new Date(log.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                    {log.ip && (
-                      <span className="text-[10px] text-gray-400">IP: {log.ip}</span>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs text-gray-400 flex items-center">
+                        <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor font-inter"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {formattedDate}
+                      </p>
+                    </div>
+                    {(log.ip || log.userAgent) && (
+                      <button
+                        className="text-gray-400 hover:text-primary transition-colors p-1"
+                        title={`IP: ${log.ip || 'N/A'}\nDispositivo: ${log.userAgent || 'N/A'}`}
+                      >
+                        <InfoIcon />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -190,8 +222,9 @@ const AccessHistoryPage: React.FC<AccessHistoryPageProps> = ({ logs, users, load
             );
           })
         ) : (
-          <div className="text-center py-10 bg-light rounded-lg">
-            <p className="text-gray-500">{t('historyNoLogs')}</p>
+          <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <p className="text-gray-500 font-medium">{t('historyNoLogs')}</p>
           </div>
         )}
       </div>
