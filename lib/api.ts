@@ -397,9 +397,7 @@ export const tenantsAPI = {
     uploadLogo: async (id: number, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post(`/upload?type=tenant`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await api.post(`/upload?type=tenant`, formData);
         return response.data;
     },
 };
@@ -439,9 +437,7 @@ export const unitsAPI = {
     uploadLogo: async (id: number, file: File) => {
         const formData = new FormData();
         formData.append('file', file); // Generic upload expects 'file'
-        const response = await api.post(`/upload?type=unit`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await api.post(`/upload?type=unit`, formData);
         return response.data;
     },
 };
@@ -639,25 +635,19 @@ export const aiAPI = {
         }
         formData.append('history', JSON.stringify(history));
 
-        const response = await api.post('/ai/chat/test', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await api.post('/ai/chat/test', formData);
         return response.data;
     },
     uploadVoice: async (audioBlob: Blob) => {
         const formData = new FormData();
         formData.append('voice', audioBlob, 'voice_sample.webm');
-        const response = await api.post('/ai/upload-voice', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await api.post('/ai/upload-voice', formData);
         return response.data;
     },
     uploadTrainingFile: async (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await api.post('/ai/upload-training-file', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await api.post('/ai/upload-training-file', formData);
         return response.data;
     }
 };
