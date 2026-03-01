@@ -528,7 +528,9 @@ export const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
     ...apiAppointment,
     professionalId: apiAppointment.professional_id,
     clientId: apiAppointment.client_id,
-    service: apiAppointment.service?.name || apiAppointment.package?.name || apiAppointment.salon_plan?.name || apiAppointment.service_name || 'Serviço',
+    service: typeof apiAppointment.service === 'string'
+        ? apiAppointment.service
+        : (apiAppointment.service?.name || apiAppointment.package?.name || apiAppointment.salon_plan?.name || apiAppointment.service_name || 'Serviço'),
     endTime: apiAppointment.end_time || apiAppointment.endTime,
     service_id: apiAppointment.service_id,
     package_id: apiAppointment.package_id,
