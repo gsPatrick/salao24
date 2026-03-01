@@ -588,29 +588,40 @@ export const mapTenantFromAPI = (apiTenant: any): Tenant => {
 };
 
 export const mapUnitFromAPI = (apiUnit: any): Unit => {
-    let phone = apiUnit.phone;
-    if (typeof phone === 'string' && (phone.startsWith('[') || phone.startsWith('{'))) {
-        try {
-            const parsed = JSON.parse(phone);
-            phone = Array.isArray(parsed) ? parsed[0] : parsed;
-        } catch (e) {
-            console.error("Error parsing unit phone:", e);
+    const cleanJsonString = (val: any) => {
+        if (typeof val === 'string' && (val.startsWith('"') && val.endsWith('"'))) {
+            try {
+                return JSON.parse(val);
+            } catch (e) {
+                return val.replace(/^"|"$/g, '');
+            }
         }
-    } else if (Array.isArray(phone)) {
-        phone = phone[0];
-    }
+        if (typeof val === 'string' && (val.startsWith('[') || val.startsWith('{'))) {
+            try {
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed[0] : parsed;
+            } catch (e) {
+                return val;
+            }
+        }
+        return Array.isArray(val) ? val[0] : val;
+    };
+
+    const phone = cleanJsonString(apiUnit.phone);
+    const cnpj_cpf = cleanJsonString(apiUnit.cnpj_cpf || apiUnit.cnpjCpf);
+    const admin_phone = cleanJsonString(apiUnit.admin_phone || apiUnit.adminPhone);
 
     return {
         ...apiUnit,
         phone: phone || '',
+        cnpj_cpf: cnpj_cpf || '',
+        admin_phone: admin_phone || '',
         suspended: apiUnit.is_suspended,
         logo: apiUnit.logo_url || apiUnit.logo,
         primaryColor: apiUnit.primary_color || apiUnit.primaryColor,
         workingHours: apiUnit.working_hours || apiUnit.workingHours,
         checkinMessage: apiUnit.checkin_message || apiUnit.checkinMessage,
         admin_name: apiUnit.admin_name || apiUnit.adminName,
-        admin_phone: apiUnit.admin_phone || apiUnit.adminPhone,
-        cnpj_cpf: apiUnit.cnpj_cpf || apiUnit.cnpjCpf,
         settings: apiUnit.settings || {},
     };
 };
