@@ -29,6 +29,8 @@ interface AuthUser {
     tenant?: {
         id: number;
         name: string;
+        logo_url?: string;
+        primary_color?: string;
         address?: {
             latitude?: number;
             longitude?: number;
@@ -96,7 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 id: apiUser.id,
                                 name: apiUser.name,
                                 email: apiUser.email,
-                                avatarUrl: apiUser.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+                                avatarUrl: apiUser.avatarUrl || apiUser.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
                                 cargo: apiUser.cargo,
                                 role: apiUser.role,
                                 tenant_id: apiUser.tenant_id,
@@ -154,7 +156,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     id: apiUser.id,
                     name: apiUser.name,
                     email: apiUser.email,
-                    avatarUrl: apiUser.avatar_url || `https://i.pravatar.cc/150?u=${apiUser.email}`,
+                    avatarUrl: apiUser.avatarUrl || apiUser.avatar_url || `https://i.pravatar.cc/150?u=${apiUser.email}`,
                     cargo: apiUser.cargo,
                     role: apiUser.role,
                     tenant_id: apiUser.tenant_id,

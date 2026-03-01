@@ -14,6 +14,15 @@ import { DirectMailCampaign } from './DirectMailCampaign';
 import { EmailServerSettings } from './EmailServerSettings';
 import { CampaignDetailsModal } from './CampaignDetailsModal';
 import NewAcquisitionChannelModal from './NewAcquisitionChannelModal';
+import { SearchableSelect } from './SearchableSelect';
+
+
+// --- Constantes de Localização ---
+const BRAZILIAN_STATES = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
 
 
 // --- Interfaces ---
@@ -52,6 +61,8 @@ interface Campaign {
     archived?: boolean;
     phoneNumber?: string;
     unitName?: string;
+    locationState?: string;
+    locationCity?: string;
 }
 
 interface AcquisitionChannel {
@@ -191,6 +202,10 @@ const NewCampaignModal: React.FC<{
     const [phoneNumber, setPhoneNumber] = useState('');
     const [estimatedAudience, setEstimatedAudience] = useState<number | null>(null);
     const [selectedGender, setSelectedGender] = useState<'Todos' | 'Masculino' | 'Feminino' | 'Outro'>('Todos');
+    const [selectedState, setSelectedState] = useState('');
+    const [selectedCity, setSelectedCity] = useState('');
+    const [cities, setCities] = useState<string[]>([]);
+    const [isFetchingCities, setIsFetchingCities] = useState(false);
 
     const [whatsappStatus, setWhatsappStatus] = useState<{ status: 'connected' | 'disconnected', phone: string | null } | null>(null);
     const [whatsappLoading, setWhatsappLoading] = useState(false);
@@ -259,12 +274,34 @@ const NewCampaignModal: React.FC<{
                 groupClients = groupClients.filter(c => c.gender === selectedGender);
             }
 
+            // Apply Location Filter
+            if (selectedState) {
+                groupClients = groupClients.filter((c: any) => {
+                    const addr = c.address;
+                    if (!addr) return false;
+                    if (typeof addr === 'string') {
+                        return addr.toUpperCase().includes(selectedState.toUpperCase());
+                    }
+                    return (addr.state || '').toUpperCase() === selectedState.toUpperCase();
+                });
+            }
+            if (selectedCity) {
+                groupClients = groupClients.filter((c: any) => {
+                    const addr = c.address;
+                    if (!addr) return false;
+                    if (typeof addr === 'string') {
+                        return addr.toLowerCase().includes(selectedCity.toLowerCase());
+                    }
+                    return (addr.city || '').toLowerCase().includes(selectedCity.toLowerCase());
+                });
+            }
+
             sum += groupClients.length;
             groupClients.forEach(client => clientSet.add(client));
         });
 
         return { audienceSum: sum, uniqueClientCount: clientSet.size };
-    }, [publicoAlvo, crmGroups, clients, selectedGender]);
+    }, [publicoAlvo, crmGroups, clients, selectedGender, selectedState, selectedCity]);
 
     const resetForm = () => {
         setName('');
@@ -322,11 +359,41 @@ const NewCampaignModal: React.FC<{
                 setScheduleSettings(campaignToEdit.scheduleSettings || []);
                 setSendLimit(campaignToEdit.sendLimit || 200);
                 setPhoneNumber(campaignToEdit.phoneNumber || '');
+                // @ts-ignore
+                setSelectedState(campaignToEdit.locationState || '');
+                // @ts-ignore
+                setSelectedCity(campaignToEdit.locationCity || '');
             } else {
                 resetForm();
             }
         }
     }, [isOpen, campaignToEdit]);
+
+    useEffect(() => {
+        if (selectedState) {
+            const fetchCities = async () => {
+                setIsFetchingCities(true);
+                try {
+                    const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${selectedState}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCities(data.map((c: any) => c.nome).sort());
+                    } else {
+                        setCities([]);
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar cidades:", error);
+                    setCities([]);
+                } finally {
+                    setIsFetchingCities(false);
+                }
+            };
+            fetchCities();
+        } else {
+            setCities([]);
+            setSelectedCity('');
+        }
+    }, [selectedState]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -401,7 +468,11 @@ const NewCampaignModal: React.FC<{
             file: file ? { name: file.name, url: filePreviewUrl } : null,
             scheduleSettings,
             sendLimit,
-            phoneNumber
+            phoneNumber,
+            // @ts-ignore
+            locationState: selectedState,
+            // @ts-ignore
+            locationCity: selectedCity
         });
         handleClose();
     };
@@ -537,6 +608,33 @@ const NewCampaignModal: React.FC<{
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     O número deve estar conectado na página de Canais para envios via WhatsApp.
                                 </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <SearchableSelect
+                                        label="Estado"
+                                        name="locationState"
+                                        value={selectedState}
+                                        onChange={(e) => setSelectedState(e.target.value)}
+                                        options={[
+                                            { value: '', label: 'Todos os Estados' },
+                                            ...BRAZILIAN_STATES.map(uf => ({ value: uf, label: uf }))
+                                        ]}
+                                    />
+                                    <SearchableSelect
+                                        label="Cidade"
+                                        name="locationCity"
+                                        value={selectedCity}
+                                        onChange={(e) => setSelectedCity(e.target.value)}
+                                        options={
+                                            isFetchingCities
+                                                ? [{ value: '', label: 'Carregando...' }]
+                                                : [
+                                                    { value: '', label: 'Todas as Cidades' },
+                                                    ...cities.map(c => ({ value: c, label: c }))
+                                                ]
+                                        }
+                                    />
+                                </div>
 
                                 <MessageTypeSelector selected={messageType} onChange={(type) => setMessageType(type as any)} />
 

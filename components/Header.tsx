@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifi
     <header className="bg-secondary text-white relative">
       <div className={`container mx-auto px-4 sm:px-6 text-center transition-all duration-500 ${currentUser ? 'py-8 sm:py-12 md:py-16' : 'py-12 sm:py-16 md:py-24'}`}>
         {logo && currentUser ? (
-          <img src={getImageUrl(logo)} alt={currentUser?.tenant?.name || 'Logo'} className="h-16 md:h-20 mx-auto mb-4 object-contain animate-pulse-logo" />
+          <img src={getImageUrl(logo)} alt={currentUser?.tenant?.name || 'Logo'} className="h-10 md:h-12 mx-auto mb-4 object-contain animate-pulse-logo" />
         ) : (
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4 break-words">
             Salão24h
@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifi
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-2 sm:gap-4 md:gap-6 bg-black/20 p-2 sm:p-4 rounded-xl backdrop-blur-sm border border-white/10 shadow-xl">
               <div className="flex items-center gap-4">
-                <img src={currentUser.avatarUrl} alt={t('avatarAlt', { name: currentUser.name })} className="w-12 h-12 rounded-full border-2 border-primary" />
+                <img src={getImageUrl(currentUser.avatarUrl || (currentUser as any).photo || (currentUser as any).avatar_url)} alt={t('avatarAlt', { name: currentUser.name })} className="w-12 h-12 rounded-full border-2 border-primary object-cover" />
                 <div className="flex flex-col items-start gap-1">
                   <span className="font-bold text-lg text-white">{t('hello')}, {currentUser.name.split(' ')[0]}!</span>
                   {currentUser.role === 'admin' && (

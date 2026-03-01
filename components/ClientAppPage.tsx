@@ -32,7 +32,7 @@ const QRCodeIcon = () => <svg className="w-6 h-6" viewBox="0 0 20 20" fill="curr
 
 
 // --- Client Promo Carousel ---
-const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) => {
+const ClientPromoCarousel: React.FC<{ promotions: any[], currentClient: Client, units?: any[] }> = ({ promotions, currentClient, units = [] }) => {
   const [banners, setBanners] = useState<any[]>([]);
 
   useEffect(() => {
@@ -49,12 +49,41 @@ const ClientPromoCarousel: React.FC<{ promotions: any[] }> = ({ promotions }) =>
 
   // Re-added debug logging for troubleshooting
   console.log('ClientPromoCarousel - Incoming promotions:', promotions);
+
   const activePromotions = (promotions || []).filter(p => {
     const isActive = p.isActive;
     const isTargetMatch = p.targetArea === 'client' || p.targetArea === 'cliente' || p.targetArea === 'area_do_cliente';
     const isStandard = p.type !== 'exclusive';
-    console.log(`Promo ID ${p.id}: isActive=${isActive}, targetArea=${p.targetArea}, type=${p.type}, isTargetMatch=${isTargetMatch}, isStandard=${isStandard}`);
-    return isActive && isTargetMatch && isStandard;
+
+    // Regional Filtering
+    let isRegionalMatch = true;
+    if (p.locationState || p.locationCity || p.locationNeighborhood) {
+      isRegionalMatch = false;
+
+      const matches = (promoVal: string | undefined, userVal: string | undefined) => {
+        if (!promoVal) return true;
+        if (!userVal) return false;
+        return promoVal.trim().toLowerCase() === userVal.trim().toLowerCase();
+      };
+
+      // Match against client's address
+      const clientAddress = currentClient?.address;
+      const matchesClient = matches(p.locationState, clientAddress?.state) &&
+        matches(p.locationCity, clientAddress?.city) &&
+        matches(p.locationNeighborhood, clientAddress?.neighborhood);
+
+      // Match against preferred unit's address if applicable
+      const preferredUnitObj = units.find(u => u.name === currentClient?.preferredUnit);
+      const unitAddress = preferredUnitObj?.address;
+      const matchesUnit = matches(p.locationState, unitAddress?.state) &&
+        matches(p.locationCity, unitAddress?.city) &&
+        matches(p.locationNeighborhood, unitAddress?.neighborhood);
+
+      isRegionalMatch = matchesClient || matchesUnit;
+    }
+
+    console.log(`Promo ID ${p.id}: isActive=${isActive}, targetArea=${p.targetArea}, type=${p.type}, isTargetMatch=${isTargetMatch}, isStandard=${isStandard}, isRegionalMatch=${isRegionalMatch}`);
+    return isActive && isTargetMatch && isStandard && isRegionalMatch;
   });
 
   const combinedItems = [
@@ -536,14 +565,14 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                       </div>
                     ))}
                   </div>
-                  <ClientPromoCarousel promotions={promotions} />
+                  <ClientPromoCarousel promotions={promotions} currentClient={currentClient} units={units} />
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="text-gray-500 text-center py-4 bg-gray-100 rounded-lg">
                     Você não tem agendamentos futuros.
                   </p>
-                  <ClientPromoCarousel promotions={promotions} />
+                  <ClientPromoCarousel promotions={promotions} currentClient={currentClient} units={units} />
                 </div>
               )}
             </div>

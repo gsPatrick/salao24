@@ -702,7 +702,7 @@ const App: React.FC = () => {
           currentUser={currentUser}
           onLogout={handleLogout}
           notifications={notifications}
-          logo={currentUnitData.unitDetails?.logo_url || currentUser?.tenant?.logo_url}
+          logo={currentUnitData.unitDetails?.logo || currentUnitData.unitDetails?.logo_url || currentUser?.tenant?.logo || currentUser?.tenant?.logo_url}
         />
         <main>
           {renderHomePage()}

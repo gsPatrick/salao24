@@ -3208,7 +3208,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     // --- Promotions & Packages State ---
     const { promotions, savePromotion, deletePromotion, togglePromotion, refreshPromotions } = useData();
+
+    // --- Regional Promotion Filtering ---
+    const filteredPromotions = useMemo(() => {
+        const currentUnitObj = units.find(u => u.name === selectedUnit);
+        const unitAddress = currentUnitObj?.address;
+
+        return promotions.filter(p => {
+            // If no location targeting, it's global
+            if (!p.locationState && !p.locationCity && !p.locationNeighborhood) {
+                return true;
+            }
+
+            // If "Todas as Unidades" is selected, show everything (Super Admin view)
+            if (selectedUnit === 'Todas as Unidades') {
+                return true;
+            }
+
+            if (!unitAddress) return false;
+
+            const matches = (promoVal: string | undefined, unitVal: string | undefined) => {
+                if (!promoVal) return true;
+                if (!unitVal) return false;
+                return promoVal.trim().toLowerCase() === unitVal.trim().toLowerCase();
+            };
+
+            if (!matches(p.locationState, unitAddress.state)) return false;
+            if (!matches(p.locationCity, unitAddress.city)) return false;
+            if (!matches(p.locationNeighborhood, unitAddress.neighborhood)) return false;
+
+            return true;
+        });
+    }, [promotions, units, selectedUnit]);
+
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+
     const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
 
     const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscription[]>([]);
@@ -3400,7 +3434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     // --- Exclusive Promotions (Mock for now) ---
     // --- Exclusive Promotions ---
     // Derived state for exclusive promotions
-    const exclusivePromotions = promotions.filter(p => p.type === 'exclusive').map(p => ({ ...p, isActive: p.isActive ?? true })); // Ensure compatibility
+    const exclusivePromotions = filteredPromotions.filter(p => p.type === 'exclusive').map(p => ({ ...p, isActive: p.isActive ?? true })); // Ensure compatibility
     const [isExclusiveModalOpen, setIsExclusiveModalOpen] = useState(false);
     const [editingExclusive, setEditingExclusive] = useState<Promotion | null>(null); // Type is Promotion
 
@@ -4430,8 +4464,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <div className={animateContent ? 'animate-fade-slide-up-4' : 'opacity-100'}>
-                        <DashboardPromoCarousel promotions={promotions.filter(p => p.type !== 'exclusive')} />
+                        <DashboardPromoCarousel promotions={filteredPromotions.filter(p => p.type !== 'exclusive')} />
                     </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -4516,8 +4551,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 selectedUnit={selectedUnit}
                 onUnitChange={onUnitChange}
                 units={units.map(u => ({ id: u.id, name: u.name }))}
-                promotions={promotions.filter(p => p.type === 'exclusive')}
+                promotions={filteredPromotions.filter(p => p.type === 'exclusive')}
                 onOpenPromoModal={handleOpenPromoModal}
+
                 unitData={currentUnitData}
             />;
             case 'Super Admin: Salões': return <SuperAdminTenantsPage />;
@@ -4563,7 +4599,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onEditSubscriptionNotes={handleEditSubscriptionNotes}
                 onDownloadSubscriptionReport={handleDownloadSubscriptionReport}
                 // Props para promoções
-                promotions={promotions.filter(p => p.type !== 'exclusive')}
+                promotions={filteredPromotions.filter(p => p.type !== 'exclusive')}
                 onSavePromotion={handleSavePromotion}
                 onDeletePromotion={handleDeletePromotion}
                 onTogglePromotion={handleTogglePromotion}
@@ -4712,9 +4748,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <aside className={`w-64 bg-secondary text-white p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
                 <div className="mb-8 px-2 flex items-center justify-between">
                     <div className="flex items-center gap-3 overflow-hidden">
-                        {(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url) ? (
+                        {(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url || (currentUser as any)?.tenant?.logo) ? (
                             <img
-                                src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url)}
+                                src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url || (currentUser as any)?.tenant?.logo)}
                                 alt={allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Logo'}
                                 className="h-10 w-10 object-contain rounded flex-shrink-0"
                             />
@@ -4756,9 +4792,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
 
                 <header className={`flex-shrink-0 bg-white shadow-md z-10`}>
-                    <div className="container mx-auto px-6 py-3 flex justify-between items-center">
-                        <button onClick={() => setIsSidebarOpen(true)} className="text-gray-600 md:hidden"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-                        <div className="hidden md:block"><h1 className="text-xl font-bold text-secondary">{sidebarItems.find(item => item.key === activeView)?.name || activeView}</h1></div>
+                    <div className="container mx-auto px-4 md:px-6 py-3 flex justify-between items-center">
+                        <div className="flex items-center space-x-4">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-gray-600 md:hidden flex-shrink-0">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            </button>
+                            {/* Dashboard Brand Logo */}
+                            <div className="flex items-center space-x-2">
+                                <div className="h-8 w-8 bg-primary/10 rounded-lg p-1 flex items-center justify-center overflow-hidden border border-gray-100 flex-shrink-0">
+                                    <img
+                                        src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url || (currentUser as any)?.tenant?.logo)}
+                                        alt="Logo"
+                                        className="h-full w-full object-contain"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://i.pravatar.cc/150?u=logo'; }}
+                                    />
+                                </div>
+                                <div className="hidden sm:block">
+                                    <h1 className="text-lg font-bold text-secondary truncate max-w-[150px] md:max-w-none">
+                                        {sidebarItems.find(item => item.key === activeView)?.name || activeView}
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
                         <div className="flex items-center space-x-5">
                             <div className="relative group">
                                 <button onClick={() => handleSidebarClick('Visão Geral')} className="text-gray-500 hover:text-primary"><HomeIcon /></button>
@@ -4782,7 +4837,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                     className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                    <img src={getImageUrl(currentUser?.avatarUrl)} alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')} className="w-10 h-10 rounded-full border border-gray-200 object-cover" />
+                                    <img
+                                        src={getImageUrl(currentUser?.avatarUrl || (currentUser as any)?.photo || (currentUser as any)?.avatar_url)}
+                                        alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')}
+                                        className="w-10 h-10 rounded-full border border-gray-200 object-cover"
+                                    />
                                     <div className="hidden sm:block text-left">
                                         <p className="font-bold text-secondary text-sm leading-tight">{currentUser?.name}</p>
                                         <p className="text-xs text-gray-500 leading-tight">{roleDisplayName}</p>
