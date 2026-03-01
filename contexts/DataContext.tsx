@@ -1773,7 +1773,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await unitsAPI.uploadLogo(unitId, file);
             await refreshUnits();
-            return response.data?.url || response.url;
+            // Handle different possible response structures from api.ts
+            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                return response.data[0].url;
+            }
+            return response.data?.url || response.url || null;
         } catch (error) {
             console.error('Error uploading unit logo:', error);
             return null;

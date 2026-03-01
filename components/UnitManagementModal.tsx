@@ -253,9 +253,22 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
 
       if (unitToEdit?.id) {
         setIsUploading(true);
-        const urlRequest = await uploadUnitLogo(unitToEdit.id, file);
-        if (urlRequest) setLogo(urlRequest);
-        setIsUploading(false);
+        try {
+          const urlRequest = await uploadUnitLogo(unitToEdit.id, file);
+          if (urlRequest) {
+            setLogo(urlRequest);
+          } else {
+            alert(t('errorUploadFailed') || 'Falha ao enviar a imagem. Tente novamente.');
+          }
+        } catch (err: any) {
+          console.error('Upload Error:', err);
+          const errMsg = err.response?.data?.message || err.message || 'Unknown error';
+          const errStatus = err.response?.status || 'No status';
+          alert(`Falha no upload (Status: ${errStatus}): ${errMsg}`);
+        } finally {
+          setIsUploading(false);
+          if (logoInputRef.current) logoInputRef.current.value = '';
+        }
       } else {
         const reader = new FileReader();
         reader.onload = (event) => setLogo(event.target?.result as string);
