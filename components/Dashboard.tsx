@@ -4634,7 +4634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                     className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                    <img src={currentUser?.avatarUrl} alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')} className="w-10 h-10 rounded-full border border-gray-200" />
+                                    <img src={getImageUrl(currentUser?.avatarUrl)} alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')} className="w-10 h-10 rounded-full border border-gray-200 object-cover" />
                                     <div className="hidden sm:block text-left">
                                         <p className="font-bold text-secondary text-sm leading-tight">{currentUser?.name}</p>
                                         <p className="text-xs text-gray-500 leading-tight">{roleDisplayName}</p>

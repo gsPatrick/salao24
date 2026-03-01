@@ -9,6 +9,7 @@ import { paymentsAPI } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser as User, Unit, Tenant } from '../contexts/DataContext';
 import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
+import { getImageUrl } from '../lib/api';
 
 
 // --- Interfaces ---
@@ -365,7 +366,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                         <tr key={user.id} className={user.suspended ? 'bg-gray-50 opacity-60' : ''}>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    <img className="h-10 w-10 rounded-full" src={user.avatarUrl} alt={user.name} />
+                                                    <img className="h-10 w-10 rounded-full border border-gray-100 object-cover" src={getImageUrl(user.avatarUrl)} alt={user.name} />
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
                                                         <div className="text-xs text-secondary font-semibold">{user.cargo}</div>

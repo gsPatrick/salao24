@@ -11,7 +11,7 @@ interface PermissionDetails {
 }
 
 import { SystemUser as User } from '../contexts/DataContext';
-import { uploadAPI } from '../lib/api';
+import { uploadAPI, getImageUrl } from '../lib/api';
 
 // --- Interfaces ---
 interface PermissionDetails {
@@ -108,7 +108,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
       category: t('permCategoryCRM') || 'CRM',
       items: [
         { id: 'crm', label: t('permItemCRM') },
-        { id: 'colunasCrm', label: 'Configurações do CRM' },
+        { id: 'colunasCrm', label: 'Configurações de Colunas e Classificações do CRM' },
       ]
     },
     {
@@ -432,9 +432,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
               <div>
                 <label className="block text-sm font-medium text-gray-700">{t('userModalLabelPhoto')}</label>
                 <div className="mt-1 flex items-center space-x-5">
-                  <span className="inline-block h-16 w-16 rounded-full overflow-hidden bg-gray-100">
+                  <span className="inline-block h-16 w-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
                     {photo ? (
-                      <img className="h-full w-full text-gray-300 object-cover" src={photo} alt={t('userAvatar')} />
+                      <img className="h-full w-full text-gray-300 object-cover" src={getImageUrl(photo)} alt={t('userAvatar')} />
                     ) : (
                       <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M24 20.993V24H0v-2.997A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -462,7 +462,19 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
               </div>
               <div>
                 <label htmlFor="cargo" className="block text-sm font-medium text-gray-700">Função / Cargo</label>
-                <input type="text" id="cargo" name="cargo" value={formData.cargo} onChange={handleChange} placeholder="Ex: Recepcionista, Gerente, etc." className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" />
+                <select
+                  id="cargo"
+                  name="cargo"
+                  value={formData.cargo}
+                  onChange={handleChange}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                >
+                  <option value="">Selecione um cargo</option>
+                  <option value="Administrador">Administrador</option>
+                  <option value="Gerente">Gerente</option>
+                  <option value="Recepcionista">Recepcionista</option>
+                  <option value="Profissional">Profissional</option>
+                </select>
               </div>
 
               <hr className="my-4" />
@@ -481,6 +493,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ isOpen, onClo
                     required={!userToEdit}
                     minLength={6}
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary pr-10"
+                    placeholder={userToEdit ? "Deixe em branco para manter a atual" : "Digite a nova senha"}
                   />
                   <button
                     type="button"
