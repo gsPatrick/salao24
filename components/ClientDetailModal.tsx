@@ -1107,9 +1107,20 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         ? new Date(localClient.createdAt || localClient.registrationDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
         : 'Pendente';
 
-    const lastVisitDateFormatted = localClient.lastVisit
-        ? new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
-        : 'N/A';
+    const lastVisitDateFormatted = (() => {
+        if (localClient.lastVisit) {
+            return new Date(localClient.lastVisit).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+        // Fallback: compute from history (most recent appointment date)
+        const historyDates = (localClient.history || [])
+            .filter(h => h.date && h.date !== 'Pendente')
+            .map(h => h.date)
+            .sort((a, b) => b.localeCompare(a));
+        if (historyDates.length > 0) {
+            return new Date(historyDates[0] + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+        return 'N/A';
+    })();
     const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''}${localClient.address.complement ? ' - ' + localClient.address.complement : ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
 
 
