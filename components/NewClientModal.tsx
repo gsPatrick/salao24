@@ -3,6 +3,7 @@ import SignatureModal from './SignatureModal';
 import HairStyleTestModal from './HairStyleTestModal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, Service, ContractTemplate } from '../contexts/DataContext';
+import { uploadAPI } from '../lib/api';
 
 interface ClientDocument {
   id: number;
@@ -215,6 +216,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const relationshipSearchRef = useRef<HTMLDivElement>(null);
 
   const [isExiting, setIsExiting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [showCameraView, setShowCameraView] = useState(false);
 
   // --- START: Image Editor State & Logic ---
@@ -322,12 +324,31 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const onMouseUp = () => { isDragging.current = false; };
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = async () => {
     const canvas = editorCanvasRef.current;
     if (!canvas) return;
-    setPhoto(canvas.toDataURL('image/png'));
-    setIsEditorOpen(false);
-    setImageToEdit('');
+
+    try {
+      setIsUploading(true);
+      // Convert canvas to blob
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (blob) {
+        const file = new File([blob], `client_photo_${Date.now()}.png`, { type: 'image/png' });
+        const response = await uploadAPI.upload(file, 'client');
+        if (response && (response.url || response.data?.url)) {
+          setPhoto(response.url || response.data?.url);
+        } else {
+          alert('Erro ao enviar a imagem para o servidor.');
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading client photo:', error);
+      alert('Erro ao processar a imagem.');
+    } finally {
+      setIsUploading(false);
+      setIsEditorOpen(false);
+      setImageToEdit('');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -552,20 +573,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const handleProcedurePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProcedurePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      // FIX: Add explicit type annotation to resolve potential type inference issue with FileList items.
-      files.forEach((file: Blob) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setProcedurePhotos(prev => [...prev, event.target.result as string]);
+      setIsUploading(true);
+      try {
+        for (const file of files) {
+          const response = await uploadAPI.upload(file as File, 'procedure');
+          if (response && (response.url || response.data?.url)) {
+            setProcedurePhotos(prev => [...prev, response.url || response.data?.url]);
           }
-        };
-        reader.readAsDataURL(file);
-      });
-      e.target.value = ''; // Reset file input
+        }
+      } catch (error) {
+        console.error('Error uploading procedure photos:', error);
+        alert('Erro ao enviar fotos de procedimento.');
+      } finally {
+        setIsUploading(false);
+        e.target.value = ''; // Reset file input
+      }
     }
   };
 
@@ -1190,7 +1215,20 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             <div className="md:col-span-2"><InputField label="Complemento" name="complement" value={formData.complement} onChange={handleChange} /></div>
             <div className="md:col-span-1"><InputField label="Bairro" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} error={errors.neighborhood} /></div>
             <div className="md:col-span-1"><InputField label="Cidade" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} error={errors.city} /></div>
-            <div className="md:col-span-1"><InputField label="Estado" name="state" value={formData.state} onChange={handleChange} onBlur={handleBlur} error={errors.state} /></div>
+            <div className="md:col-span-1">
+              <SelectField
+                label="Estado"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                options={[
+                  { value: '', label: 'Selecione' },
+                  ...['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => ({ value: uf, label: uf }))
+                ]}
+                error={errors.state}
+              />
+            </div>
           </div>
         </CollapsibleSection>
 

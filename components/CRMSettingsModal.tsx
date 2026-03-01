@@ -9,6 +9,7 @@ interface CrmColumnSettings {
   deletable?: boolean;
   description?: string;
   ai_actions?: { title: string; description: string; active: boolean }[];
+  tagIcon?: string;
 }
 
 interface Classification {
@@ -90,6 +91,7 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
 
   const [isExiting, setIsExiting] = useState(false);
   const [openIconPicker, setOpenIconPicker] = useState<number | null>(null);
+  const [openTagIconPicker, setOpenTagIconPicker] = useState<number | null>(null);
   const [openClassificationIconPicker, setOpenClassificationIconPicker] = useState<number | 'new' | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('Emoções');
 
@@ -103,6 +105,7 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
     } else {
       setOpenIconPicker(null);
       setOpenClassificationIconPicker(null);
+      setOpenTagIconPicker(null);
     }
   }, [isOpen, columns, classifications]);
 
@@ -133,6 +136,7 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
       id: `custom-${Date.now()}`,
       title: 'Nova Coluna',
       icon: '🆕',
+      tagIcon: '🆕',
       visible: true,
       deletable: true,
     };
@@ -183,50 +187,62 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
               <div className="space-y-4">
                 {editableColumns.map((col, index) => (
                   <div key={col.id} className="grid grid-cols-12 gap-3 items-center bg-light p-3 rounded-lg">
-                    <div className="col-span-2 sm:col-span-1 relative">
-                      <button type="button" onClick={() => setOpenIconPicker(openIconPicker === index ? null : index)} className="w-full text-center p-2 border border-gray-300 rounded-md shadow-sm text-lg bg-white" aria-haspopup="true" aria-expanded={openIconPicker === index}>
-                        {col.icon}
-                      </button>
-                      {openIconPicker === index && (
-                        <div className="absolute z-10 mt-1 w-64 bg-white shadow-lg rounded-md border border-gray-200">
-                          <div className="border-b border-gray-200">
-                            <div className="flex flex-wrap gap-1 p-2">
-                              {iconCategories.map(category => (
-                                <button
-                                  key={category.name}
-                                  type="button"
-                                  onClick={() => setSelectedCategory(category.name)}
-                                  className={`px-2 py-1 text-xs rounded-md transition-colors ${selectedCategory === category.name
-                                    ? 'bg-primary text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                                >
-                                  {category.name}
+                    <div className="col-span-4 sm:col-span-3 flex gap-2">
+                      <div className="relative flex-1">
+                        <div className="text-[10px] text-gray-500 font-medium text-center mb-1 leading-tight">Ícone (Coluna)</div>
+                        <button type="button" onClick={() => { setOpenIconPicker(openIconPicker === index ? null : index); setOpenTagIconPicker(null); }} className="w-full text-center p-2 border border-gray-300 rounded-md shadow-sm text-lg bg-white" aria-haspopup="true" aria-expanded={openIconPicker === index}>
+                          {col.icon}
+                        </button>
+                        {openIconPicker === index && (
+                          <div className="absolute z-10 mt-1 w-64 bg-white shadow-lg rounded-md border border-gray-200">
+                            <div className="border-b border-gray-200">
+                              <div className="flex flex-wrap gap-1 p-2">
+                                {iconCategories.map(category => (
+                                  <button key={category.name} type="button" onClick={() => setSelectedCategory(category.name)} className={`px-2 py-1 text-xs rounded-md transition-colors ${selectedCategory === category.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                    {category.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
+                              {iconCategories.find(cat => cat.name === selectedCategory)?.icons.map(icon => (
+                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'icon', icon); setOpenIconPicker(null); }} className="p-1 rounded-md hover:bg-gray-100 text-lg">
+                                  {icon}
                                 </button>
                               ))}
                             </div>
                           </div>
-                          <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
-                            {iconCategories
-                              .find(cat => cat.name === selectedCategory)
-                              ?.icons.map(icon => (
-                                <button
-                                  key={icon}
-                                  type="button"
-                                  onClick={() => {
-                                    handleFieldChange(index, 'icon', icon);
-                                    setOpenIconPicker(null);
-                                  }}
-                                  className="p-1 rounded-md hover:bg-gray-100 text-lg"
-                                >
+                        )}
+                      </div>
+
+                      <div className="relative flex-1">
+                        <div className="text-[10px] text-gray-500 font-medium text-center mb-1 leading-tight">Ícone (Tag)</div>
+                        <button type="button" onClick={() => { setOpenTagIconPicker(openTagIconPicker === index ? null : index); setOpenIconPicker(null); }} className="w-full text-center p-2 border border-blue-300 rounded-md shadow-sm text-lg bg-blue-50" aria-haspopup="true" aria-expanded={openTagIconPicker === index}>
+                          {col.tagIcon || col.icon}
+                        </button>
+                        {openTagIconPicker === index && (
+                          <div className="absolute z-10 mt-1 w-64 bg-white shadow-lg rounded-md border border-blue-200">
+                            <div className="border-b border-gray-200">
+                              <div className="flex flex-wrap gap-1 p-2">
+                                {iconCategories.map(category => (
+                                  <button key={category.name} type="button" onClick={() => setSelectedCategory(category.name)} className={`px-2 py-1 text-xs rounded-md transition-colors ${selectedCategory === category.name ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                    {category.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
+                              {iconCategories.find(cat => cat.name === selectedCategory)?.icons.map(icon => (
+                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'tagIcon', icon); setOpenTagIconPicker(null); }} className="p-1 rounded-md hover:bg-blue-100 text-lg">
                                   {icon}
                                 </button>
                               ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                    <div className="col-span-10 sm:col-span-6">
+                    <div className="col-span-8 sm:col-span-5">
                       <input type="text" value={col.title} onChange={(e) => handleFieldChange(index, 'title', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Nome da Coluna" />
 
                       {/* AI Rule Editor (Restored) */}

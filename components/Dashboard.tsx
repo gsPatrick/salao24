@@ -512,6 +512,13 @@ const formatRelativeTime = (date: Date): string => {
     return "agora mesmo";
 };
 
+// --- Constantes de Localização ---
+const BRAZILIAN_STATES = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
 // --- Promoções Component ---
 interface PromotionsPageProps {
     promotions: Promotion[];
@@ -873,13 +880,16 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                                            <input
+                                            <select
                                                 name="locationState"
-                                                type="text"
-                                                placeholder="Ex: SP"
                                                 defaultValue={editingPromotion?.locationState || ''}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
-                                            />
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
+                                            >
+                                                <option value="">Todos os Estados</option>
+                                                {BRAZILIAN_STATES.map(uf => (
+                                                    <option key={uf} value={uf}>{uf}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">Cidade</label>
@@ -2749,13 +2759,16 @@ const MonthlyPackagesPage: React.FC<{
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs text-gray-500 mb-1">Estado</label>
-                                                    <input
+                                                    <select
                                                         name="locationState"
-                                                        type="text"
-                                                        placeholder="Ex: SP"
                                                         defaultValue={editingPromotion?.locationState || ''}
-                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
-                                                    />
+                                                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
+                                                    >
+                                                        <option value="">Todos os Estados</option>
+                                                        {BRAZILIAN_STATES.map(uf => (
+                                                            <option key={uf} value={uf}>{uf}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs text-gray-500 mb-1">Cidade</label>

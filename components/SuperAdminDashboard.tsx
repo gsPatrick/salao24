@@ -39,6 +39,9 @@ interface Banner {
     link_url: string;
     click_count: number;
     target_area: string;
+    target_state?: string;
+    target_city?: string;
+    target_neighborhood?: string;
     is_active: boolean;
     order: number;
 }
@@ -293,6 +296,26 @@ export const SuperAdminBannersPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
 
+    const [filterOptions, setFilterOptions] = useState<{ countries: string[], states: string[], cities: string[], neighborhoods: string[] }>({
+        countries: [],
+        states: [],
+        cities: [],
+        neighborhoods: []
+    });
+
+    const fetchOptions = async () => {
+        try {
+            const res = await tenantsAPI.getFilterOptions();
+            setFilterOptions(res.data);
+        } catch (error) {
+            console.error("Error fetching filter options:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchOptions();
+    }, []);
+
     // Image states
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -385,6 +408,9 @@ export const SuperAdminBannersPage: React.FC = () => {
             mobile_image_url: mobileImageUrl,
             link_url: formData.get('link_url'),
             target_area: formData.get('target_area'),
+            target_state: formData.get('target_state') || null,
+            target_city: formData.get('target_city') || null,
+            target_neighborhood: formData.get('target_neighborhood') || null,
             is_active: true,
             order: parseInt(formData.get('order') as string || '0')
         };
@@ -622,6 +648,60 @@ export const SuperAdminBannersPage: React.FC = () => {
                                         defaultValue={editingBanner?.order || 0}
                                         className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all"
                                     />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-gray-50">
+                                <h4 className="text-sm font-bold text-secondary mb-4 uppercase tracking-widest">Filtros de Localização (Opcional)</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Estado</label>
+                                        <div className="relative">
+                                            <select
+                                                name="target_state"
+                                                defaultValue={editingBanner?.target_state || ''}
+                                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
+                                            >
+                                                <option value="">Todos os Estados</option>
+                                                {filterOptions.states.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cidade</label>
+                                        <div className="relative">
+                                            <select
+                                                name="target_city"
+                                                defaultValue={editingBanner?.target_city || ''}
+                                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
+                                            >
+                                                <option value="">Todas as Cidades</option>
+                                                {filterOptions.cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Bairro</label>
+                                        <div className="relative">
+                                            <select
+                                                name="target_neighborhood"
+                                                defaultValue={editingBanner?.target_neighborhood || ''}
+                                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
+                                            >
+                                                <option value="">Todos os Bairros</option>
+                                                {filterOptions.neighborhoods.map(n => <option key={n} value={n}>{n}</option>)}
+                                            </select>
+                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </form>

@@ -543,6 +543,7 @@ interface CrmColumnConfig {
     description?: string;
     compiled_rules?: any[];
     ai_actions?: AIAction[];
+    tagIcon?: string;
 }
 
 interface Classification {
@@ -1112,7 +1113,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
             // Sync tag logic
             const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
-            const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
+            const targetIcon = targetColumn ? (targetColumn.tagIcon || targetColumn.icon) : null;
+            const matchingTag = targetIcon ? classifications.find(cls => cls.icon === targetIcon) : null;
 
             if (matchingTag) {
                 draggedClient.classification = matchingTag.text;
@@ -1129,14 +1131,15 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         });
 
         // Also persist the stage change to the backend
-        const targetColumn = columnsConfig.find(c => c.id === targetColumnId);
-        const matchingTag = targetColumn ? classifications.find(cls => cls.icon === targetColumn.icon) : null;
+        const targetColumnAPI = columnsConfig.find(c => c.id === targetColumnId);
+        const targetIconAPI = targetColumnAPI ? (targetColumnAPI.tagIcon || targetColumnAPI.icon) : null;
+        const matchingTagAPI = targetIconAPI ? classifications.find(cls => cls.icon === targetIconAPI) : null;
 
         console.log(`[CRM] Sending API update for client ${clientId}: stage=${targetColumnId}`);
 
         clientsAPI.update(clientId, {
             crm_stage: targetColumnId,
-            classification: matchingTag?.text || undefined
+            classification: matchingTagAPI?.text || undefined
         }).then(response => {
             console.log(`[CRM] API update success for client ${clientId}`, response);
         }).catch(err => {
