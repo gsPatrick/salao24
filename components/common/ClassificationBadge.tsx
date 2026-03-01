@@ -41,17 +41,17 @@ const ClassificationBadge: React.FC<ClassificationBadgeProps> = ({ classificatio
 
     // Try to find matching stage in CRM settings
     const stage = crmSettings?.funnel_stages?.find(s => {
-        const id = s.id?.toLowerCase();
-        const title = s.title?.toLowerCase();
-        const tagTitle = s.tagTitle?.toLowerCase();
-        const cls = classification.toLowerCase();
+        const stageId = String(s.id || '').toLowerCase();
+        const stageTitle = String(s.title || '').toLowerCase();
+        const stageTagTitle = String(s.tagTitle || '').toLowerCase();
+        const targetCls = String(classification || '').toLowerCase();
 
-        return id === cls ||
-            title === cls ||
-            tagTitle === cls ||
-            (cls === 'inativa' && id === 'inactive') ||
-            (cls === 'nova' && id === 'new') ||
-            (cls === 'recorrente' && id === 'recurrent');
+        return stageId === targetCls ||
+            stageTitle === targetCls ||
+            stageTagTitle === targetCls ||
+            (targetCls === 'inativa' && stageId === 'inactive') ||
+            (targetCls === 'nova' && stageId === 'new') ||
+            (targetCls === 'recorrente' && stageId === 'recurrent');
     });
 
     // Determine text and icon, with priority to custom props, then CRM settings, then defaults
