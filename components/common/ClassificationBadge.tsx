@@ -3,11 +3,12 @@ import { useData } from '../../contexts/DataContext';
 
 interface ClassificationBadgeProps {
     classification: string;
+    crmStage?: string | number;
     customIcon?: string;
     customText?: string;
 }
 
-const ClassificationBadge: React.FC<ClassificationBadgeProps> = ({ classification, customIcon, customText }) => {
+const ClassificationBadge: React.FC<ClassificationBadgeProps> = ({ classification, crmStage, customIcon, customText }) => {
     const { crmSettings } = useData();
 
     const colors: { [key: string]: string } = {
@@ -45,7 +46,12 @@ const ClassificationBadge: React.FC<ClassificationBadgeProps> = ({ classificatio
         const stageTitle = String(s.title || '').toLowerCase();
         const stageTagTitle = String(s.tagTitle || '').toLowerCase();
         const targetCls = String(classification || '').toLowerCase();
+        const targetStageId = String(crmStage || '').toLowerCase();
 
+        // 1. If crmStage is provided, try exact match by ID first
+        if (crmStage && stageId === targetStageId) return true;
+
+        // 2. Fallback to matching by classification text
         return stageId === targetCls ||
             stageTitle === targetCls ||
             stageTagTitle === targetCls ||

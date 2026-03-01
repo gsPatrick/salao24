@@ -151,7 +151,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
                 <div className="flex-1">
                     <div className="flex justify-between items-start">
                         <h3 className={`font-bold ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
-                        <ClassificationBadge classification={classification} />
+                        <ClassificationBadge classification={classification} crmStage={client.crm_stage} />
                     </div>
                     <div className={`text-xs space-y-2 mt-2 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
                         <div className="flex items-center justify-between">

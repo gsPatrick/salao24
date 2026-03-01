@@ -1415,7 +1415,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                         )
                                     )}
                                     <div className="mt-2">
-                                        <ClassificationBadge classification={classification} />
+                                        <ClassificationBadge classification={classification} crmStage={localClient.crm_stage} />
                                     </div>
                                 </div>
                             </div>
