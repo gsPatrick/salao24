@@ -186,13 +186,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);
-    const [tabOrder, setTabOrder] = useState(['conta', 'unidade', 'usuario', 'email-server', 'historico']);
+    const [tabOrder, setTabOrder] = useState(['conta', 'unidade', 'usuario', 'dados-conta', 'email-server', 'historico']);
 
     const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
     const [unitToEdit, setUnitToEdit] = useState<Unit | null>(null);
     const [draggedTab, setDraggedTab] = useState<string | null>(null);
     const [isEditingSMTP, setIsEditingSMTP] = useState(false);
     const [isTestingConnection, setIsTestingConnection] = useState(false);
+    const [isEditingBankInfo, setIsEditingBankInfo] = useState(false);
 
     const currentPlanName = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
 
@@ -287,6 +288,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         } catch (error: any) {
             console.error('Error saving SMTP settings:', error);
             alert('Erro ao salvar configurações de e-mail: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleBankInfoSave = async (bankInfo: any) => {
+        try {
+            if (!tenant) return;
+            const updatedSettings = {
+                ...tenant.settings,
+                bank_info: bankInfo
+            };
+            await updateTenant({ settings: updatedSettings });
+            showNotification('Dados bancários salvos com sucesso!');
+            setIsEditingBankInfo(false);
+        } catch (error: any) {
+            console.error('Error saving bank info:', error);
+            alert('Erro ao salvar dados bancários: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -716,6 +733,159 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         )}
                     </div>
                 );
+            case 'dados-conta':
+                const bankInfo = tenant?.settings?.bank_info || {};
+                const showBankForm = isEditingBankInfo || !bankInfo.bank_name;
+
+                return (
+                    <div className="animate-fade-in space-y-6">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold text-secondary">Dados Bancários para Repasse</h2>
+                                <p className="text-gray-500 text-sm">Informe os dados da conta onde você deseja receber os valores de pagamentos online.</p>
+                            </div>
+                            {!showBankForm && (
+                                <button
+                                    onClick={() => setIsEditingBankInfo(true)}
+                                    className="text-primary hover:text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center transition-colors border border-primary"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Editar
+                                </button>
+                            )}
+                        </div>
+
+                        {showBankForm ? (
+                            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 space-y-6">
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const updatedBankInfo = {
+                                        bank_name: formData.get('bank_name') as string,
+                                        agency: formData.get('agency') as string,
+                                        account: formData.get('account') as string,
+                                        account_type: formData.get('account_type') as string,
+                                        pix_key: formData.get('pix_key') as string,
+                                    };
+                                    handleBankInfoSave(updatedBankInfo);
+                                }}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Nome do Banco</label>
+                                                <input
+                                                    type="text"
+                                                    name="bank_name"
+                                                    required
+                                                    placeholder="Ex: Banco do Brasil"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                    defaultValue={bankInfo.bank_name || ''}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Agência</label>
+                                                <input
+                                                    type="text"
+                                                    name="agency"
+                                                    required
+                                                    placeholder="0001"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                    defaultValue={bankInfo.agency || ''}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Conta com dígito</label>
+                                                <input
+                                                    type="text"
+                                                    name="account"
+                                                    required
+                                                    placeholder="12345-6"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                    defaultValue={bankInfo.account || ''}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Tipo de Conta</label>
+                                                <select
+                                                    name="account_type"
+                                                    required
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                    defaultValue={bankInfo.account_type || 'Conta Corrente'}
+                                                >
+                                                    <option value="Conta Corrente">Conta Corrente</option>
+                                                    <option value="Conta Poupança">Conta Poupança</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Chave PIX (opcional)</label>
+                                                <input
+                                                    type="text"
+                                                    name="pix_key"
+                                                    placeholder="CPF, CNPJ, E-mail ou Telefone"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm"
+                                                    defaultValue={bankInfo.pix_key || ''}
+                                                />
+                                                <p className="mt-1 text-xs text-gray-500 italic">Facilita transferências. Pode ser CPF, CNPJ, e-mail ou telefone.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
+                                        <button
+                                            type="submit"
+                                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm"
+                                        >
+                                            Salvar Alterações
+                                        </button>
+                                        {isEditingBankInfo && bankInfo.bank_name && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsEditingBankInfo(false)}
+                                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg transition-colors text-sm"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Nome do Banco</label>
+                                            <p className="text-secondary font-bold text-lg">{bankInfo.bank_name}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Agência</label>
+                                            <p className="text-secondary font-bold text-lg">{bankInfo.agency}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Conta com dígito</label>
+                                            <p className="text-secondary font-bold text-lg">{bankInfo.account}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tipo de Conta</label>
+                                            <p className="text-secondary font-bold text-lg">{bankInfo.account_type}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Chave PIX</label>
+                                            <p className="text-secondary font-bold text-lg">{bankInfo.pix_key || 'Não informada'}</p>
+                                            {bankInfo.pix_key && <p className="mt-1 text-xs text-gray-500">PIX configurado para repasses.</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
             case 'historico':
                 return (
                     <div className="animate-fade-in">
@@ -794,6 +964,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 'conta': t('settingsTabAccountData'),
                                 'unidade': t('settingsTabUnit'),
                                 'usuario': t('settingsTabUser'),
+                                'dados-conta': 'Dados da Conta',
                                 'email-server': 'Servidor de E-mail',
                                 'historico': t('settingsTabAccessHistory')
                             };
