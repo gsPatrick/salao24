@@ -1516,10 +1516,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                 label={t('totalVisits')}
                                 value={(() => {
                                     // Calculate visits dynamically from history
-                                    // A visit is any appointment with a "completed" status
-                                    const completionStatuses = ['atendido', 'concluido', 'concluído', 'finalizado', 'pago'];
+                                    // Count ALL appointments (services, sessions, scheduled, completed, etc.)
+                                    // Exclude only cancelled/missed
+                                    const excludeStatuses = ['cancelado', 'desmarcou'];
                                     return (localClient?.history || []).filter(h =>
-                                        completionStatuses.includes((h.status || '').toLowerCase())
+                                        !excludeStatuses.includes((h.status || '').toLowerCase())
                                     ).length;
                                 })()}
                             />

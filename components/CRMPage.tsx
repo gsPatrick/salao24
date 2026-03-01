@@ -91,7 +91,64 @@ const ClientCard: React.FC<{
     columnTitle?: string;
     tagIcon?: string;
     tagTitle?: string;
-}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals, columnIcon, columnTitle, tagIcon, tagTitle }) => {
+}> = ({ client: rawClient, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals, columnIcon, columnTitle, tagIcon, tagTitle }) => {
+    // Enrich client with history from global appointments if not present
+    const client = useMemo(() => {
+        const enriched = { ...rawClient };
+        if (!enriched.history || enriched.history.length === 0) {
+            const clientAppts = appointments.filter((a: any) => String(a.clientId) === String(enriched.id) || String(a.client_id) === String(enriched.id));
+            if (clientAppts.length > 0) {
+                enriched.history = clientAppts.map((apt: any) => ({
+                    id: apt.id,
+                    name: apt.service || 'Serviço',
+                    date: apt.date,
+                    time: apt.time ? String(apt.time).substring(0, 5) : '00:00',
+                    professional: professionals.find((p: any) => p.id === apt.professionalId)?.name || 'Profissional',
+                    status: apt.status,
+                    price: apt.price || '0',
+                    package_id: apt.package_id || apt.packageId,
+                    salon_plan_id: apt.salon_plan_id || apt.salonPlanId,
+                    service_id: apt.service_id || apt.serviceId,
+                    type: apt.package_id ? 'Pacote' : (apt.salon_plan_id ? 'Plano' : 'Serviço'),
+                    total_sessions: apt.total_sessions || 0,
+                    consumed_sessions: apt.consumed_sessions || 0,
+                }));
+            }
+        }
+        // Build packages from history if not present
+        if (!enriched.packages || enriched.packages.length === 0) {
+            const pkgMap: any = {};
+            (enriched.history || []).forEach((h: any) => {
+                if (h.package_id && !pkgMap[`pkg-${h.package_id}`]) {
+                    pkgMap[`pkg-${h.package_id}`] = {
+                        id: `pkg-${h.package_id}`,
+                        name: h.name || 'Pacote',
+                        type: 'package',
+                        package_id: h.package_id,
+                        total_sessions: h.total_sessions || 0,
+                        sessions: h.total_sessions || 0,
+                        totalSessions: h.total_sessions || 0,
+                        status: 'active'
+                    };
+                }
+                if (h.salon_plan_id && !pkgMap[`plan-${h.salon_plan_id}`]) {
+                    pkgMap[`plan-${h.salon_plan_id}`] = {
+                        id: `plan-${h.salon_plan_id}`,
+                        name: h.name || 'Plano',
+                        type: 'plan',
+                        plan_id: h.salon_plan_id,
+                        total_sessions: h.total_sessions || 0,
+                        sessions: h.total_sessions || 0,
+                        totalSessions: h.total_sessions || 0,
+                        status: 'active'
+                    };
+                }
+            });
+            enriched.packages = Object.values(pkgMap);
+        }
+        return enriched;
+    }, [rawClient, appointments, professionals]);
+
     const { isBirthdayMonth, classification: calculatedClassification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
     // Prioritize explicit classification (from drag/drop or DB) over calculated one
     const classification = client.classification || calculatedClassification;
