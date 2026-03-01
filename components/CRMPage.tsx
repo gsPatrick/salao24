@@ -3,7 +3,7 @@ import CRMSettingsModal from './CRMSettingsModal';
 import ClientDetailModal from './ClientDetailModal';
 import ClassificationBadge from './common/ClassificationBadge';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useData, SystemUser } from '../contexts/DataContext';
+import { useData, SystemUser, mapClientFromAPI } from '../contexts/DataContext';
 import { Client, Professional, Service, Appointment } from '../types';
 import { clientsAPI } from '../lib/api';
 import { displayCurrency } from '../lib/formatUtils';
@@ -1198,6 +1198,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const ClientAppointmentsView = () => {
         const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+        const [fullClient, setFullClient] = useState<any>(null);
+        const [isLoadingClient, setIsLoadingClient] = useState(false);
         const [searchQuery, setSearchQuery] = useState('');
         const [showSearchResults, setShowSearchResults] = useState(false);
         const searchRef = useRef<HTMLDivElement>(null);
@@ -1207,6 +1209,21 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             endDate: '',
             status: 'all',
         });
+
+        // Fetch full client details when a client is selected
+        useEffect(() => {
+            if (!selectedClient) { setFullClient(null); return; }
+            let canceled = false;
+            setIsLoadingClient(true);
+            clientsAPI.getById(selectedClient.id).then(response => {
+                if (!canceled) {
+                    const data = response.data || response;
+                    setFullClient(mapClientFromAPI(data));
+                }
+            }).catch(err => console.error('Error fetching client details:', err))
+                .finally(() => { if (!canceled) setIsLoadingClient(false); });
+            return () => { canceled = true; };
+        }, [selectedClient]);
 
         useEffect(() => {
             const handleClickOutside = (event: MouseEvent) => {
@@ -1229,19 +1246,36 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
         const clientAppointments = useMemo(() => {
             if (!selectedClient) return [];
+
+            // If we have full client data with history, use it as the primary source
+            if (fullClient?.history && fullClient.history.length > 0) {
+                return fullClient.history.map((h: any) => {
+                    const professional = (professionals as Professional[]).find(p => p.id === h.professionalId || p.name === h.professional);
+                    return {
+                        ...h,
+                        service: h.name || h.service,
+                        price: h.price || '0',
+                        professionalName: professional?.name || h.professional || 'N/A',
+                    };
+                }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            }
+
+            // Fallback: use global appointments with improved price lookup
             return appointments
                 .filter(a => a.clientId === selectedClient.id)
                 .map(a => {
                     const service = (services as Service[]).find(s => s.name === a.service);
                     const professional = (professionals as Professional[]).find(p => p.id === a.professionalId);
+                    // Prioritize the appointment's own price over the service catalog price
+                    const appointmentPrice = a.price && parseFloat(String(a.price)) > 0 ? a.price : (service?.price || '0');
                     return {
                         ...a,
-                        price: service?.price || 'N/A',
+                        price: appointmentPrice,
                         professionalName: professional?.name || 'N/A',
                     };
                 })
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        }, [selectedClient, appointments]);
+        }, [selectedClient, fullClient, appointments, services, professionals]);
 
         const filteredAppointments = useMemo(() => {
             return clientAppointments.filter(appt => {
@@ -1255,17 +1289,26 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
         const clientSummary = useMemo(() => {
             if (!selectedClient) return null;
-            const attendedAppointments = clientAppointments.filter(a => a.status === 'Atendido' || a.status === 'concluído');
+            const completionStatuses = ['atendido', 'concluído', 'concluido', 'finalizado', 'pago'];
+            const attendedAppointments = clientAppointments.filter(a => completionStatuses.includes((a.status || '').toLowerCase()));
             const totalSpent = attendedAppointments.reduce((sum, a) => {
-                const price = parseFloat(String(a.price).replace(',', '.'));
+                const priceStr = String(a.price || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                const price = parseFloat(priceStr);
                 return sum + (isNaN(price) ? 0 : price);
             }, 0);
+
+            // Use backend values if available from full client data
+            const finalTotalSpent = (fullClient?.totalSpent && parseFloat(fullClient.totalSpent) > 0)
+                ? parseFloat(fullClient.totalSpent)
+                : totalSpent;
+
             return {
                 totalAppointments: clientAppointments.length,
-                totalSpent: totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                attendedCount: attendedAppointments.length,
+                totalSpent: finalTotalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                 lastVisit: attendedAppointments.length > 0 ? new Date(attendedAppointments[0].date).toLocaleDateString('pt-BR') : 'N/A',
             };
-        }, [selectedClient, clientAppointments]);
+        }, [selectedClient, fullClient, clientAppointments]);
 
         const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
             setAppointmentFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -1336,6 +1379,10 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                             <p className="text-sm text-gray-500">Agendamentos</p>
                         </div>
                         <div>
+                            <p className="text-xl font-bold text-green-600">{clientSummary?.attendedCount}</p>
+                            <p className="text-sm text-gray-500">Atendidos</p>
+                        </div>
+                        <div>
                             <p className="text-xl font-bold text-black">{clientSummary?.totalSpent}</p>
                             <p className="text-sm text-gray-500">Total Gasto</p>
                         </div>
@@ -1393,12 +1440,29 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const ClientCompleteHistoryView = () => {
         const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+        const [fullClient, setFullClient] = useState<any>(null);
+        const [isLoadingClient, setIsLoadingClient] = useState(false);
         const [searchQuery, setSearchQuery] = useState('');
         const [showSearchResults, setShowSearchResults] = useState(false);
         const searchRef = useRef<HTMLDivElement>(null);
 
         const ServiceIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a1 1 0 000-2H4a1 1 0 000 2zm1.5 8.5A.5.5 0 016 12v4a1 1 0 001 1h6a1 1 0 001-1v-4a.5.5 0 011 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4a.5.5 0 01.5-.5z" /><path d="M10 12a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zM15 4h-3a1 1 0 100 2h3a1 1 0 100-2zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" /></svg>;
         const RegistrationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>;
+
+        // Fetch full client details when a client is selected
+        useEffect(() => {
+            if (!selectedClient) { setFullClient(null); return; }
+            let canceled = false;
+            setIsLoadingClient(true);
+            clientsAPI.getById(selectedClient.id).then(response => {
+                if (!canceled) {
+                    const data = response.data || response;
+                    setFullClient(mapClientFromAPI(data));
+                }
+            }).catch(err => console.error('Error fetching client details:', err))
+                .finally(() => { if (!canceled) setIsLoadingClient(false); });
+            return () => { canceled = true; };
+        }, [selectedClient]);
 
         useEffect(() => {
             const handleClickOutside = (event: MouseEvent) => {
@@ -1420,31 +1484,35 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         }, [searchQuery, clients]);
 
         const timelineEvents = useMemo(() => {
-            if (!selectedClient) return [];
+            // Use fullClient (deep data) if available, otherwise fallback to selectedClient (shallow)
+            const clientData = fullClient || selectedClient;
+            if (!clientData) return [];
 
             const events: any[] = [];
 
             events.push({
                 type: 'registration',
-                date: selectedClient.registrationDate,
+                date: clientData.registrationDate,
                 title: 'Cliente Cadastrado',
-                description: `Cliente cadastrado via ${selectedClient.howTheyFoundUs}.`
+                description: `Cliente cadastrado via ${clientData.howTheyFoundUs || 'canal desconhecido'}.`
             });
 
-            selectedClient.history.forEach(item => {
+            // Use history from full client data (includes completed services)
+            const history = clientData.history || [];
+            history.forEach((item: any) => {
                 events.push({
                     type: 'service',
                     date: item.date,
                     title: item.name,
-                    description: `Com ${item.professional} às ${item.time}.`,
+                    description: `Com ${item.professional} às ${item.time}.${item.price ? ' Valor: ' + displayCurrency(item.price) : ''}`,
                     status: item.status
                 });
             });
 
-            selectedClient.documents.forEach(doc => {
+            const documents = clientData.documents || [];
+            documents.forEach((doc: any) => {
                 if (doc.signed) {
-                    // Faking date as it's not available in the mock data
-                    const firstServiceDate = selectedClient.history[0]?.date || selectedClient.registrationDate;
+                    const firstServiceDate = history[0]?.date || clientData.registrationDate;
                     events.push({
                         type: 'document',
                         date: firstServiceDate,
@@ -1455,7 +1523,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             });
 
             return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        }, [selectedClient]);
+        }, [selectedClient, fullClient]);
 
         const getStatusInfo = (status: string) => {
             switch (status) {
