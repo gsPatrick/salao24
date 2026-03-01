@@ -161,7 +161,7 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, client, navigate, onEdit, onSave, existingClients, onDelete, onBlock, onUnblock, onRefresh }) => {
     const { t } = useLanguage();
-    const { saveClient, salonPlans, packages, professionals, selectedUnitId } = useData();
+    const { saveClient, salonPlans, packages, professionals, selectedUnitId, appointments: globalAppointments } = useData();
     const [isExiting, setIsExiting] = useState(false);
     const [activeTab, setActiveTab] = useState('info');
     const [activeSubTab, setActiveSubTab] = useState('servicos');
@@ -223,10 +223,62 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     if (!canceled) {
                         const clientData = response.data || response;
                         const fullClient = mapClientFromAPI(clientData);
+
+                        // Fallback: if API returned no history, build from global appointments
+                        if ((!fullClient.history || fullClient.history.length === 0) && globalAppointments.length > 0) {
+                            const clientAppts = globalAppointments.filter((a: any) => String(a.clientId) === String(clientId) || String(a.client_id) === String(clientId));
+                            if (clientAppts.length > 0) {
+                                fullClient.history = clientAppts.map((apt: any) => ({
+                                    id: apt.id,
+                                    name: apt.service || 'Serviço',
+                                    date: apt.date,
+                                    time: apt.time ? String(apt.time).substring(0, 5) : '00:00',
+                                    professional: professionals.find((p: any) => p.id === apt.professionalId)?.name || 'Profissional',
+                                    professionalId: apt.professionalId,
+                                    status: apt.status,
+                                    price: apt.price || '0',
+                                    package_id: apt.package_id,
+                                    salon_plan_id: apt.salon_plan_id,
+                                    service_id: apt.service_id,
+                                    type: apt.package_id ? 'Pacote' : (apt.salon_plan_id ? 'Plano' : 'Serviço'),
+                                    total_sessions: apt.total_sessions || 0,
+                                    consumed_sessions: apt.consumed_sessions || 0,
+                                    session_index: apt.session_index,
+                                    payment_status: apt.payment_status
+                                }));
+                            }
+                        }
+
                         setLocalClient(fullClient);
                     }
                 } catch (error) {
                     console.error("Error fetching client details:", error);
+                    // Fallback: build history from global appointments on error
+                    if (!canceled && globalAppointments.length > 0) {
+                        const clientAppts = globalAppointments.filter((a: any) => String(a.clientId) === String(clientId) || String(a.client_id) === String(clientId));
+                        if (clientAppts.length > 0 && client) {
+                            const fallbackClient = { ...client } as Client;
+                            fallbackClient.history = clientAppts.map((apt: any) => ({
+                                id: apt.id,
+                                name: apt.service || 'Serviço',
+                                date: apt.date,
+                                time: apt.time ? String(apt.time).substring(0, 5) : '00:00',
+                                professional: professionals.find((p: any) => p.id === apt.professionalId)?.name || 'Profissional',
+                                professionalId: apt.professionalId,
+                                status: apt.status,
+                                price: apt.price || '0',
+                                package_id: apt.package_id,
+                                salon_plan_id: apt.salon_plan_id,
+                                service_id: apt.service_id,
+                                type: apt.package_id ? 'Pacote' : (apt.salon_plan_id ? 'Plano' : 'Serviço'),
+                                total_sessions: apt.total_sessions || 0,
+                                consumed_sessions: apt.consumed_sessions || 0,
+                                session_index: apt.session_index,
+                                payment_status: apt.payment_status
+                            }));
+                            setLocalClient(fallbackClient);
+                        }
+                    }
                 } finally {
                     if (!canceled) setIsLoadingDetails(false);
                 }
