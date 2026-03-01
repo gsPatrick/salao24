@@ -5,8 +5,11 @@ import ClassificationBadge from './common/ClassificationBadge';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser, mapClientFromAPI } from '../contexts/DataContext';
 import { Client, Professional, Service, Appointment } from '../types';
-import { clientsAPI } from '../lib/api';
+import { clientsAPI, crmAPI } from '../lib/api';
 import { displayCurrency } from '../lib/formatUtils';
+
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { CRMRulesModal } from './CRMRulesModal';
 
 // --- Helper Functions ---
 const getClientStatus = (birthdate?: string, lastVisit?: string, totalVisits: number = 0) => {
@@ -606,6 +609,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
 
     const [activeTab, setActiveTab] = useState('clientes');
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -1790,6 +1794,17 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 </div>
 
                 <div className="bg-white p-4 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row gap-4 items-center flex-wrap">
+                    <div className="flex w-full sm:w-auto items-center gap-2 mb-2 sm:mb-0">
+                        <button
+                            onClick={() => setIsRulesModalOpen(true)}
+                            className="bg-white border text-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm hover:shadow hover:bg-gray-50 transition-all flex items-center gap-2 whitespace-nowrap"
+                        >
+                            <span className="text-lg">⚙️</span>
+                            <span className="hidden sm:inline">Configurar Regras IA</span>
+                            <span className="inline sm:hidden">Regras IA</span>
+                        </button>
+                    </div>
+
                     <div className="relative flex-grow w-full sm:w-auto">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <SearchIcon />
@@ -1962,6 +1977,14 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 client={selectedClient}
                 navigate={navigate}
                 existingClients={clients}
+            />
+            <CRMRulesModal
+                isOpen={isRulesModalOpen}
+                onClose={() => setIsRulesModalOpen(false)}
+                settings={crmSettings}
+                onSettingsUpdated={() => {
+                    // Force refresh or just assume crmSettings will update
+                }}
             />
         </>
     );
