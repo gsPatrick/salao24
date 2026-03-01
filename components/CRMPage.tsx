@@ -116,7 +116,9 @@ const ClientCard: React.FC<{
     professionals: Professional[];
     columnIcon?: string;
     columnTitle?: string;
-}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals, columnIcon, columnTitle }) => {
+    tagIcon?: string;
+    tagTitle?: string;
+}> = ({ client, onClick, onDragStart, onDragEnd, isDragging, onOpenChat, appointments, services, professionals, columnIcon, columnTitle, tagIcon, tagTitle }) => {
     const { isBirthdayMonth, classification: calculatedClassification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);
     // Prioritize explicit classification (from drag/drop or DB) over calculated one
     const classification = client.classification || calculatedClassification;
@@ -147,7 +149,7 @@ const ClientCard: React.FC<{
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-1 mb-1">
                         <h3 className={`font-bold text-base truncate leading-tight ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{client.name}</h3>
-                        <ClassificationBadge classification={classification} customIcon={columnIcon} customText={columnTitle} />
+                        <ClassificationBadge classification={classification} customIcon={tagIcon || columnIcon} customText={tagTitle || columnTitle} />
                     </div>
                     <div className={`text-xs space-y-1.5 ${isBirthdayMonth ? 'text-gray-700' : 'text-gray-500'}`}>
                         <div className="flex items-center justify-between">
@@ -501,6 +503,8 @@ const KanbanColumn: React.FC<{
                             client={client}
                             columnIcon={icon}
                             columnTitle={title}
+                            tagIcon={config.tagIcon}
+                            tagTitle={config.tagTitle}
                             onClick={() => onCardClick(client)}
                             onDragStart={(e) => onDragStart(e, client.id)}
                             onDragEnd={onDragEnd}
@@ -544,6 +548,7 @@ interface CrmColumnConfig {
     compiled_rules?: any[];
     ai_actions?: AIAction[];
     tagIcon?: string;
+    tagTitle?: string;
 }
 
 interface Classification {
@@ -592,6 +597,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             title: 'Novos Clientes',
             description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativo.",
             icon: '⭐',
+            tagIcon: '⭐',
+            tagTitle: 'Novos Clientes',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -607,6 +614,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             title: 'Agendados',
             description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente. Se confirmou, manter. Se faltou, mover para Faltantes. Se concluiu, mover para Recorrente.",
             icon: '✅',
+            tagIcon: '✅',
+            tagTitle: 'Agendados',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -622,6 +631,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             title: 'Faltantes',
             description: "Objetivo: Recuperar clientes que faltaram. Tentar reagendar. Se reagendar, mover para Agendados. Se não reagendar em 60 dias, mover para Inativo.",
             icon: '❌',
+            tagIcon: '❌',
+            tagTitle: 'Faltantes',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -637,6 +648,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             title: 'Recorrente',
             description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativo.",
             icon: '💎',
+            tagIcon: '💎',
+            tagTitle: 'Recorrente',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -652,6 +665,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             title: 'Inativo',
             description: "Objetivo: Reativar clientes antigos. Tentar contato para novo agendamento. Se agendar, mover para Agendados.",
             icon: '⏳',
+            tagIcon: '⏳',
+            tagTitle: 'Inativo',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -701,6 +716,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                     title,
                     icon,
                     ai_actions,
+                    tagIcon: stage.tagIcon || defaultStage?.tagIcon || icon,
+                    tagTitle: stage.tagTitle || defaultStage?.tagTitle || title,
                     // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
                     deletable: canCustomize ? true : stage.deletable,
                     visible: stage.visible !== false // Default to true if undefined

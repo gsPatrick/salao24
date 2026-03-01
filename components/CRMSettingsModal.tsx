@@ -10,6 +10,7 @@ interface CrmColumnSettings {
   description?: string;
   ai_actions?: { title: string; description: string; active: boolean }[];
   tagIcon?: string;
+  tagTitle?: string;
 }
 
 interface Classification {
@@ -137,6 +138,7 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
       title: 'Nova Coluna',
       icon: '🆕',
       tagIcon: '🆕',
+      tagTitle: 'Nova Tag',
       visible: true,
       deletable: true,
     };
@@ -186,27 +188,35 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
               <p className="text-sm text-gray-500 mb-4">Adicione, edite ou remova colunas da sua visualização do CRM.</p>
               <div className="space-y-4">
                 {editableColumns.map((col, index) => (
-                  <div key={col.id} className="grid grid-cols-12 gap-3 items-center bg-light p-3 rounded-lg">
-                    <div className="col-span-4 sm:col-span-3 flex gap-2">
-                      <div className="relative flex-1">
-                        <div className="text-[10px] text-gray-500 font-medium text-center mb-1 leading-tight">Ícone (Coluna)</div>
-                        <button type="button" onClick={() => { setOpenIconPicker(openIconPicker === index ? null : index); setOpenTagIconPicker(null); }} className="w-full text-center p-2 border border-gray-300 rounded-md shadow-sm text-lg bg-white" aria-haspopup="true" aria-expanded={openIconPicker === index}>
+                  <div key={col.id} className="bg-light p-4 rounded-xl space-y-4 border border-gray-100 shadow-sm">
+                    {/* Linha 1: Ícone da Coluna e Nome da Coluna */}
+                    <div className="flex items-end gap-3">
+                      <div className="relative w-14">
+                        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Ícone</div>
+                        <button
+                          type="button"
+                          onClick={() => { setOpenIconPicker(openIconPicker === index ? null : index); setOpenTagIconPicker(null); }}
+                          className="w-full h-11 flex items-center justify-center border border-gray-300 rounded-lg shadow-sm text-xl bg-white hover:border-primary transition-colors"
+                        >
                           {col.icon}
                         </button>
                         {openIconPicker === index && (
-                          <div className="absolute z-10 mt-1 w-64 bg-white shadow-lg rounded-md border border-gray-200">
-                            <div className="border-b border-gray-200">
-                              <div className="flex flex-wrap gap-1 p-2">
-                                {iconCategories.map(category => (
-                                  <button key={category.name} type="button" onClick={() => setSelectedCategory(category.name)} className={`px-2 py-1 text-xs rounded-md transition-colors ${selectedCategory === category.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                                    {category.name}
-                                  </button>
-                                ))}
-                              </div>
+                          <div className="absolute z-20 mt-1 w-64 bg-white shadow-xl rounded-lg border border-gray-200 left-0">
+                            <div className="p-2 border-b border-gray-100 flex flex-wrap gap-1">
+                              {iconCategories.map(category => (
+                                <button
+                                  key={category.name}
+                                  type="button"
+                                  onClick={() => setSelectedCategory(category.name)}
+                                  className={`px-2 py-1 text-[10px] rounded-md transition-colors ${selectedCategory === category.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                  {category.name}
+                                </button>
+                              ))}
                             </div>
                             <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
                               {iconCategories.find(cat => cat.name === selectedCategory)?.icons.map(icon => (
-                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'icon', icon); setOpenIconPicker(null); }} className="p-1 rounded-md hover:bg-gray-100 text-lg">
+                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'icon', icon); setOpenIconPicker(null); }} className="p-1.5 rounded-md hover:bg-gray-100 text-xl transition-transform hover:scale-110">
                                   {icon}
                                 </button>
                               ))}
@@ -214,77 +224,109 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
                           </div>
                         )}
                       </div>
-
-                      <div className="relative flex-1">
-                        <div className="text-[10px] text-gray-500 font-medium text-center mb-1 leading-tight">Ícone (Tag)</div>
-                        <button type="button" onClick={() => { setOpenTagIconPicker(openTagIconPicker === index ? null : index); setOpenIconPicker(null); }} className="w-full text-center p-2 border border-blue-300 rounded-md shadow-sm text-lg bg-blue-50" aria-haspopup="true" aria-expanded={openTagIconPicker === index}>
-                          {col.tagIcon || col.icon}
-                        </button>
-                        {openTagIconPicker === index && (
-                          <div className="absolute z-10 mt-1 w-64 bg-white shadow-lg rounded-md border border-blue-200">
-                            <div className="border-b border-gray-200">
-                              <div className="flex flex-wrap gap-1 p-2">
-                                {iconCategories.map(category => (
-                                  <button key={category.name} type="button" onClick={() => setSelectedCategory(category.name)} className={`px-2 py-1 text-xs rounded-md transition-colors ${selectedCategory === category.name ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                                    {category.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
-                              {iconCategories.find(cat => cat.name === selectedCategory)?.icons.map(icon => (
-                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'tagIcon', icon); setOpenTagIconPicker(null); }} className="p-1 rounded-md hover:bg-blue-100 text-lg">
-                                  {icon}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Nome da Coluna (Funil)</div>
+                        <input
+                          type="text"
+                          value={col.title}
+                          onChange={(e) => handleFieldChange(index, 'title', e.target.value)}
+                          className="w-full h-11 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                          placeholder="Ex: Novos Clientes"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pb-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" checked={col.visible} onChange={(e) => handleFieldChange(index, 'visible', e.target.checked)} />
+                          <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          <span className="ml-2 text-[11px] font-bold text-gray-500 uppercase tracking-tight">Visível</span>
+                        </label>
+                      </div>
+                      <div className="pb-1.5 px-1">
+                        {canCustomize && col.deletable && (
+                          <button onClick={() => handleDeleteColumn(index)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" aria-label="Excluir coluna">
+                            <TrashIcon />
+                          </button>
                         )}
                       </div>
                     </div>
-                    <div className="col-span-8 sm:col-span-5">
-                      <input type="text" value={col.title} onChange={(e) => handleFieldChange(index, 'title', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="Nome da Coluna" />
 
-                      {/* AI Rule Editor (Restored) */}
+                    {/* Linha 2: Ícone da Tag e Nome da Tag */}
+                    <div className="flex items-end gap-3 pl-4 border-l-2 border-primary/20 bg-primary/5 p-3 rounded-r-lg">
+                      <div className="relative w-14">
+                        <div className="text-[10px] text-primary font-bold uppercase tracking-wider mb-1 leading-tight">Ícone Tag</div>
+                        <button
+                          type="button"
+                          onClick={() => { setOpenTagIconPicker(openTagIconPicker === index ? null : index); setOpenIconPicker(null); }}
+                          className="w-full h-11 flex items-center justify-center border border-primary/30 rounded-lg shadow-sm text-xl bg-white hover:border-primary transition-colors"
+                        >
+                          {col.tagIcon || col.icon}
+                        </button>
+                        {openTagIconPicker === index && (
+                          <div className="absolute z-20 mt-1 w-64 bg-white shadow-xl rounded-lg border border-gray-200 left-0">
+                            <div className="p-2 border-b border-gray-100 flex flex-wrap gap-1">
+                              {iconCategories.map(category => (
+                                <button
+                                  key={category.name}
+                                  type="button"
+                                  onClick={() => setSelectedCategory(category.name)}
+                                  className={`px-2 py-1 text-[10px] rounded-md transition-colors ${selectedCategory === category.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                  {category.name}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 p-2 max-h-48 overflow-y-auto">
+                              {iconCategories.find(cat => cat.name === selectedCategory)?.icons.map(icon => (
+                                <button key={icon} type="button" onClick={() => { handleFieldChange(index, 'tagIcon', icon); setOpenTagIconPicker(null); }} className="p-1.5 rounded-md hover:bg-gray-100 text-xl transition-transform hover:scale-110">
+                                  {icon}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] text-primary font-bold uppercase tracking-wider mb-1 leading-tight">Nome da Tag (Exibido no Cliente)</div>
+                        <input
+                          type="text"
+                          value={col.tagTitle || col.title}
+                          onChange={(e) => handleFieldChange(index, 'tagTitle', e.target.value)}
+                          className="w-full h-11 px-3 py-2 border border-primary/30 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                          placeholder="Ex: Novo Cliente"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Regra de IA */}
+                    <div className="bg-white/50 p-3 rounded-lg border border-gray-100">
                       {col.ai_actions && col.ai_actions.length > 0 ? (
-                        <div className="mt-2">
-                          <label className="text-xs text-gray-500 font-semibold">Regra de IA (Prompt):</label>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Regra de IA (Prompt)</label>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${col.ai_actions[0].active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                              {col.ai_actions[0].active ? 'Automação Ativa' : 'Automação Pausada'}
+                            </span>
+                          </div>
                           <textarea
                             value={col.ai_actions[0].description}
                             onChange={(e) => handleAiRuleChange(index, e.target.value)}
                             rows={3}
-                            className="w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             placeholder="Descreva a regra para a IA..."
                           />
-                          <div className="mt-1 flex items-center justify-between">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${col.ai_actions[0].active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {col.ai_actions[0].active ? `✅ Automação Ativa (${col.ai_actions.length} regras)` : '⏸️ Automação Pausada'}
-                            </span>
-                          </div>
                         </div>
                       ) : (
-                        <div className="mt-2">
-                          <label className="text-xs text-gray-500">Descrição (Resumo):</label>
+                        <div className="space-y-2">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Descrição (Resumo)</label>
                           <textarea
                             value={col.description || ''}
                             onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
                             rows={2}
-                            className="w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                            className="w-full p-2.5 text-xs border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             placeholder="Descrição da etapa..."
                           />
                         </div>
                       )}
-
-                    </div>
-                    <div className="col-span-6 sm:col-span-3 flex items-center justify-center">
-                      <label htmlFor={`visible-${col.id}`} className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id={`visible-${col.id}`} className="sr-only peer" checked={col.visible} onChange={(e) => handleFieldChange(index, 'visible', e.target.checked)} />
-                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                        <span className="ml-3 text-sm font-medium text-gray-600">Visível</span>
-                      </label>
-                    </div>
-                    <div className="col-span-6 sm:col-span-2 flex justify-end">
-                      {canCustomize && col.deletable ? (<button onClick={() => handleDeleteColumn(index)} className="p-2 rounded-md text-red-500 hover:bg-red-100" aria-label="Excluir coluna"> <TrashIcon /> </button>) : (<div className="w-8 h-8"></div>)}
                     </div>
                   </div>
                 ))}
