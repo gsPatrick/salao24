@@ -126,6 +126,35 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             setFormData(prev => ({ ...prev, unit: units[0].name }));
         }
     }, [isOpen, units, professionalToEdit]);
+
+    const [cities, setCities] = useState<string[]>([]);
+    const [isFetchingCities, setIsFetchingCities] = useState(false);
+
+    useEffect(() => {
+        if (formData.state) {
+            const fetchCities = async () => {
+                setIsFetchingCities(true);
+                try {
+                    const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${formData.state}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCities(data.map((c: any) => c.nome).sort());
+                    } else {
+                        setCities([]);
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar cidades:", error);
+                    setCities([]);
+                } finally {
+                    setIsFetchingCities(false);
+                }
+            };
+            fetchCities();
+        } else {
+            setCities([]);
+        }
+    }, [formData.state]);
+
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [useSocialName, setUseSocialName] = useState(false);
     const [photo, setPhoto] = useState<string | null>(null);
@@ -564,7 +593,21 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                         <div className="md:col-span-1"><InputField label="Número *" name="number" value={formData.number} onChange={handleChange} onBlur={handleBlur} required error={errors.number} /></div>
                         <div className="md:col-span-1"><InputField label="Complemento" name="addressComplement" value={formData.addressComplement} onChange={handleChange} /></div>
                         <div className="md:col-span-2"><InputField label="Bairro *" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} required error={errors.neighborhood} /></div>
-                        <div className="md:col-span-2"><InputField label="Cidade *" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} required error={errors.city} /></div>
+                        <div className="md:col-span-2">
+                            <SelectField
+                                label="Cidade *"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                options={[
+                                    { value: '', label: isFetchingCities ? 'Carregando...' : 'Selecione' },
+                                    ...cities.map(c => ({ value: c, label: c }))
+                                ]}
+                                required
+                                error={errors.city}
+                            />
+                        </div>
                         <div className="md:col-span-2">
                             <SelectField
                                 label="Estado *"

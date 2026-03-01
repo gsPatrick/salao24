@@ -350,6 +350,41 @@ export const SuperAdminBannersPage: React.FC = () => {
         }
     }, [isModalOpen]);
 
+    const [selectedTargetState, setSelectedTargetState] = useState(editingBanner?.target_state || '');
+    const [targetCities, setTargetCities] = useState<string[]>([]);
+    const [isFetchingTargetCities, setIsFetchingTargetCities] = useState(false);
+
+    useEffect(() => {
+        if (selectedTargetState) {
+            const fetchCities = async () => {
+                setIsFetchingTargetCities(true);
+                try {
+                    const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${selectedTargetState}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setTargetCities(data.map((c: any) => c.nome).sort());
+                    } else {
+                        setTargetCities([]);
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar cidades:", error);
+                    setTargetCities([]);
+                } finally {
+                    setIsFetchingTargetCities(false);
+                }
+            };
+            fetchCities();
+        } else {
+            setTargetCities([]);
+        }
+    }, [selectedTargetState]);
+
+    useEffect(() => {
+        if (isModalOpen) {
+            setSelectedTargetState(editingBanner?.target_state || '');
+        }
+    }, [isModalOpen, editingBanner]);
+
     const handleFileSelect = (selectedFile: File | null, isMobile: boolean = false) => {
         if (isMobile) {
             setMobileImageFile(selectedFile);
@@ -659,7 +694,8 @@ export const SuperAdminBannersPage: React.FC = () => {
                                         <div className="relative">
                                             <select
                                                 name="target_state"
-                                                defaultValue={editingBanner?.target_state || ''}
+                                                value={selectedTargetState}
+                                                onChange={(e) => setSelectedTargetState(e.target.value)}
                                                 className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
                                             >
                                                 <option value="">Todos os Estados</option>
@@ -678,8 +714,8 @@ export const SuperAdminBannersPage: React.FC = () => {
                                                 defaultValue={editingBanner?.target_city || ''}
                                                 className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none transition-all cursor-pointer"
                                             >
-                                                <option value="">Todas as Cidades</option>
-                                                {filterOptions.cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                <option value="">{isFetchingTargetCities ? 'Carregando...' : 'Todas as Cidades'}</option>
+                                                {targetCities.map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
                                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>

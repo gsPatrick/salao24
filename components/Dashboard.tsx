@@ -575,6 +575,41 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
         }
     }, [isPromoModalOpen]);
 
+    const [selectedState, setSelectedState] = useState(editingPromotion?.locationState || '');
+    const [cities, setCities] = useState<string[]>([]);
+    const [isFetchingCities, setIsFetchingCities] = useState(false);
+
+    useEffect(() => {
+        if (selectedState) {
+            const fetchCities = async () => {
+                setIsFetchingCities(true);
+                try {
+                    const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${selectedState}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCities(data.map((c: any) => c.nome).sort());
+                    } else {
+                        setCities([]);
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar cidades:", error);
+                    setCities([]);
+                } finally {
+                    setIsFetchingCities(false);
+                }
+            };
+            fetchCities();
+        } else {
+            setCities([]);
+        }
+    }, [selectedState]);
+
+    useEffect(() => {
+        if (isPromoModalOpen) {
+            setSelectedState(editingPromotion?.locationState || '');
+        }
+    }, [isPromoModalOpen, editingPromotion]);
+
 
     const handleFileSelect = (selectedFile: File | null) => {
         setImageFile(selectedFile);
@@ -882,7 +917,8 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                             <label className="block text-xs text-gray-500 mb-1">Estado</label>
                                             <select
                                                 name="locationState"
-                                                defaultValue={editingPromotion?.locationState || ''}
+                                                value={selectedState}
+                                                onChange={(e) => setSelectedState(e.target.value)}
                                                 className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
                                             >
                                                 <option value="">Todos os Estados</option>
@@ -893,13 +929,16 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">Cidade</label>
-                                            <input
+                                            <select
                                                 name="locationCity"
-                                                type="text"
-                                                placeholder="Ex: São Paulo"
                                                 defaultValue={editingPromotion?.locationCity || ''}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm"
-                                            />
+                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white"
+                                            >
+                                                <option value="">{isFetchingCities ? 'Carregando...' : 'Todas as Cidades'}</option>
+                                                {cities.map(city => (
+                                                    <option key={city} value={city}>{city}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-500 mb-1">Bairro</label>
