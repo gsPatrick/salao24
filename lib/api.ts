@@ -9,6 +9,13 @@ const api = axios.create({
     },
 });
 
+export const getImageUrl = (path: string | undefined | null) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const baseUrl = API_URL.replace(/\/api$/, '');
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 // Request interceptor to add token and unit context
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');

@@ -1741,16 +1741,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const saveUnit = async (unit: Partial<Unit>): Promise<Unit | null> => {
         try {
             // Map frontend fields (camelCase) to backend fields (snake_case)
+            // Need to support both as some components pass snake_case directly
             const apiData = {
                 ...unit,
-                is_suspended: unit.suspended,
-                logo_url: unit.logo,
-                primary_color: unit.primaryColor,
-                working_hours: unit.workingHours,
-                checkin_message: unit.checkinMessage,
-                cnpj_cpf: unit.cnpj_cpf || unit.cnpjCpf,
-                admin_name: unit.admin_name || unit.adminName,
-                admin_phone: unit.admin_phone || unit.adminPhone,
+                is_suspended: unit.suspended ?? (unit as any).is_suspended,
+                logo_url: unit.logo || (unit as any).logo_url,
+                primary_color: unit.primaryColor || (unit as any).primary_color,
+                working_hours: unit.workingHours || (unit as any).working_hours,
+                checkin_message: unit.checkinMessage || (unit as any).checkin_message,
+                cnpj_cpf: (unit as any).cnpj_cpf || (unit as any).cnpjCpf,
+                admin_name: (unit as any).admin_name || (unit as any).adminName,
+                admin_phone: (unit as any).admin_phone || (unit as any).adminPhone,
                 settings: unit.settings || {},
             };
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useLanguage } from '../contexts/LanguageContext';
 import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
 import { useData } from '../contexts/DataContext';
+import { getImageUrl } from '../lib/api';
 
 // --- Interfaces ---
 interface AdditionalPhone {
@@ -368,7 +369,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <label className="block text-sm font-medium text-gray-700">{t('settingsSpaceLabelLogo')}</label>
-                    {logo && <img src={logo} alt="logo preview" className="h-12 w-12 object-contain rounded-md bg-gray-100 p-1 border" />}
+                    {logo && <img src={logo.startsWith('data:') ? logo : getImageUrl(logo)} alt="logo preview" className="h-12 w-12 object-contain rounded-md bg-gray-100 p-1 border" />}
                     <button type="button" onClick={() => logoInputRef.current?.click()} disabled={isUploading} className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                       {isUploading ? '...' : t('settingsSpaceButtonChange')}
                     </button>
