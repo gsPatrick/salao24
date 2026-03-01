@@ -4562,17 +4562,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return (
         <div className="min-h-screen bg-light flex">
             <aside className={`w-64 bg-secondary text-white p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
-                <div className="mb-8 px-4 flex justify-between items-center">
-                    {(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url) ? (
-                        <img
-                            src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url)}
-                            alt={allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Logo'}
-                            className="h-10 mx-auto object-contain"
-                        />
-                    ) : (
-                        <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="text-center block text-3xl font-extrabold text-white no-underline break-words px-2">{allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Salão24h'}</a>
-                    )}
-                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-300 hover:text-white">
+                <div className="mb-8 px-2 flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        {(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url) ? (
+                            <img
+                                src={getImageUrl(allData[selectedUnit]?.unitDetails?.logo || allData[selectedUnit]?.unitDetails?.logo_url || currentUser?.tenant?.logo_url)}
+                                alt={allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Logo'}
+                                className="h-10 w-10 object-contain rounded flex-shrink-0"
+                            />
+                        ) : null}
+                        <span className="font-extrabold text-white text-lg truncate no-underline">
+                            {allData[selectedUnit]?.unitDetails?.name || currentUser?.tenant?.name || 'Salão24h'}
+                        </span>
+                    </div>
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-300 hover:text-white flex-shrink-0 ml-2">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
