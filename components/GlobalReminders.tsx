@@ -216,10 +216,10 @@ const GlobalReminders: React.FC = () => {
 
 
     return (
-        <div className="relative">
+        <div className="relative group">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-400 hover:text-white transition-colors focus:outline-none"
+                className="relative p-2 text-gray-500 hover:text-primary transition-colors focus:outline-none"
             >
                 <span className="sr-only">View notifications</span>
                 <ClockIcon />
@@ -229,6 +229,10 @@ const GlobalReminders: React.FC = () => {
                     </span>
                 )}
             </button>
+            <div className="absolute top-full mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(0.5rem)' }}>
+                Lembretes de Clientes
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-b-gray-800"></div>
+            </div>
 
             {isOpen && (
                 <>
