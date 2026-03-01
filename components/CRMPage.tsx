@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import CRMSettingsModal from './CRMSettingsModal';
 import ClientDetailModal from './ClientDetailModal';
+import ClassificationBadge from './common/ClassificationBadge';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData, SystemUser } from '../contexts/DataContext';
 import { Client, Professional, Service, Appointment } from '../types';
@@ -74,35 +75,7 @@ const Confetti: React.FC = () => (
 );
 
 
-const ClassificationBadge: React.FC<{ classification: string; customIcon?: string; customText?: string }> = ({ classification, customIcon, customText }) => {
-    const colors: { [key: string]: string } = {
-        'Nova': 'bg-blue-100 text-blue-800',
-        'Novo': 'bg-blue-100 text-blue-800',
-        'Novos Clientes': 'bg-blue-100 text-blue-800',
-        'Recorrente': 'bg-green-100 text-green-800',
-        'Recorrentes': 'bg-green-100 text-green-800',
-        'Recorrentes (Ativos)': 'bg-green-100 text-green-800',
-        'VIP': 'bg-purple-100 text-purple-800',
-        'Inativa': 'bg-yellow-100 text-yellow-800',
-        'Inativo': 'bg-yellow-100 text-yellow-800',
-        'Inativos': 'bg-yellow-100 text-yellow-800',
-        'Inativos (60+ dias)': 'bg-yellow-100 text-yellow-800',
-        'Agendado': 'bg-indigo-100 text-indigo-800',
-        'Agendados': 'bg-indigo-100 text-indigo-800',
-        'Faltou': 'bg-red-100 text-red-800',
-        'Faltantes': 'bg-red-100 text-red-800',
-    };
-    const icons: { [key: string]: string } = { 'Nova': '⭐', 'Novo': '⭐', 'Recorrente': '💎', 'VIP': '👑', 'Inativa': '⏳', 'Inativo': '⏳', 'Agendado': '✅', 'Faltou': '❌' };
-
-    // Use custom text/icon if provided (from column), otherwise fallback to classification lookup
-    const displayText = customText || classification;
-    const displayIcon = customIcon || icons[classification] || '👤';
-
-    // Try to find color by exact match, or fallback to default
-    const colorClass = colors[displayText] || colors[classification] || 'bg-gray-100 text-gray-800';
-
-    return <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${colorClass}`}>{displayIcon} {displayText}</span>;
-};
+// ClassificationBadge is now imported from common
 
 const ClientCard: React.FC<{
     client: any;

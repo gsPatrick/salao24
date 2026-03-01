@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 // FIX: Changed to a named import to resolve module resolution error.
 import { NewClientModal } from './NewClientModal';
 import ClientDetailModal from './ClientDetailModal'; // Import the new component
+import ClassificationBadge from './common/ClassificationBadge';
 import { Client, useData, mapClientFromAPI } from '../contexts/DataContext';
 import { clientsAPI } from '../lib/api';
 
@@ -64,24 +65,7 @@ const Confetti: React.FC = () => (
     </>
 );
 
-const ClassificationBadge: React.FC<{ classification: string }> = ({ classification }) => {
-    const defaults: { [key: string]: { text: string, icon: string, classes: string } } = {
-        'Nova': { text: 'Nova', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
-        'Novo': { text: 'Novo', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
-        'Recorrente': { text: 'Recorrente', icon: '💎', classes: 'bg-green-100 text-green-800' },
-        'VIP': { text: 'VIP', icon: '👑', classes: 'bg-purple-100 text-purple-800' },
-        'Inativa': { text: 'Inativa', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
-        'Inativo': { text: 'Inativo', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
-        'Agendado': { text: 'Agendado', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
-        'Agendados': { text: 'Agendados', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
-        'Faltou': { text: 'Faltou', icon: '❌', classes: 'bg-red-100 text-red-800' },
-        'Faltantes': { text: 'Faltantes', icon: '❌', classes: 'bg-red-100 text-red-800' },
-    };
-
-    const badge = defaults[classification] || { text: classification, icon: '🏷️', classes: 'bg-gray-100 text-gray-800' };
-
-    return <span className={`text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${badge.classes}`}>{badge.icon} {badge.text}</span>;
-};
+// ClassificationBadge is now imported from common
 
 const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (clientId: number) => void }> = ({ client, onClick, onOpenChat }) => {
     const { isBirthdayMonth, classification: calculatedClassification } = getClientStatus(client.birthdate, client.lastVisit, client.totalVisits);

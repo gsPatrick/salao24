@@ -6,6 +6,7 @@ import { useData, Client as DataContextClient, mapClientFromAPI } from '../conte
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
 import ScheduleInternalModal from './ScheduleInternalModal';
+import ClassificationBadge from './common/ClassificationBadge';
 import { displayCurrency, displayDuration } from '../lib/formatUtils';
 
 // ... existing icons ...
@@ -1060,31 +1061,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
     const fullAddress = localClient.address ? `${localClient.address.street || ''}, ${localClient.address.number || ''}${localClient.address.complement ? ' - ' + localClient.address.complement : ''} - ${localClient.address.neighborhood || ''}, ${localClient.address.city || ''} - ${localClient.address.state || ''}, ${localClient.address.cep || ''}` : '';
 
 
-    const getBadgeInfo = (cls: string) => {
-        const defaults: { [key: string]: { text: string, icon: string, classes: string } } = {
-            'Nova': { text: 'Nova', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
-            'Novo': { text: 'Novo', icon: '✨', classes: 'bg-blue-100 text-blue-800' },
-            'Recorrente': { text: 'Recorrente', icon: '💎', classes: 'bg-green-100 text-green-800' },
-            'VIP': { text: 'VIP', icon: '👑', classes: 'bg-purple-100 text-purple-800' },
-            'Inativa': { text: 'Inativa', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
-            'Inativo': { text: 'Inativo', icon: '⏳', classes: 'bg-yellow-100 text-yellow-800' },
-            'Agendado': { text: 'Agendado', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
-            'Agendados': { text: 'Agendados', icon: '✅', classes: 'bg-indigo-100 text-indigo-800' },
-            'Faltou': { text: 'Faltou', icon: '❌', classes: 'bg-red-100 text-red-800' },
-            'Faltantes': { text: 'Faltantes', icon: '❌', classes: 'bg-red-100 text-red-800' },
-        };
-
-        if (defaults[cls]) return defaults[cls];
-
-        // Fallback for custom tags
-        return {
-            text: cls,
-            icon: '🏷️',
-            classes: 'bg-gray-100 text-gray-800'
-        };
-    };
-
-    const badgeInfo = getBadgeInfo(classification);
+    // getBadgeInfo is replaced by common ClassificationBadge component
 
     const TabButton: React.FC<{ tabName: string; label: string; icon: React.ReactNode }> = ({ tabName, label, icon }) => (
         <button
@@ -1437,11 +1414,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             <p className="text-lg font-medium text-gray-300">({localClient.socialName})</p>
                                         )
                                     )}
-                                    {badgeInfo && (
-                                        <span className={`mt-2 inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${badgeInfo.classes}`}>
-                                            {badgeInfo.icon} <span className="ml-1.5">{badgeInfo.text}</span>
-                                        </span>
-                                    )}
+                                    <div className="mt-2">
+                                        <ClassificationBadge classification={classification} />
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2 no-print">
