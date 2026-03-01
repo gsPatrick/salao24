@@ -1899,13 +1899,15 @@ const MonthlyPackagesPage: React.FC<{
 
             if (!passFilter) return false;
 
-            // Apply search filter (Search by Client, Responsible or Unit)
+            // Apply search filter (Search by Client, Responsible, Unit or CNPJ)
             if (subSearchTerm) {
-                const term = subSearchTerm.toLowerCase();
+                const term = subSearchTerm.toLowerCase().replace(/[.\-\/() ]/g, '');
+                const cnpjCpf = (subscription.cnpjCpf || '').replace(/[.\-\/() ]/g, '').toLowerCase();
                 return (
-                    (subscription.clientName || '').toLowerCase().includes(term) ||
-                    (subscription.responsible || '').toLowerCase().includes(term) ||
-                    (subscription.unit || '').toLowerCase().includes(term)
+                    (subscription.clientName || '').toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+                    (subscription.responsible || '').toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+                    (subscription.unit || '').toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+                    cnpjCpf.includes(term)
                 );
             }
 
@@ -2086,7 +2088,7 @@ const MonthlyPackagesPage: React.FC<{
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            placeholder="Filtrar por nome, responsável ou unidade..."
+                                            placeholder="Filtrar por nome, responsável, unidade ou CNPJ/CPF..."
                                             value={subSearchTerm}
                                             onChange={(e) => setSubSearchTerm(e.target.value)}
                                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
@@ -2172,6 +2174,7 @@ const MonthlyPackagesPage: React.FC<{
                                                 <tr key={subscription.id} className={`hover:bg-gray-50 transition-colors ${isExpiringSoon ? 'bg-amber-50/30 font-semibold' : ''}`}>
                                                     <td className="px-4 py-4 whitespace-nowrap border-r border-gray-100">
                                                         <div className="font-bold text-gray-900">{subscription.clientName}</div>
+                                                        {subscription.cnpjCpf && <div className="text-xs text-gray-500">{subscription.cnpjCpf}</div>}
                                                     </td>
                                                     <td className="px-4 py-4 whitespace-nowrap border-r border-gray-100">
                                                         <div className="text-gray-700">{subscription.responsible}</div>
@@ -2564,6 +2567,7 @@ const MonthlyPackagesPage: React.FC<{
 
                                         const subscription: any = {
                                             clientName: formData.get('clientName') as string,
+                                            cnpjCpf: formData.get('cnpjCpf') as string,
                                             address: formData.get('address') as string,
                                             phone: formData.get('phone') as string,
                                             email: formData.get('email') as string,
@@ -2582,14 +2586,14 @@ const MonthlyPackagesPage: React.FC<{
                                     }} className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Negócio</label>
                                                 <input
                                                     name="clientName"
                                                     type="text"
                                                     required
                                                     defaultValue={editingSubscription?.clientName || ''}
                                                     className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                                    placeholder="Nome completo"
+                                                    placeholder="Nome do estabelecimento"
                                                 />
                                             </div>
                                             <div>
@@ -2605,16 +2609,46 @@ const MonthlyPackagesPage: React.FC<{
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                                            <input
-                                                name="address"
-                                                type="text"
-                                                required
-                                                defaultValue={editingSubscription?.address || ''}
-                                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                                                placeholder="Endereço completo"
-                                            />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF</label>
+                                                <input
+                                                    name="cnpjCpf"
+                                                    type="text"
+                                                    required
+                                                    defaultValue={editingSubscription?.cnpjCpf || ''}
+                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                                    placeholder="00.000.000/0000-00 ou 000.000.000-00"
+                                                    maxLength={18}
+                                                    onChange={(e) => {
+                                                        let v = e.target.value.replace(/\D/g, '');
+                                                        if (v.length <= 11) {
+                                                            // CPF mask: 000.000.000-00
+                                                            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                                                            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                                                            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                                                        } else {
+                                                            // CNPJ mask: 00.000.000/0000-00
+                                                            v = v.replace(/(\d{2})(\d)/, '$1.$2');
+                                                            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                                                            v = v.replace(/(\d{3})(\d)/, '$1/$2');
+                                                            v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+                                                        }
+                                                        e.target.value = v;
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                                                <input
+                                                    name="address"
+                                                    type="text"
+                                                    required
+                                                    defaultValue={editingSubscription?.address || ''}
+                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                                    placeholder="Endereço completo"
+                                                />
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
