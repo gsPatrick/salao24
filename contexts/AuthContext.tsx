@@ -91,6 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 // Silent validation
                 authAPI.me()
                     .then(response => {
+                        console.log('[DEBUG-AUTH] Profile Response:', response);
                         if (response.success) {
                             const apiUser = response.data.user || response.data;
                             const plan = response.data.plan;
