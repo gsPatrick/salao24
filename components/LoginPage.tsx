@@ -28,6 +28,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'login' | 'forgot-password'>('login');
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -127,7 +128,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
           )}
         </div>
 
-        {rememberedUser ? (
+        {mode === 'login' && rememberedUser && (
           // --- Remembered User View ---
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6 text-center animate-bounce-in">
             <img src={rememberedUser.avatarUrl} alt={t('userPhotoAlt', { name: rememberedUser.name })} className="w-24 h-24 mx-auto rounded-full ring-4 ring-primary/20" />
@@ -157,8 +158,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                 </button>
               </div>
               <div className="text-sm text-right">
-                <a href="#" className="font-medium text-primary hover:text-primary-dark">
-                  {t('loginForgotPassword') || 'Esqueceu a senha?'}
+                <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot-password'); setError(null); }} className="font-medium text-primary hover:text-primary-dark">
+                  {t('loginForgotPassword') || 'Esqueci a senha'}
                 </a>
               </div>
               {error && <p className="text-sm text-red-600 text-center pt-2">{error}</p>}
@@ -174,7 +175,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
               {t('loginNotYou') || 'Não é você?'}
             </button>
           </div>
-        ) : (
+        )}
+        
+        {mode === 'login' && !rememberedUser && (
           // --- Default Login View ---
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
             <div>
@@ -240,8 +243,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-primary hover:text-primary-dark">
-                    {t('loginForgotPassword') || 'Esqueceu a senha?'}
+                  <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot-password'); setError(null); }} className="font-medium text-primary hover:text-primary-dark">
+                    {t('loginForgotPassword') || 'Esqueci a senha'}
                   </a>
                 </div>
               </div>
@@ -272,8 +275,72 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
           </div>
         )}
 
+        {/* Forgot Password View */}
+        {mode === 'forgot-password' && (
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+            <div>
+              <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-secondary">
+                Recuperação de Senha
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                Informe seu e-mail para enviarmos instruções.
+              </p>
+            </div>
+            <form className="space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsLoading(true);
+              setError(null);
+              const email = emailRef.current?.value.trim() || '';
+              try {
+                // @ts-ignore Since we import authAPI directly we can use it
+                const { authAPI } = await import('../lib/api');
+                const response = await authAPI.forgotPassword(email);
+                if (response.success) {
+                  alert(response.message || 'Senha enviada para o seu e-mail!');
+                  setMode('login');
+                } else {
+                  setError(response.message || 'Erro ao redefinir senha');
+                }
+              } catch (err: any) {
+                setError(err.response?.data?.message || 'Erro ao processar solicitação');
+              } finally {
+                setIsLoading(false);
+              }
+            }}>
+              <div>
+                <label htmlFor="forgot-email" className="sr-only font-bold">E-mail</label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  ref={emailRef}
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                  placeholder="Seu e-mail cadastrado"
+                />
+              </div>
+              {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Enviando...' : 'Recuperar Senha'}
+              </button>
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError(null); }}
+                  className="text-sm font-medium text-gray-500 hover:text-gray-900"
+                >
+                  Voltar para o login
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         <div className="text-center text-sm text-gray-500">
-          <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
         </div>
       </div>
     </div>

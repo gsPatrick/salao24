@@ -30,12 +30,13 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [mode, setMode] = useState<'login' | 'signup' | 'cpf-check' | 'create-credentials'>('login');
+    const [mode, setMode] = useState<'login' | 'signup' | 'cpf-check' | 'create-credentials' | 'forgot-password'>('login');
     const [cpfData, setCpfData] = useState<{ cpf: string; clientName?: string; tenantName?: string } | null>(null);
 
     const cpfRef = useRef<HTMLInputElement>(null);
     const emailRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
+    const rememberMeRef = useRef<HTMLInputElement>(null);
 
     const formatCpf = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -52,8 +53,9 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
 
         const email = emailRef.current?.value.trim() || '';
         const password = passwordRef.current?.value || '';
+        const rememberMe = rememberMeRef.current?.checked || false;
 
-        const result = await login(email, password, false);
+        const result = await login(email, password, rememberMe);
 
         if (result.success) {
             const storedUser = localStorage.getItem('authUser');
@@ -211,6 +213,27 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <input
+                                        id="remember-me"
+                                        name="remember-me"
+                                        type="checkbox"
+                                        ref={rememberMeRef}
+                                        className="h-4 w-4 text-primary focus:ring-primary border-gray-600 rounded bg-gray-700"
+                                    />
+                                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                                        {t('loginRememberMe') || 'Lembrar-me'}
+                                    </label>
+                                </div>
+                                <div className="text-sm">
+                                    <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot-password'); setError(null); }} className="font-medium text-primary hover:text-primary-dark">
+                                        {t('loginForgotPassword') || 'Esqueci a senha'}
+                                    </a>
+                                </div>
+                            </div>
+
                             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
                             <button
                                 type="submit"
@@ -248,6 +271,59 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                             >
                                 {isLoading ? 'Verificando...' : 'Verificar CPF'}
                             </button>
+                        </form>
+                    )}
+
+                    {/* Forgot Password Form */}
+                    {mode === 'forgot-password' && (
+                        <form className="space-y-4" onSubmit={async (e) => {
+                            e.preventDefault();
+                            setIsLoading(true);
+                            setError(null);
+                            const email = emailRef.current?.value.trim() || '';
+                            try {
+                                const response = await authAPI.forgotPassword(email);
+                                if (response.success) {
+                                    alert(response.message || 'Senha enviada para o seu e-mail!');
+                                    setMode('login');
+                                } else {
+                                    setError(response.message || 'Erro ao redefinir senha');
+                                }
+                            } catch (err: any) {
+                                setError(err.response?.data?.message || 'Erro ao processar solicitação');
+                            } finally {
+                                setIsLoading(false);
+                            }
+                        }}>
+                            <div>
+                                <p className="text-sm text-gray-600 text-center mb-4">Informe seu e-mail para enviarmos sua senha.</p>
+                                <label htmlFor="forgot-email" className="sr-only font-bold">E-mail</label>
+                                <input
+                                    id="forgot-email"
+                                    type="email"
+                                    ref={emailRef}
+                                    required
+                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
+                                    placeholder="Seu e-mail cadastrado"
+                                />
+                            </div>
+                            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-colors duration-300 disabled:bg-primary/70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? 'Enviando...' : 'Recuperar Senha'}
+                            </button>
+                            <div className="text-center mt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => { setMode('login'); setError(null); }}
+                                    className="text-sm font-medium text-gray-500 hover:text-gray-900"
+                                >
+                                    Voltar para o login
+                                </button>
+                            </div>
                         </form>
                     )}
 
@@ -336,10 +412,10 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                     <p className="mb-4">
                         É um colaborador?{' '}
                         <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="font-medium text-primary hover:text-primary-dark">
-                            Acesse aqui a Área Restrita
+                            Acesse sua Conta
                         </a>
                     </p>
-                    <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
                 </div>
             </div>
         </div>
