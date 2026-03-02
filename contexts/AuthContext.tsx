@@ -39,6 +39,7 @@ interface AuthUser {
     };
     // Additional fields used by existing frontend
     contracts?: any[];
+    packages?: any[];
 }
 
 interface AuthContextType {
@@ -115,6 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                         marketing_campaigns: plan.marketing_campaigns || false,
                                     },
                                 } : undefined,
+                                packages: apiUser.packages || [],
                                 contracts: [],
                             };
                             setUser(authUser);
@@ -173,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             marketing_campaigns: plan.marketing_campaigns || false,
                         },
                     } : undefined,
+                    packages: apiUser.packages || [],
                     contracts: [],
                 };
 

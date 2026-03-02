@@ -348,6 +348,11 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
 
   const [units, setUnits] = useState<any[]>([]);
+  
+  // Sync state with prop updates (e.g. after AuthContext silent validation)
+  useEffect(() => {
+    setClientData(currentClient);
+  }, [currentClient]);
 
   // Fetch units to get cancellation settings
   useEffect(() => {
