@@ -689,7 +689,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
       case 'pacotes':
         return (
           <div>
-            <h2 className="text-xl font-bold text-secondary mb-4">Meus Pacotes</h2>
+            <h2 className="text-xl font-bold text-secondary mb-4">Pacotes e Planos Ativos</h2>
             {(clientData?.packages || []).length > 0 ? (
               <div className="space-y-4">
                 {clientData.packages.map((pkg, index) => (
@@ -708,7 +708,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8 bg-gray-100 rounded-lg">Você não possui pacotes ativos.</p>
+              <p className="text-gray-500 text-center py-8 bg-gray-100 rounded-lg">Você não possui pacotes ou planos ativos.</p>
             )}
           </div>
         );
@@ -776,7 +776,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
           <footer className="flex-shrink-0 bg-white border-t p-2 flex justify-around">
             <TabButton tabId="inicio" icon={<HomeIcon />} label="Início" />
             <TabButton tabId="historico" icon={<HistoryIcon />} label="Histórico" />
-            <TabButton tabId="pacotes" icon={<PackageIcon />} label="Pacotes" />
+            <TabButton tabId="pacotes" icon={<PackageIcon />} label="Pacotes/Planos" />
           </footer>
         </div>
       </div>
