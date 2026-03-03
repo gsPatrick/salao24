@@ -557,7 +557,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                             <label className="block text-sm font-medium text-gray-700">Segmento</label>
                                             <input
                                                 type="text"
-                                                value={tenant?.business_segment || ''}
+                                                value={tenant?.settings?.segment || tenant?.business_segment || ''}
                                                 disabled
                                                 className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-sm"
                                             />
@@ -1046,7 +1046,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     const planKey = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
     const currentPlanName = planKey;
     const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || (tenant?.plan?.name ? `Acesso ao plano ${tenant.plan.name}` : '');
-    const businessSegmentLabel = currentUser?.businessSegmentLabel;
+    const businessSegmentLabel = tenant?.settings?.segment || currentUser?.businessSegmentLabel;
 
     const canUpgrade = !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(planKey);
 
