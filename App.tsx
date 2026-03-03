@@ -105,10 +105,7 @@ const App: React.FC = () => {
   const [subscriptionBlocked, setSubscriptionBlocked] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
 
-  // Scroll to top on page change
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, [page]);
+  // Removed duplicate useLayoutEffect that was fighting the scroll position
 
   // Listen for subscription blocked events from API interceptor
   useEffect(() => {
@@ -355,15 +352,22 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Force immediate scroll to top on every page change, bypassing smooth scrolling
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'auto'
+    // A robust, multi-phase approach to fight against React's layout shifts and heavy component mounting
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    // 1st attempt: Immediate
+    scrollToTop();
+
+    // 2nd attempt: Next animation frame
+    requestAnimationFrame(() => {
+      scrollToTop();
+      // 3rd attempt: After typical React paint (50ms)
+      setTimeout(scrollToTop, 50);
     });
-    // Fallback for legacy browsers and specific layout contexts
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
   }, [page]);
 
 
@@ -381,12 +385,6 @@ const App: React.FC = () => {
       setHistory(prev => [...prev, page]);
       setPage(pageName);
       setNavigationParams(params || null);
-      // Reliable scroll to top after React re-render
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }, 10);
     }
   };
 
@@ -398,12 +396,6 @@ const App: React.FC = () => {
     } else {
       setPage('home');
     }
-    // Reliable scroll to top after React re-render
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 10);
   };
 
   const handlePlanSelection = (plan: Plan) => {
