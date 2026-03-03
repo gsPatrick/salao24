@@ -227,8 +227,9 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
                 if (!value.trim()) error = t('errorRequired');
                 break;
             case 'cpf':
-                if (!value.trim()) error = t('errorRequired');
-                else if (value.replace(/\D/g, '').length !== 11) error = t('errorInvalidCPF');
+                const cleanCpfCnpj = value.replace(/\D/g, '');
+                if (!cleanCpfCnpj) error = t('errorRequired');
+                else if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) error = 'CPF/CNPJ inválido';
                 break;
             case 'email':
                 if (!value.trim()) error = t('errorRequired');
@@ -266,15 +267,29 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         </svg>
     );
 
-    const formatCPF = (value: string) => {
-        return value.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    const formatCpfCnpj = (value: string) => {
+        const cleanValue = value.replace(/\D/g, '');
+        if (cleanValue.length <= 11) {
+            return cleanValue
+                .slice(0, 11)
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        } else {
+            return cleanValue
+                .slice(0, 14)
+                .replace(/^(\d{2})(\d)/, '$1.$2')
+                .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                .replace(/\.(\d{3})(\d)/, '.$1/$2')
+                .replace(/(\d{4})(\d)/, '$1-$2');
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const name = e.target.name as keyof typeof formData;
         const { value } = e.target;
 
-        const processedValue = name === 'cpf' ? formatCPF(value) : value;
+        const processedValue = name === 'cpf' ? formatCpfCnpj(value) : value;
 
         setFormData(prevData => {
             const newData = { ...prevData, [name]: processedValue };
@@ -539,8 +554,8 @@ Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com to
                                     {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
                                 </div>
                                 <div>
-                                    <label htmlFor="cpf" className="sr-only">{t('trialCPFLabel')}</label>
-                                    <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="123.456.789-00" />
+                                    <label htmlFor="cpf" className="sr-only">CPF / CNPJ</label>
+                                    <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="CPF ou CNPJ" />
                                     {errors.cpf && <p className="text-xs text-red-600 mt-1">{errors.cpf}</p>}
                                 </div>
                                 <div>
