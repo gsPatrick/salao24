@@ -294,7 +294,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         startFreeTrial: 'Comece grátis por 15 dias',
         noCreditCard: 'Não é necessário cartão de crédito.',
         clientArea: 'Área do Cliente',
-        collaboratorAccess: 'Acesso Colaborador',
+        collaboratorAccess: 'Acesse sua Conta',
         administrativeAccess: 'Administrativo',
         welcomeAdmin: 'Bem-vindo, Administrador. Acesso total ao painel de controle.',
         welcomeUser: 'Bem-vindo(a) ao seu painel de controle.',
