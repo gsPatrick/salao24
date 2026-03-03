@@ -373,8 +373,8 @@ const App: React.FC = () => {
       setHistory(prev => [...prev, page]);
       setPage(pageName);
       setNavigationParams(params || null);
-      // Sempre voltar para o topo ao trocar de "página" interna
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      // Scroll to top after React re-render
+      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
     }
   };
 
@@ -383,11 +383,11 @@ const App: React.FC = () => {
     if (lastPage) {
       setHistory(prev => prev.slice(0, -1));
       setPage(lastPage);
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     } else {
-      navigate('home');
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      setPage('home');
     }
+    // Scroll to top after React re-render
+    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
   };
 
   const handlePlanSelection = (plan: Plan) => {
