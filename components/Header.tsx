@@ -47,12 +47,11 @@ const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifi
               </div>
 
               {/* Secondary CTAs Block */}
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
-                <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="font-medium text-primary hover:text-primary-dark transition-colors">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="border-2 border-primary hover:bg-primary/20 text-primary font-bold py-2 px-6 rounded-full transition-all duration-300 w-full sm:w-auto active:scale-95">
                   {t('clientArea')}
                 </a>
-                <span className="hidden sm:inline text-gray-500">|</span>
-                <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="font-medium text-gray-400 hover:text-white transition-colors">
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="border-2 border-gray-400 hover:bg-gray-700 hover:border-gray-700 text-white font-bold py-2 px-6 rounded-full transition-all duration-300 w-full sm:w-auto active:scale-95">
                   {t('collaboratorAccess')}
                 </a>
               </div>
