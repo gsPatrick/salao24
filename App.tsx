@@ -532,30 +532,80 @@ const App: React.FC = () => {
         <ContractSignaturePage
           goBack={goBack}
           contractText={contractForSignature.contractText}
-          onSign={(signatureData) => {
+          onSign={async (signatureData) => {
             const { user, contractText, cpf } = contractForSignature;
             const plan = planDetailsMap[user.plan!];
-            const prices = {
-              'Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
-              'Empresa Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
-              'Empresa Pro': { discounted: 'R$ 349,90', afterYear: 'R$ 449,90' },
-              'Empresa Premium': { discounted: 'R$ 599,90', afterYear: 'R$ 749,90' },
-            };
-            const planPrices = prices[user.plan! as keyof typeof prices];
 
-            const newContract: Contract = {
-              planName: plan.name,
-              price: plan.price,
-              discountedPrice: planPrices.discounted,
-              priceAfterYear: planPrices.afterYear,
-              date: new Date().toLocaleDateString('pt-BR'),
-              contractText: contractText,
-              signatureImg: signatureData.signature,
-              userPhoto: signatureData.photo,
-              userName: user.name,
-              userCpf: cpf,
-            };
-            handleTrialSuccess(user, newContract);
+            // Realize the API Registration
+            try {
+              const { authAPI } = await import('./lib/api');
+              
+              // Mapeia o plano correspondente ao backend
+              const planMapping: Record<string, number> = {
+                'Individual': 1, // Assume IDs baseados em seeds comuns
+                'Empresa Essencial': 2,
+                'Empresa Pro': 3,
+                'Empresa Premium': 4
+              };
+              const planIdToSend = planMapping[plan.name] || 2; // Default to Essencial
+              
+              const registerResponse = await authAPI.register({
+                tenantName: user.salonName || `${user.name} Salão`,
+                userName: user.name,
+                email: user.email,
+                password: user.password || 'senha123',
+                planId: planIdToSend,
+                userType: 'admin',
+                cnpj_cpf: cpf,
+                segmentType: user.businessSegmentKey || 'outros'
+              });
+
+              if (registerResponse && registerResponse.success) {
+                  // After successful registration, pass the newly authenticated data to the local state
+                  const prices = {
+                    'Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
+                    'Empresa Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
+                    'Empresa Pro': { discounted: 'R$ 349,90', afterYear: 'R$ 449,90' },
+                    'Empresa Premium': { discounted: 'R$ 599,90', afterYear: 'R$ 749,90' },
+                  };
+                  const planPrices = prices[user.plan! as keyof typeof prices];
+      
+                  const newContract: Contract = {
+                    planName: plan.name,
+                    price: plan.price,
+                    discountedPrice: planPrices.discounted,
+                    priceAfterYear: planPrices.afterYear,
+                    date: new Date().toLocaleDateString('pt-BR'),
+                    contractText: contractText,
+                    signatureImg: signatureData.signature,
+                    userPhoto: signatureData.photo,
+                    userName: user.name,
+                    userCpf: cpf,
+                  };
+                  
+                  // O AuthContext vai se hidratar no próximo reload usando o token (se retornado ou via auto-login futuro)
+                  // Mas para não quebrar o fluxo imediato, chamamos o handleTrialSuccess usando os novos dados estruturados
+                  const registeredUser = registerResponse.data?.user || user;
+                  // Força o avatar com a UI-Avatars se veio sem
+                  if (!registeredUser.avatarUrl || registeredUser.avatarUrl.includes('pravatar') || registeredUser.avatarUrl.includes('pixabay')) {
+                    registeredUser.avatarUrl = user.avatarUrl;
+                  }
+                  
+                  // Salva o novo token retornado da API
+                  if (registerResponse.data && registerResponse.data.token) {
+                     localStorage.setItem('token', registerResponse.data.token);
+                     localStorage.setItem('authUser', JSON.stringify(registeredUser));
+                     // Dispara reload pra simular o sync de context se o usuário refrescar, ou deixa o state ser atualizado
+                  }
+
+                  handleTrialSuccess(registeredUser, newContract);
+              } else {
+                 alert('Falha ao registrar a conta: ' + (registerResponse.message || 'Erro interno'));
+              }
+            } catch (err: any) {
+               console.error('Registration failed:', err);
+               alert('Erro ao processar o cadastro: ' + (err.response?.data?.message || err.message));
+            }
           }}
         />
       </div>;

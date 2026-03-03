@@ -9,6 +9,8 @@ interface User {
     plan?: 'Individual' | 'Empresa' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium';
     businessSegmentKey?: string;
     businessSegmentLabel?: string;
+    password?: string;
+    salonName?: string;
 }
 
 interface Contract {
@@ -355,13 +357,16 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
             return;
         }
 
+        const cleanNameUrl = encodeURIComponent(formData.fullName.trim() || 'U');
         const newUser: User = {
             name: formData.fullName,
             email: formData.email,
-            avatarUrl: `https://i.pravatar.cc/150?u=${formData.email}`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${cleanNameUrl}&background=10b981&color=fff`,
             role: 'admin' as const,
             plan: chosenPlan!.name as 'Individual' | 'Empresa' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium',
             businessSegmentKey: selectedSegment || undefined,
+            password: formData.password,
+            salonName: formData.salonName,
             businessSegmentLabel: selectedSegment
                 ? (selectedSegment === 'outros'
                     ? (otherSegmentText.trim() || 'Outros segmentos')
