@@ -133,7 +133,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                 </div>
                 <span className="text-4xl sm:text-5xl font-black text-black tracking-tight" style={{ letterSpacing: '-0.05em' }}>Salão24h</span>
               </div>
-              <p className="mt-2 text-xs sm:text-sm text-gray-800 font-medium text-center">Sua plataforma inteligente de gestão para negócio.</p>
             </a>
           )}
         </div>
