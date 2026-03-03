@@ -118,12 +118,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="mb-4">
           {rememberedUser?.tenant?.logo_url ? (
             <img src={rememberedUser.tenant.logo_url} alt={rememberedUser.tenant.name || 'Logo'} className="h-16 mx-auto mb-4 object-contain" />
-          ) : (
+          ) : rememberedUser?.tenant?.name && rememberedUser.tenant.name !== 'Salão24h' ? (
             <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline break-words px-4">
-              {rememberedUser?.tenant?.name || 'Salão24h'}
+              {rememberedUser.tenant.name}
+            </a>
+          ) : (
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="flex flex-col items-center justify-center no-underline">
+              <div className="flex items-center justify-center gap-3">
+                <div className="bg-primary flex items-center justify-center rounded-2xl w-14 h-14 sm:w-16 sm:h-16">
+                  <span className="text-black font-black text-4xl sm:text-5xl">S</span>
+                </div>
+                <span className="text-4xl sm:text-5xl font-black text-black tracking-tight" style={{ letterSpacing: '-0.05em' }}>Salão24h</span>
+              </div>
+              <p className="mt-2 text-xs sm:text-sm text-gray-800 font-medium text-center">Sua plataforma inteligente de gestão para negócio.</p>
             </a>
           )}
         </div>
@@ -264,6 +274,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
               <p>{(t('loginHintAdmin') || 'Dica: use admin@salao24h.com / admin para o admin.').replace('{email}', 'admin@salao24h.com').replace('{password}', 'admin')}</p>
               <p>{(t('loginHintProfessional') || 'Use fernanda@salao24h.com / 123 para um profissional.').replace('{email}', 'fernanda@salao24h.com').replace('{password}', '123')}</p>
             </div>
+            <div className="pt-4 mt-4 bg-primary/5 p-4 rounded-xl border border-primary/10 text-center">
+              <p className="text-sm text-gray-700 mb-2 font-medium">
+                É um cliente?
+              </p>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="inline-block bg-white text-primary border border-primary font-bold py-2 px-6 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 w-full">
+                Acessar Área do Cliente
+              </a>
+            </div>
           </div>
         )}
 
@@ -331,16 +349,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
           </div>
         )}
 
-        <div className="text-center text-sm text-gray-500 space-y-4">
-          <p>
-            É um cliente?{' '}
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="font-medium text-primary hover:text-primary-dark">
-              Acessar Área do Cliente
-            </a>
-          </p>
-          <div>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
-          </div>
+        <div className="text-center text-sm text-gray-500 mt-6">
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
         </div>
       </div>
     </div>

@@ -157,9 +157,15 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                 <LanguageSelector />
             </div>
             <div className="max-w-md w-full space-y-8">
-                <div>
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="text-center block text-4xl sm:text-5xl font-extrabold text-secondary no-underline">
-                        Salão24h
+                <div className="mb-4">
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="flex flex-col items-center justify-center no-underline">
+                        <div className="flex items-center justify-center gap-3">
+                            <div className="bg-primary flex items-center justify-center rounded-2xl w-14 h-14 sm:w-16 sm:h-16">
+                                <span className="text-black font-black text-4xl sm:text-5xl">S</span>
+                            </div>
+                            <span className="text-4xl sm:text-5xl font-black text-black tracking-tight" style={{ letterSpacing: '-0.05em' }}>Salão24h</span>
+                        </div>
+                        <p className="mt-2 text-xs sm:text-sm text-gray-800 font-medium text-center">Sua plataforma inteligente de gestão para negócio.</p>
                     </a>
                 </div>
 
@@ -406,18 +412,18 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                     <div className="pt-4 text-center text-xs text-gray-500">
                         <p>Para criar sua conta, você precisa ter um CPF cadastrado em um de nossos salões parceiros.</p>
                     </div>
-                </div>
-
-                <div className="text-center text-sm text-gray-500 space-y-4">
-                    <p>
-                        É um colaborador?{' '}
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="font-medium text-primary hover:text-primary-dark">
+                    <div className="pt-4 mt-4 bg-primary/5 p-4 rounded-xl border border-primary/10 text-center">
+                        <p className="text-sm text-gray-700 mb-2 font-medium">
+                            É um colaborador?
+                        </p>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="inline-block bg-white text-primary border border-primary font-bold py-2 px-6 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 w-full">
                             Acesse sua Conta
                         </a>
-                    </p>
-                    <div>
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
                     </div>
+                </div>
+
+                <div className="text-center text-sm text-gray-500 mt-6">
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
                 </div>
             </div>
         </div>
