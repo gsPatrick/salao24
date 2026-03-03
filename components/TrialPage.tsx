@@ -153,7 +153,7 @@ const NailIcon: React.FC = () => (
     </svg>
 );
 
-type SegmentKey = 'salao' | 'bemEstar' | 'estudio' | 'podologia' | 'barbearia' | 'esmalteria' | 'outros';
+type SegmentKey = 'salao' | 'bemEstar' | 'estudio' | 'podologia' | 'barbearia' | 'Esmalteria' | 'outros';
 
 const segments: { key: SegmentKey; title: string; description: string; Icon: React.FC }[] = [
     {
@@ -187,7 +187,7 @@ const segments: { key: SegmentKey; title: string; description: string; Icon: Rea
         Icon: BarberIcon,
     },
     {
-        key: 'esmalteria',
+        key: 'Esmalteria',
         title: 'Esmalteria',
         description: 'Manicure e pedicure de técnicas convencionais e específicas, como esmaltação em gel e outros',
         Icon: NailIcon,
@@ -383,26 +383,72 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         };
         const planPrices = prices[chosenPlan!.name as keyof typeof prices];
 
+        const getExtenso = (planName: string) => {
+            switch (planName) {
+                case 'Individual': return 'setenta e nove reais e oitenta e sete centavos';
+                case 'Empresa Essencial': return 'cento e noventa e nove reais e noventa centavos';
+                case 'Empresa Pro': return 'trezentos e quarenta e nove reais e noventa centavos';
+                case 'Empresa Premium': return 'quinhentos e noventa e nove reais e noventa centavos';
+                default: return '';
+            }
+        };
+
         const contractText = `
-CONTRATO DE PRESTAÇÃO DE SERVIÇOS - SALÃO24H
- 
- CONTRATANTE: ${formData.fullName}, CPF: ${formData.cpf}.
- SALÃO: ${formData.salonName}
- CONTRATADA: Salão24h, CNPJ: XX.XXX.XXX/0001-XX.
- 
- Data de Início: ${new Date().toLocaleDateString('pt-BR')}
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
-OBJETO: O presente contrato tem por objeto a concessão de licença de uso do software Salão24h, conforme o plano selecionado.
+SALÃO24H – PLANO MENSAL
 
-PLANO: ${chosenPlan!.name}
+CONTRATANTE: ${formData.fullName}, CPF/CNPJ nº ${formData.cpf}
+CONTRATADA: Salão24h Plataforma inteligente de gestão para negócio, 
+CNPJ nº 57.085.111/0001-20.
+DATA DE INÍCIO: ${new Date().toLocaleDateString('pt-BR')}.
 
-VALORES:
-- Valor Promocional (primeiros 12 meses): ${planPrices.discounted} por mês.
-- Valor após 12 meses: ${planPrices.afterYear} por mês.
-- Período de Teste: 15 dias gratuitos a partir da data de início.
+CLÁUSULA 1ª – DO OBJETO
+O presente contrato tem por objeto a concessão de licença de uso do software Salão24h, disponibilizado na modalidade SaaS (Software como Serviço), conforme o plano contratado.
 
-Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com todos os termos de serviço e política de privacidade da Salão24h.
-    `.trim();
+CLÁUSULA 2ª – DO PLANO CONTRATADO
+Plano: ${chosenPlan!.name}
+
+CLÁUSULA 3ª – DO PERÍODO DE TESTE
+A CONTRATADA concede 15 (quinze) dias de teste gratuito.
+Caso não haja solicitação de cancelamento dentro do período de teste, a assinatura será automaticamente convertida em plano mensal pago.
+
+CLÁUSULA 4ª – DO VALOR E FORMA DE PAGAMENTO
+I – Valor mensal: ${planPrices.discounted} (${getExtenso(chosenPlan!.name)}).
+II – A cobrança será realizada de forma recorrente mensal.
+III – O valor poderá ser reajustado anualmente, mediante aviso prévio de 30 dias.
+
+CLÁUSULA 5ª – DA VIGÊNCIA E CANCELAMENTO
+I – O presente contrato possui vigência por prazo indeterminado.
+II – O CONTRATANTE poderá cancelar a qualquer momento, mediante solicitação pelos canais oficiais, com aviso prévio mínimo de 7 (sete) dias antes da próxima cobrança.
+III – Não haverá multa por cancelamento.
+IV – O acesso permanecerá ativo até o final do período já pago.
+V – O não pagamento não caracteriza cancelamento automático.
+
+CLÁUSULA 6ª – DA INADIMPLÊNCIA
+I – Em caso de atraso no pagamento, poderá incidir multa de 2% e juros de 1% ao mês.
+II – O acesso poderá ser suspenso após 5 (cinco) dias de atraso.
+III – Após 30 (trinta) dias de inadimplência, o contrato poderá ser rescindido, com exclusão dos dados após 60 dias, salvo obrigação legal de retenção.
+
+CLÁUSULA 7ª – DA PROTEÇÃO DE DADOS (LGPD)
+I – As partes comprometem-se a cumprir a Lei nº 13.709/2018 (LGPD).
+II – A CONTRATADA atuará como operadora dos dados inseridos na plataforma.
+III – O CONTRATANTE declara possuir base legal para o tratamento dos dados de seus clientes.
+IV – Os dados serão utilizados exclusivamente para execução dos serviços contratados.
+
+CLÁUSULA 8ª – DA LIMITAÇÃO DE RESPONSABILIDADE
+I – A CONTRATADA compromete-se a manter a plataforma funcional, salvo casos fortuitos, força maior ou falhas externas.
+II – A responsabilidade da CONTRATADA limita-se ao valor pago pelo CONTRATANTE nos últimos 3 meses.
+
+CLÁUSULA 9ª – DA PROPRIEDADE INTELECTUAL
+O software Salão24h é de propriedade exclusiva da CONTRATADA, sendo vedada qualquer reprodução, cópia ou uso indevido.
+
+CLÁUSULA 10ª – DO FORO
+Fica eleito o foro da Comarca de Recife-PE, com renúncia a qualquer outro, para dirimir controvérsias.
+
+CLÁUSULA 11ª – ACEITAÇÃO
+Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Termos de Uso e Política de Privacidade da Salão24h.
+`.trim();
 
         onStartSignatureFlow({
             user: newUser,
