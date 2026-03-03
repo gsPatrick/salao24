@@ -354,6 +354,18 @@ const App: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Force immediate scroll to top on every page change, bypassing smooth scrolling
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+    // Fallback for legacy browsers and specific layout contexts
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [page]);
+
 
   const [navigationParams, setNavigationParams] = useState<any>(null);
 

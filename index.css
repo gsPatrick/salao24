@@ -22,3 +22,7 @@
 .ring-primary {
   --tw-ring-color: var(--primary-color);
 }
+
+html {
+  scroll-behavior: auto !important;
+}
