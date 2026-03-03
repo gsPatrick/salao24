@@ -56,8 +56,23 @@ const SuccessView: React.FC<{ title: string; message: string; }> = ({ title, mes
 );
 
 
+const AVAILABLE_PLANS = [
+  { id: 1, name: 'Individual', price: 'R$ 79,87', description: 'Para autônomos.', frequency: 'mês' },
+  { id: 2, name: 'Empresa Essencial', price: 'R$ 199,90', description: 'Para equipes pequenas.', frequency: 'mês' },
+  { id: 3, name: 'Empresa Pro', price: 'R$ 349,90', description: 'Com assistente de IA.', frequency: 'mês' },
+  { id: 4, name: 'Empresa Premium', price: 'R$ 599,90', description: 'Para grandes redes.', frequency: 'mês' }
+];
+
 export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymentSuccess, goBack, currentUser, onUpdateSuccess }) => {
   const { t } = useLanguage();
+
+  // Find the initial plan from the AVAILABLE_PLANS to ensure we have the full object (including id) if possible
+  const initialPlan = useMemo(() => {
+    return AVAILABLE_PLANS.find(p => p.name === selectedPlan.name) || { ...selectedPlan, id: 1, description: '', frequency: 'mês' };
+  }, [selectedPlan]);
+
+  const [localPlan, setLocalPlan] = useState(initialPlan);
+
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'other'>('card');
   const [cardType, setCardType] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -163,7 +178,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
         'Empresa Pro': 3,
         'Empresa Premium': 4
       };
-      const planId = planMap[selectedPlan.name] || 1;
+      const planId = localPlan.id || planMap[localPlan.name] || 1;
 
       const response = await subscribeToPlan(planId, paymentMethod);
 
@@ -225,26 +240,47 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
               <div className="animate-fade-in">
                 <h2 className="text-xl font-semibold mb-6">Atualizar Pagamento</h2>
                 <p className="text-gray-300">Atualize seu método de pagamento. Suas informações são salvas com segurança em nosso sistema.</p>
-                <p className="text-gray-300 mt-4">Plano atual: <span className="font-bold">{selectedPlan.name}</span></p>
+                <p className="text-gray-300 mt-4">Plano atual: <span className="font-bold">{localPlan.name}</span></p>
               </div>
             ) : (
-              <>
-                <h2 className="text-xl font-semibold mb-6">Resumo do Pedido</h2>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-600">
-                    <span className="text-gray-300">Plano Selecionado:</span>
-                    <span className="font-bold text-lg">{selectedPlan.name}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-600">
+              <div className="flex flex-col h-full animate-fade-in">
+                <h2 className="text-xl font-semibold mb-6">Escolha seu Plano</h2>
+                <div className="space-y-3 flex-grow">
+                  {AVAILABLE_PLANS.map((plan) => (
+                    <div
+                      key={plan.id}
+                      onClick={() => setLocalPlan(plan)}
+                      className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 ${
+                        localPlan.id === plan.id || localPlan.name === plan.name
+                          ? 'bg-primary/10 border-primary text-white'
+                          : 'bg-transparent border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-lg">{plan.name}</span>
+                        <span className={`font-extrabold ${localPlan.id === plan.id || localPlan.name === plan.name ? 'text-primary' : ''}`}>
+                          {plan.price}
+                        </span>
+                      </div>
+                      <div className="text-sm opacity-80 flex justify-between">
+                        <span>{plan.description}</span>
+                        <span>/{plan.frequency}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 pt-6 border-t border-gray-600">
+                  <div className="flex justify-between items-center mb-3">
                     <span className="text-gray-300">Valor Mensal:</span>
-                    <span className="font-bold text-lg">{selectedPlan.price}</span>
+                    <span className="font-bold text-lg">{localPlan.price}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-4">
-                    <span className="text-gray-200 text-lg">Total a pagar:</span>
-                    <span className="font-extrabold text-2xl">{selectedPlan.price}</span>
+                  <div className="flex justify-between items-center flex-wrap">
+                    <span className="text-gray-200 text-lg">Total a pagar hoje:</span>
+                    <span className="font-extrabold text-3xl text-primary">{localPlan.price}</span>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
           <p className="text-xs text-gray-400 mt-8">&copy; 2024 Salão24h. Todos os direitos reservados.</p>
@@ -300,7 +336,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
                     {t('back')}
                   </button>
                   <button type="submit" disabled={isProcessing || !isCardFormValid} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark disabled:bg-gray-400">
-                    {isProcessing ? 'Processando...' : (isUpdateMode ? 'Atualizar Cartão' : `Pagar ${selectedPlan.price}`)}
+                    {isProcessing ? 'Processando...' : (isUpdateMode ? 'Atualizar Cartão' : `Pagar ${localPlan.price}`)}
                   </button>
                 </div>
               </form>
