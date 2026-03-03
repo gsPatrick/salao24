@@ -211,10 +211,10 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
     const accountSectionRef = useRef<HTMLDivElement | null>(null);
 
     const [formData, setFormData] = useState({
-        salonName: 'Espaço Beleza Fictício',
-        fullName: 'Maria da Silva',
-        cpf: '123.456.789-00',
-        email: 'maria.silva@example.com',
+        salonName: '',
+        fullName: '',
+        cpf: '',
+        email: '',
         password: '',
         confirmPassword: '',
     });
@@ -530,22 +530,22 @@ Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com to
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="salonName" className="sr-only">Nome do Espaço</label>
-                                    <input id="salonName" name="salonName" type="text" required value={formData.salonName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.salonName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Nome do Espaço" />
+                                    <input id="salonName" name="salonName" type="text" required value={formData.salonName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.salonName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Espaço Beleza Fictício" />
                                     {errors.salonName && <p className="text-xs text-red-600 mt-1">{errors.salonName}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="fullName" className="sr-only">Seu Nome Completo</label>
-                                    <input id="fullName" name="fullName" type="text" autoComplete="name" required value={formData.fullName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.fullName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu Nome Completo" />
+                                    <input id="fullName" name="fullName" type="text" autoComplete="name" required value={formData.fullName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.fullName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Maria da Silva" />
                                     {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="cpf" className="sr-only">{t('trialCPFLabel')}</label>
-                                    <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder={t('trialCPFLabel')} />
+                                    <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="123.456.789-00" />
                                     {errors.cpf && <p className="text-xs text-red-600 mt-1">{errors.cpf}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
-                                    <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu E-mail" />
+                                    <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
                                     {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                                 </div>
                             </div>
@@ -561,7 +561,7 @@ Ao assinar este documento, o CONTRATANTE declara estar ciente e de acordo com to
                                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 transition-transform active:scale-90"><span className="sr-only">Mostrar/Ocultar senha</span>{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                                 {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
                             </div>
-                            <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-[0.98]">
+                            <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]">
                                 <SubmitButtonContent />
                             </button>
                         </form>
