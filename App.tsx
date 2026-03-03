@@ -354,10 +354,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, [page]);
-
 
   const [navigationParams, setNavigationParams] = useState<any>(null);
 
@@ -373,8 +369,12 @@ const App: React.FC = () => {
       setHistory(prev => [...prev, page]);
       setPage(pageName);
       setNavigationParams(params || null);
-      // Scroll to top after React re-render
-      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
+      // Reliable scroll to top after React re-render
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 10);
     }
   };
 
@@ -386,8 +386,12 @@ const App: React.FC = () => {
     } else {
       setPage('home');
     }
-    // Scroll to top after React re-render
-    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
+    // Reliable scroll to top after React re-render
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 10);
   };
 
   const handlePlanSelection = (plan: Plan) => {
