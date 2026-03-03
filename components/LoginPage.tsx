@@ -212,7 +212,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                   required
                   className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all duration-300"
                   placeholder={t('loginYourEmail') || 'Seu e-mail'}
-                  defaultValue="admin@salao24h.com"
                 />
               </div>
               <div className="relative">
@@ -226,7 +225,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
                   required
                   className="appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 border-gray-600 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm pr-10 transition-all duration-300"
                   placeholder={t('loginPassword') || 'Senha'}
-                  defaultValue="admin"
                 />
                 <button
                   type="button"
