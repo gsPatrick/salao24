@@ -264,14 +264,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
               <p>{(t('loginHintAdmin') || 'Dica: use admin@salao24h.com / admin para o admin.').replace('{email}', 'admin@salao24h.com').replace('{password}', 'admin')}</p>
               <p>{(t('loginHintProfessional') || 'Use fernanda@salao24h.com / 123 para um profissional.').replace('{email}', 'fernanda@salao24h.com').replace('{password}', '123')}</p>
             </div>
-            <div className="text-center text-sm text-gray-500">
-              <p>
-                É um cliente?{' '}
-                <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="font-medium text-primary hover:text-primary-dark transition-colors">
-                  Acesse a Área do Cliente
-                </a>
-              </p>
-            </div>
           </div>
         )}
 
@@ -339,8 +331,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigate, goBack, onLoginSuccess 
           </div>
         )}
 
-        <div className="text-center text-sm text-gray-500">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+        <div className="text-center text-sm text-gray-500 space-y-4">
+          <p>
+            É um cliente?{' '}
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('clientLogin'); }} className="font-medium text-primary hover:text-primary-dark">
+              Acessar Área do Cliente
+            </a>
+          </p>
+          <div>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+          </div>
         </div>
       </div>
     </div>

@@ -408,14 +408,16 @@ const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onL
                     </div>
                 </div>
 
-                <div className="text-center text-sm text-gray-500">
-                    <p className="mb-4">
+                <div className="text-center text-sm text-gray-500 space-y-4">
+                    <p>
                         É um colaborador?{' '}
                         <a href="#" onClick={(e) => { e.preventDefault(); navigate('login'); }} className="font-medium text-primary hover:text-primary-dark">
                             Acesse sua Conta
                         </a>
                     </p>
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+                    <div>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="font-medium text-primary hover:text-primary-dark">&larr; {t('loginBack') || 'Voltar para a página inicial'}</a>
+                    </div>
                 </div>
             </div>
         </div>
