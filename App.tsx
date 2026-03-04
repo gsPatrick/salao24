@@ -449,15 +449,15 @@ const App: React.FC = () => {
   };
 
   const handleTrialSuccess = (user: User, contractData?: Contract) => {
+    const { updateUser } = useAuth();
+    
     const userWithContract = contractData
       ? { ...user, contracts: [...(user.contracts || []), contractData] }
       : user;
     
-    // Persist contract if provided
+    // Persist contract if provided via context to ensure all components see it
     if (contractData && user.email) {
-      const existingContracts = JSON.parse(localStorage.getItem(`contracts_${user.email}`) || '[]');
-      const updatedContracts = [...existingContracts, contractData];
-      localStorage.setItem(`contracts_${user.email}`, JSON.stringify(updatedContracts));
+      updateUser({ contracts: userWithContract.contracts });
     }
     
     setCurrentUser(userWithContract);
@@ -550,12 +550,12 @@ const App: React.FC = () => {
               
               // Mapeia o plano correspondente ao backend
               const planMapping: Record<string, number> = {
-                'Individual': 1, // Assume IDs baseados em seeds comuns
-                'Empresa Essencial': 2,
-                'Empresa Pro': 3,
-                'Empresa Premium': 4
+                'Plano Individual': 1,
+                'Plano Empresa Essencial': 2,
+                'Plano Empresa Pro': 3,
+                'Plano Empresa Premium': 4
               };
-              const planIdToSend = planMapping[plan.name] || 2; // Default to Essencial
+              const planIdToSend = planMapping[plan.name] || 1; // Default to Individual if selecting it
               
               const registerResponse = await authAPI.register({
                 tenantName: user.salonName || `${user.name} Salão`,
@@ -600,11 +600,19 @@ const App: React.FC = () => {
                     registeredUser.avatarUrl = user.avatarUrl;
                   }
                   
-                  // Salva o novo token retornado da API
-                  if (registerResponse.data && registerResponse.data.token) {
-                     localStorage.setItem('token', registerResponse.data.token);
-                     localStorage.setItem('authUser', JSON.stringify(registeredUser));
-                     // Dispara reload pra simular o sync de context se o usuário refrescar, ou deixa o state ser atualizado
+                  // Salva o contrato no backend
+                  try {
+                    const { contractsAPI } = await import('./lib/api');
+                    await contractsAPI.save({
+                      plan_id: planIdToSend,
+                      content: contractText,
+                      signature: signatureData.signature,
+                      verification_photo: signatureData.photo,
+                      signed_date: new Date().toISOString().split('T')[0]
+                    });
+                  } catch (apiErr) {
+                    console.error('Failed to save contract to API:', apiErr);
+                    // Fallback to local storage is already handled in handleTrialSuccess
                   }
 
                   handleTrialSuccess(registeredUser, newContract);

@@ -744,20 +744,29 @@ export const packagesAPI = {
 };
 
 export const contractsAPI = {
-    list: async () => {
+    listTemplates: async () => {
         const response = await api.get('/contracts/templates');
         return response.data;
     },
-    create: async (data: { title: string; type: 'Contrato' | 'Termo'; content: string }) => {
+    createTemplate: async (data: { title: string; type: 'Contrato' | 'Termo'; content: string }) => {
         const response = await api.post('/contracts/templates', data);
         return response.data;
     },
-    update: async (id: number, data: { title: string; content: string }) => {
+    updateTemplate: async (id: number, data: { title: string; content: string }) => {
         const response = await api.put(`/contracts/templates/${id}`, data);
         return response.data;
     },
-    delete: async (id: number) => {
+    deleteTemplate: async (id: number) => {
         const response = await api.delete(`/contracts/templates/${id}`);
+        return response.data;
+    },
+    // Signed Contracts
+    getAll: async () => {
+        const response = await api.get('/contracts');
+        return response.data;
+    },
+    save: async (data: any) => {
+        const response = await api.post('/contracts', data);
         return response.data;
     }
 };

@@ -129,9 +129,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                         marketing_campaigns: plan.marketing_campaigns || false,
                                     },
                                 } : undefined,
-                                packages: apiUser.packages || [],
-                                contracts: contracts,
+                                contracts: response.data.contracts || contracts,
                             };
+
+                            // Update local storage for immediate persistence
+                            localStorage.setItem(`contracts_${authUser.email}`, JSON.stringify(authUser.contracts));
                             setUser(authUser);
                             localStorage.setItem('authUser', JSON.stringify(authUser));
                         }

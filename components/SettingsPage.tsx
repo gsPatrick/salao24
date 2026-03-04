@@ -999,39 +999,44 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
 
 const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, currentUser, onLogout, navigate, tenant }) => {
+    const { updateUser } = useAuth();
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [invoices, setInvoices] = useState<AsaasPayment[]>([]);
     const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+    const [signedContracts, setSignedContracts] = useState<Contract[]>(currentUser?.contracts || []);
+    const [isLoadingContracts, setIsLoadingContracts] = useState(false);
 
     useEffect(() => {
-        const fetchInvoices = async () => {
-            setIsLoadingInvoices(true);
+        const fetchContracts = async () => {
+            setIsLoadingContracts(true);
             try {
-                // Assuming paymentsAPI is imported from '../lib/api'
-                // We need to dynamically import or having it available. 
-                // Since this file imports everything from 'api.ts' via '../contexts/DataContext' usually, 
-                // but here it seems standalone. Let's use the standard import if available or existing hooks.
-                // Re-checking imports: 'api.ts' is likely imported as 'paymentsAPI' or similar.
-                // Assuming global 'paymentsAPI' or importing it at the top would be better.
-                // For this edit, I'll rely on global fetch or assume imports exist.
-                // Actually, let's use the explicit import in the file header if I could, but I can't see it now.
-                // I will assume `paymentsAPI` is available or I will fix the import in a separate block if needed.
-                // WAIT: I can't add imports easily without seeing the top.
-                // Let's assume I can use `useData` context if I updated it, but I didn't update DataContext.
-                // I will fallback to `paymentsAPI.getInvoices()` and assume I need to double check imports.
-                // Let's try to fetch using the imported `paymentsAPI`.
-                const result = await paymentsAPI.getInvoices();
-                if (result && Array.isArray(result.data)) {
-                    setInvoices(result.data);
+                const { contractsAPI } = await import('../lib/api');
+                const result = await contractsAPI.getAll();
+                // Map API contracts to frontend format if necessary
+                if (result && result.success && Array.isArray(result.data)) {
+                    const mappedContracts: Contract[] = result.data.map((c: any) => ({
+                        planName: c.plan?.name || `Plano ${c.plan_id}`,
+                        price: c.plan?.price || '',
+                        date: new Date(c.signed_date).toLocaleDateString('pt-BR'),
+                        contractText: c.content,
+                        signatureImg: c.signature,
+                        userPhoto: c.verification_photo,
+                        userName: currentUser?.name || '',
+                        userCpf: c.cnpj_cpf || ''
+                    }));
+                    setSignedContracts(mappedContracts);
+                    // Sync with user context for other screens
+                    updateUser({ contracts: mappedContracts });
                 }
             } catch (error) {
-                console.error("Failed to fetch invoices", error);
+                console.error("Failed to fetch signed contracts", error);
             } finally {
-                setIsLoadingInvoices(false);
+                setIsLoadingContracts(false);
             }
         };
 
         fetchInvoices();
+        fetchContracts();
     }, []);
 
     const planDetailsMap = {
@@ -1365,8 +1370,12 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 <h2 className="text-xl font-bold text-secondary">{t('signedContractsTitle')}</h2>
                 <p className="text-gray-600 mt-1">{t('signedContractsDesc')}</p>
                 <div className="mt-6 space-y-4">
-                    {currentUser?.contracts && currentUser.contracts.length > 0 ? (
-                        currentUser.contracts.map((contract, index) => (
+                    {isLoadingContracts ? (
+                        <div className="text-center py-10">
+                            <p className="text-gray-500">Carregando contratos...</p>
+                        </div>
+                    ) : signedContracts.length > 0 ? (
+                        signedContracts.map((contract, index) => (
                             <div key={index} className="bg-light p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div className="flex items-center">
                                     <div className="p-3 rounded-full mr-4 bg-primary/10 text-primary">
