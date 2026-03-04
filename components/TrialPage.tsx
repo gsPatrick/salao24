@@ -416,17 +416,16 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         };
 
         const contractText = `
-CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-
-SALÃO24H – PLANO MENSAL
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE PROMOÇÃO E DIVULGAÇÃO COMERCIAL
 
 CONTRATANTE: ${formData.fullName}, CPF/CNPJ nº ${formData.cpf}
-CONTRATADA: Salão24h Plataforma inteligente de gestão para negócio, 
-CNPJ nº 57.085.111/0001-20.
+CONTRATADA: CNPJ nº 61.807.071/0001-95 WAGNER VICENTE DOS SANTOS, 
+NOME FANTASIA: SALÃO24H
+
 DATA DE INÍCIO: ${new Date().toLocaleDateString('pt-BR')}.
 
-CLÁUSULA 1ª – DO OBJETO
-O presente contrato tem por objeto a concessão de licença de uso do software Salão24h, disponibilizado na modalidade SaaS (Software como Serviço), conforme o plano contratado.
+CLÁUSULA 1 – OBJETO
+O presente contrato tem como objeto a prestação de serviços de marketing digital, promoção comercial e intermediação de agendamentos, visando ampliar a visibilidade, captação e retenção de clientes do CONTRATANTE, utilizando ferramenta tecnológica própria como meio de operacionalização dos serviços.
 
 CLÁUSULA 2ª – DO PLANO CONTRATADO
 Plano: ${chosenPlan!.name}
