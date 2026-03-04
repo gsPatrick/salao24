@@ -637,7 +637,7 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                                     <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
                                     {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                                 </div>
-                                <div>
+                                <div className="md:col-span-2">
                                     <label htmlFor="adminPhone" className="sr-only">Telefone Pessoal (Admin)</label>
                                     <input id="adminPhone" name="adminPhone" type="tel" required value={formData.adminPhone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.adminPhone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu Telefone / WhatsApp" />
                                     {errors.adminPhone && <p className="text-xs text-red-600 mt-1">{errors.adminPhone}</p>}
