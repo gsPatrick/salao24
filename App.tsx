@@ -515,7 +515,7 @@ const App: React.FC = () => {
     }
 
     if (page === 'clientLogin') {
-      return <div key="clientLogin" className="animate-fade-in"><ClientLoginPage navigate={navigate} goBack={goBack} onLoginSuccess={handleClientLoginSuccess} /></div>;
+      return <div key="clientLogin" className="animate-fade-in"><ClientLoginPage navigate={navigate} goBack={goBack} onLoginSuccess={handleClientLoginSuccess} initialParams={navigationParams} /></div>;
     }
 
     if (page === 'updatePaymentMethod' && currentUser) {

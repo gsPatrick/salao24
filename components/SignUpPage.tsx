@@ -241,7 +241,13 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ navigate, goBack }) => {
               />
             </div>
             <button
-              onClick={handleNext}
+              onClick={() => {
+                if (userType === 'salon') {
+                  navigate('trial');
+                } else if (userType === 'client') {
+                  navigate('clientLogin', { mode: 'cpf-check' });
+                }
+              }}
               disabled={!userType}
               className="w-full py-5 bg-secondary text-white font-black rounded-2xl hover:bg-secondary-dark shadow-xl hover:shadow-secondary/30 transition-all duration-300 active:scale-[0.98] disabled:opacity-30 disabled:hover:shadow-none mt-8"
             >

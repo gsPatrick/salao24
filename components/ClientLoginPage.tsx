@@ -22,15 +22,16 @@ interface ClientLoginPageProps {
     navigate: (page: string) => void;
     goBack: () => void;
     onLoginSuccess: (client: any) => void;
+    initialParams?: { mode?: 'login' | 'signup' | 'cpf-check' | 'create-credentials' | 'forgot-password' };
 }
 
-const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onLoginSuccess }) => {
+const ClientLoginPage: React.FC<ClientLoginPageProps> = ({ navigate, goBack, onLoginSuccess, initialParams }) => {
     const { t } = useLanguage();
     const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [mode, setMode] = useState<'login' | 'signup' | 'cpf-check' | 'create-credentials' | 'forgot-password'>('login');
+    const [mode, setMode] = useState<'login' | 'signup' | 'cpf-check' | 'create-credentials' | 'forgot-password'>(initialParams?.mode || 'login');
     const [cpfData, setCpfData] = useState<{ cpf: string; clientName?: string; tenantName?: string } | null>(null);
 
     const cpfRef = useRef<HTMLInputElement>(null);
