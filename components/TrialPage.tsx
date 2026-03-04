@@ -217,6 +217,9 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         fullName: '',
         cpf: '',
         email: '',
+        phone: '',
+        adminPhone: '',
+        cep: '',
         password: '',
         confirmPassword: '',
     });
@@ -236,6 +239,17 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
             case 'email':
                 if (!value.trim()) error = t('errorRequired');
                 else if (!/\S+@\S+\.\S+/.test(value)) error = t('errorInvalidEmail');
+                break;
+            case 'phone':
+            case 'adminPhone':
+                const cleanPhone = value.replace(/\D/g, '');
+                if (!cleanPhone) error = t('errorRequired') || 'Campo obrigatório';
+                else if (cleanPhone.length < 10) error = 'Telefone inválido';
+                break;
+            case 'cep':
+                const cleanCep = value.replace(/\D/g, '');
+                if (!cleanCep) error = t('errorRequired') || 'Campo obrigatório';
+                else if (cleanCep.length !== 8) error = 'CEP inválido';
                 break;
             case 'password':
                 if (!value) error = t('errorRequired');
@@ -287,11 +301,27 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         }
     };
 
+    const formatPhone = (value: string) => {
+        const cleanValue = value.replace(/\D/g, '');
+        if (cleanValue.length <= 10) {
+            return cleanValue.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+        }
+        return cleanValue.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+    };
+
+    const formatCep = (value: string) => {
+        const cleanValue = value.replace(/\D/g, '').slice(0, 8);
+        return cleanValue.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const name = e.target.name as keyof typeof formData;
         const { value } = e.target;
 
-        const processedValue = name === 'cpf' ? formatCpfCnpj(value) : value;
+        let processedValue = value;
+        if (name === 'cpf') processedValue = formatCpfCnpj(value);
+        if (name === 'phone' || name === 'adminPhone') processedValue = formatPhone(value);
+        if (name === 'cep') processedValue = formatCep(value);
 
         setFormData(prevData => {
             const newData = { ...prevData, [name]: processedValue };
@@ -340,7 +370,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
 
         // FIX: Changed type to be more specific to avoid a misleading TypeScript error about symbol index types, while still allowing for a 'general' error property.
         const validationErrors: Partial<Record<keyof typeof formData | 'general', string>> = {};
-        const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'password', 'confirmPassword'];
+        const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'phone', 'adminPhone', 'cep', 'password', 'confirmPassword'];
         fieldsToValidate.forEach(key => {
             const error = validate(key, formData[key], formData);
             if (error) {
@@ -372,6 +402,9 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
                     ? (otherSegmentText.trim() || 'Outros segmentos')
                     : (segments.find(s => s.key === selectedSegment)?.title || ''))
                 : undefined,
+            phone: formData.phone,
+            adminPhone: formData.adminPhone,
+            cep: formData.cep
         };
 
         // Generate Contract
@@ -467,6 +500,9 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
             !!formData.fullName &&
             !!formData.cpf &&
             !!formData.email &&
+            !!formData.phone &&
+            !!formData.adminPhone &&
+            !!formData.cep &&
             !!formData.password &&
             !!formData.confirmPassword;
     }, [errors, chosenPlan, selectedSegment, otherSegmentText, formData]);
@@ -613,6 +649,21 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                                     <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
                                     <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
                                     {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+                                </div>
+                                <div>
+                                    <label htmlFor="phone" className="sr-only">Telefone do Negócio</label>
+                                    <input id="phone" name="phone" type="tel" autoComplete="tel" required value={formData.phone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.phone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Telefone do Salão (com DDD)" />
+                                    {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
+                                </div>
+                                <div>
+                                    <label htmlFor="cep" className="sr-only">CEP do Negócio</label>
+                                    <input id="cep" name="cep" type="text" autoComplete="postal-code" required value={formData.cep} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cep ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="CEP do Salão" />
+                                    {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
+                                </div>
+                                <div>
+                                    <label htmlFor="adminPhone" className="sr-only">Telefone Pessoal (Admin)</label>
+                                    <input id="adminPhone" name="adminPhone" type="tel" required value={formData.adminPhone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.adminPhone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu Telefone / WhatsApp" />
+                                    {errors.adminPhone && <p className="text-xs text-red-600 mt-1">{errors.adminPhone}</p>}
                                 </div>
                             </div>
                             <div className="relative">

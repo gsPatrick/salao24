@@ -268,8 +268,8 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
                             {activeStep === 3 && (
                                 <div className="p-4 rounded-lg border-2 border-primary animate-fade-in">
                                     <h4 className="font-semibold text-gray-800">{t('signatureModalStep3')}</h4>
-                                    <div className="mt-4 border rounded-lg p-3 bg-gray-50 max-h-40 overflow-y-auto">
-                                        <p className="text-xs text-gray-600 whitespace-pre-wrap">{contractText}</p>
+                                    <div className="mt-4 mb-4 border rounded-lg p-4 bg-gray-50 max-h-48 overflow-y-auto shadow-inner">
+                                        <p className="text-xs text-gray-700 whitespace-pre-wrap">{contractText}</p>
                                     </div>
                                     <div className="flex items-center justify-center mt-4">
                                         <input type="checkbox" id="agreement" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />

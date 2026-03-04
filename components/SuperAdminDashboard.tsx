@@ -188,6 +188,11 @@ export const SuperAdminTenantsPage: React.FC = () => {
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tenant.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                         {tenant.is_active ? 'Ativo' : 'Inativo'}
                                     </span>
+                                    {tenant.subscription_status === 'trial' && (
+                                        <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Período de Teste
+                                        </span>
+                                    )}
                                     {tenant.subscription_status === 'lifetime' && (
                                         <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
                                             Vitalício
@@ -256,7 +261,7 @@ export const SuperAdminTenantsPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase">Status de Assinatura</label>
-                                    <p className="text-lg font-medium capitalize">{selectedTenant.subscription_status}</p>
+                                    <p className="text-lg font-medium capitalize">{selectedTenant.subscription_status === 'trial' ? 'Período de Teste' : selectedTenant.subscription_status}</p>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase">Plano Atual</label>

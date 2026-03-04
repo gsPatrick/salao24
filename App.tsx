@@ -557,7 +557,10 @@ const App: React.FC = () => {
                 planId: planIdToSend,
                 userType: 'admin',
                 cnpj_cpf: cpf,
-                segmentType: user.businessSegmentKey || 'outros'
+                segmentType: user.businessSegmentKey || 'outros',
+                phone: user.phone,
+                adminPhone: user.adminPhone,
+                cep: user.cep
               });
 
               if (registerResponse && registerResponse.success) {
