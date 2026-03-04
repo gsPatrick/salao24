@@ -1007,6 +1007,20 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     const [isLoadingContracts, setIsLoadingContracts] = useState(false);
 
     useEffect(() => {
+        const fetchInvoices = async () => {
+            setIsLoadingInvoices(true);
+            try {
+                const result = await paymentsAPI.getInvoices();
+                if (result && Array.isArray(result.data)) {
+                    setInvoices(result.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch invoices", error);
+            } finally {
+                setIsLoadingInvoices(false);
+            }
+        };
+
         const fetchContracts = async () => {
             setIsLoadingContracts(true);
             try {
