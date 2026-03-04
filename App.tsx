@@ -452,6 +452,14 @@ const App: React.FC = () => {
     const userWithContract = contractData
       ? { ...user, contracts: [...(user.contracts || []), contractData] }
       : user;
+    
+    // Persist contract if provided
+    if (contractData && user.email) {
+      const existingContracts = JSON.parse(localStorage.getItem(`contracts_${user.email}`) || '[]');
+      const updatedContracts = [...existingContracts, contractData];
+      localStorage.setItem(`contracts_${user.email}`, JSON.stringify(updatedContracts));
+    }
+    
     setCurrentUser(userWithContract);
     setCurrentClient(null);
     setHistory([]);

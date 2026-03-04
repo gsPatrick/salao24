@@ -1185,8 +1185,8 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 theme: 'plain',
                 headStyles: { fillColor: [245, 245, 245], textColor: 20, fontStyle: 'bold' },
                 body: [
-                    ['CONTRATANTE', `${userName}, CPF: ${userCpf}`],
-                    ['CONTRATADA', 'Salão24h, CNPJ: XX.XXX.XXX/0001-XX'],
+                    ['CONTRATANTE', `${userName}, CPF/CNPJ: ${userCpf}`],
+                    ['CONTRATADA', 'WAGNER VICENTE DOS SANTOS (SALÃO24H), CNPJ: 61.807.071/0001-95'],
                     ['DATA DE INÍCIO', contractDate],
                 ],
                 didDrawPage: (data: any) => {
@@ -1195,46 +1195,66 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
             });
             y += 20;
 
-            // Contract Text
+            // Contract Text with Multi-page Handling
             pdf.setFontSize(10);
             pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(50);
             const lines = pdf.splitTextToSize(contractText, usableWidth);
-            const textHeight = lines.length * 12; // Adjusted line height for 10pt font
-            if (y + textHeight > pdf.internal.pageSize.getHeight() - margin) {
-                pdf.addPage();
-                y = margin;
-            }
-            pdf.text(lines, margin, y);
-            y += textHeight + 40;
+            const lineHeight = 14;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            lines.forEach((line: string) => {
+                if (y + lineHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    y = margin;
+                }
+                pdf.text(line, margin, y);
+                y += lineHeight;
+            });
+            
+            y += 30;
 
             // Signature Section
-            if (y + 120 > pdf.internal.pageSize.getHeight() - margin) { // Check space for signature block
+            if (y + 150 > pageHeight - margin) { // Check space for signature block
                 pdf.addPage();
                 y = margin;
             }
+
+            pdf.setDrawColor(200);
+            pdf.line(margin, y, pageWidth - margin, y);
+            y += 20;
 
             pdf.setFontSize(12);
             pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(0);
             pdf.text('Assinatura Digital e Verificação', margin, y);
-            y += 20;
+            y += 30;
 
             // Add images with error handling
+            const imageY = y;
             try {
                 if (contract.userPhoto && contract.userPhoto.startsWith('data:image')) {
-                    pdf.addImage(contract.userPhoto, 'PNG', margin, y, 80, 80);
-                    pdf.text('Foto de Verificação', margin + 40, y + 90, { align: 'center' });
+                    pdf.addImage(contract.userPhoto, 'PNG', margin, imageY, 100, 100);
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text('Foto de Verificação', margin + 50, imageY + 115, { align: 'center' });
                 }
             } catch (e) { console.error("Could not add user photo to PDF", e); }
 
             try {
                 if (contract.signatureImg && contract.signatureImg.startsWith('data:image')) {
-                    pdf.addImage(contract.signatureImg, 'PNG', margin + 150, y, 150, 75);
-                    pdf.line(margin + 150, y + 80, margin + 300, y + 80); // Signature line
-                    pdf.text('Assinatura Digital do Contratante', margin + 225, y + 90, { align: 'center' });
+                    const sigWidth = 180;
+                    const sigHeight = 90;
+                    const sigX = pageWidth - margin - sigWidth;
+                    pdf.addImage(contract.signatureImg, 'PNG', sigX, imageY, sigWidth, sigHeight);
+                    pdf.line(sigX, imageY + sigHeight + 5, sigX + sigWidth, imageY + sigHeight + 5); // Signature line
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text('Assinatura Digital do Contratante', sigX + (sigWidth / 2), imageY + sigHeight + 20, { align: 'center' });
                 }
             } catch (e) { console.error("Could not add signature image to PDF", e); }
 
-            y += 120;
+            y += 150;
 
             pdf.save(`Contrato_Salao24h_${userName.replace(/\s/g, '_')}.pdf`);
 

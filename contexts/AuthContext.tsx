@@ -85,8 +85,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (storedToken && storedUser) {
             try {
                 const parsedUser = JSON.parse(storedUser);
-                setToken(storedToken);
-                setUser(parsedUser);
+                if (parsedUser) {
+                    // Load persisted contracts from localStorage
+                    const storedContracts = localStorage.getItem(`contracts_${parsedUser.email}`);
+                    if (storedContracts) {
+                        parsedUser.contracts = JSON.parse(storedContracts);
+                    }
+                    
+                    setToken(storedToken);
+                    setUser(parsedUser);
+                }
 
                 // Silent validation
                 authAPI.me()
@@ -95,6 +103,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         if (response.success) {
                             const apiUser = response.data.user || response.data;
                             const plan = response.data.plan;
+
+                            // Load persisted contracts again to ensure they are merged with API data
+                            const storedContracts = localStorage.getItem(`contracts_${apiUser.email}`);
+                            const contracts = storedContracts ? JSON.parse(storedContracts) : [];
 
                             const authUser: AuthUser = {
                                 id: apiUser.id,
@@ -118,7 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                     },
                                 } : undefined,
                                 packages: apiUser.packages || [],
-                                contracts: [],
+                                contracts: contracts,
                             };
                             setUser(authUser);
                             localStorage.setItem('authUser', JSON.stringify(authUser));
@@ -207,6 +219,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(prev => {
             if (!prev) return null;
             const updated = { ...prev, ...updates };
+            
+            // If contracts are updated, also persist them specifically
+            if (updates.contracts) {
+                localStorage.setItem(`contracts_${updated.email}`, JSON.stringify(updates.contracts));
+            }
+            
             localStorage.setItem('authUser', JSON.stringify(updated));
             return updated;
         });
