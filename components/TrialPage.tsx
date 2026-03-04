@@ -217,9 +217,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         fullName: '',
         cpf: '',
         email: '',
-        phone: '',
         adminPhone: '',
-        cep: '',
         password: '',
         confirmPassword: '',
     });
@@ -240,16 +238,10 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
                 if (!value.trim()) error = t('errorRequired');
                 else if (!/\S+@\S+\.\S+/.test(value)) error = t('errorInvalidEmail');
                 break;
-            case 'phone':
             case 'adminPhone':
                 const cleanPhone = value.replace(/\D/g, '');
                 if (!cleanPhone) error = t('errorRequired') || 'Campo obrigatório';
                 else if (cleanPhone.length < 10) error = 'Telefone inválido';
-                break;
-            case 'cep':
-                const cleanCep = value.replace(/\D/g, '');
-                if (!cleanCep) error = t('errorRequired') || 'Campo obrigatório';
-                else if (cleanCep.length !== 8) error = 'CEP inválido';
                 break;
             case 'password':
                 if (!value) error = t('errorRequired');
@@ -368,9 +360,8 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        // FIX: Changed type to be more specific to avoid a misleading TypeScript error about symbol index types, while still allowing for a 'general' error property.
         const validationErrors: Partial<Record<keyof typeof formData | 'general', string>> = {};
-        const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'phone', 'adminPhone', 'cep', 'password', 'confirmPassword'];
+        const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'adminPhone', 'password', 'confirmPassword'];
         fieldsToValidate.forEach(key => {
             const error = validate(key, formData[key], formData);
             if (error) {
@@ -402,9 +393,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
                     ? (otherSegmentText.trim() || 'Outros segmentos')
                     : (segments.find(s => s.key === selectedSegment)?.title || ''))
                 : undefined,
-            phone: formData.phone,
             adminPhone: formData.adminPhone,
-            cep: formData.cep
         };
 
         // Generate Contract
@@ -500,9 +489,7 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
             !!formData.fullName &&
             !!formData.cpf &&
             !!formData.email &&
-            !!formData.phone &&
             !!formData.adminPhone &&
-            !!formData.cep &&
             !!formData.password &&
             !!formData.confirmPassword;
     }, [errors, chosenPlan, selectedSegment, otherSegmentText, formData]);
@@ -649,16 +636,6 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                                     <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
                                     <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
                                     {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="phone" className="sr-only">Telefone do Negócio</label>
-                                    <input id="phone" name="phone" type="tel" autoComplete="tel" required value={formData.phone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.phone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Telefone do Salão (com DDD)" />
-                                    {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="cep" className="sr-only">CEP do Negócio</label>
-                                    <input id="cep" name="cep" type="text" autoComplete="postal-code" required value={formData.cep} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cep ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="CEP do Salão" />
-                                    {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="adminPhone" className="sr-only">Telefone Pessoal (Admin)</label>

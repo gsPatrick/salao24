@@ -33,6 +33,13 @@ export interface User {
     contracts?: Contract[];
     tenant_id?: number;
     permissions?: { [key: string]: PermissionDetails };
+    phone?: string;
+    adminPhone?: string;
+    cep?: string;
+    salonName?: string;
+    businessSegmentKey?: string;
+    businessSegmentLabel?: string;
+    password?: string;
 }
 
 export interface Reminder {
