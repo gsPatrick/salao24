@@ -77,7 +77,7 @@ const planDetailsMap: { [key: string]: Plan } = {
 
 const App: React.FC = () => {
   const { t } = useLanguage();
-  const { user: authUser, logout: authLogout, isSuperAdmin, planFeatures, isLoading: authLoading } = useAuth();
+  const { user: authUser, logout: authLogout, isSuperAdmin, planFeatures, isLoading: authLoading, updateUser } = useAuth();
   // DataContext Hook
   // Sync selectedUnitId
   const {
@@ -449,7 +449,7 @@ const App: React.FC = () => {
   };
 
   const handleTrialSuccess = (user: User, contractData?: Contract) => {
-    const { updateUser } = useAuth();
+    // updateUser is now available from top-level useAuth()
     
     const userWithContract = contractData
       ? { ...user, contracts: [...(user.contracts || []), contractData] }
@@ -595,9 +595,10 @@ const App: React.FC = () => {
                   // O AuthContext vai se hidratar no próximo reload usando o token (se retornado ou via auto-login futuro)
                   // Mas para não quebrar o fluxo imediato, chamamos o handleTrialSuccess usando os novos dados estruturados
                   const registeredUser = registerResponse.data?.user || user;
-                  // Força o avatar com a UI-Avatars se veio sem
-                  if (!registeredUser.avatarUrl || registeredUser.avatarUrl.includes('pravatar') || registeredUser.avatarUrl.includes('pixabay')) {
-                    registeredUser.avatarUrl = user.avatarUrl;
+                  const token = registerResponse.data?.token;
+
+                  if (token) {
+                    localStorage.setItem('token', token);
                   }
                   
                   // Salva o contrato no backend
