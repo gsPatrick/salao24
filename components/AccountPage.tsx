@@ -433,8 +433,9 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
         setDateRange(firstDay, lastDay);
     };
 
+    const userPlan = (currentUser?.plan as any)?.name || currentUser?.plan || '';
     const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'Administrador';
-    const canUpgrade = isAdmin && !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentUser?.plan || '');
+    const canUpgrade = isAdmin && !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(userPlan);
 
     return (
         <div className="container mx-auto px-6 py-8">

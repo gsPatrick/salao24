@@ -1033,7 +1033,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
 
                 if (rawContracts.length > 0) {
                     const mappedContracts: Contract[] = rawContracts.map((c: any) => ({
-                        planName: c.plan?.display_name || c.plan?.name || `Plano ${c.plan_id}`,
+                        planName: c.plan?.display_name || c.plan?.name || planDetailsMap[c.plan_id]?.name || `Plano ${c.plan_id}`,
                         price: c.plan?.price || '',
                         date: c.signed_date ? new Date(c.signed_date).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
                         contractText: c.content,
@@ -1058,16 +1058,22 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     }, []);
 
     const planDetailsMap = {
-        'Individual': { name: t('pricingIndividualPlanName'), desc: t('pricingIndividualPlanDesc') },
+        'individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
+        'Individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
+        'Plano Individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
+        'essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'Empresa Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
+        'pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'Empresa Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
+        'premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Empresa Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
+        'vitalicio': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
         'Vitalício': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
         'Vitalicio': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
-        'Empresa': { name: t('pricingEnterprisePlanName'), desc: t('pricingEnterprisePlanDesc') },
+        'Plano Vitalício': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
     };
 
     const planKey = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
@@ -1075,7 +1081,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || (tenant?.plan?.name ? `Acesso ao plano ${tenant.plan.name}` : '');
     const businessSegmentLabel = tenant?.settings?.segment || currentUser?.businessSegmentLabel;
 
-    const canUpgrade = !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(planKey);
+    const canUpgrade = !['Empresa Premium', 'Premium', 'Empresa Premium', 'Vitalício', 'Vitalicio', 'Plano Vitalício'].includes(planKey);
 
     const handleCancelSubscription = () => {
         setIsCancelModalOpen(true);
@@ -1280,6 +1286,24 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                     pdf.setTextColor(100);
                     pdf.text('ASSINATURA DIGITAL DO CONTRATANTE', sigX + (sigWidth / 2), imageY + sigHeight + 15, { align: 'center' });
                     pdf.text(`IP: ${window.location.hostname}`, sigX + (sigWidth / 2), imageY + sigHeight + 25, { align: 'center' });
+                } else {
+                    // Typed Signature Fallback
+                    const sigWidth = 200;
+                    const sigHeight = 80;
+                    const sigX = pageWidth - margin - sigWidth;
+                    
+                    pdf.setFont('cursive', 'normal');
+                    pdf.setFontSize(24);
+                    pdf.setTextColor(0, 0, 150); // Direct blue for typed signature
+                    pdf.text(contract.userName || 'Assinado Digitalmente', sigX + (sigWidth / 2), imageY + (sigHeight / 2), { align: 'center' });
+                    
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setDrawColor(150);
+                    pdf.line(sigX + 10, imageY + sigHeight + 2, sigX + sigWidth - 10, imageY + sigHeight + 2); // Signature line
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(100);
+                    pdf.text('ASSINATURA DIGITAL (TIPO FONTE)', sigX + (sigWidth / 2), imageY + sigHeight + 15, { align: 'center' });
+                    pdf.text(`Audit ID: ${Date.now().toString(36).toUpperCase()}`, sigX + (sigWidth / 2), imageY + sigHeight + 25, { align: 'center' });
                 }
             } catch (e) { console.error("Could not add signature image to PDF", e); }
 

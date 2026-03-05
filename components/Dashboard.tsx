@@ -4888,7 +4888,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <div className="px-4 py-2 border-b border-gray-50 mb-2">
                                             <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">{t('activePlan') || 'Plano Ativo'}</p>
                                             <p className="text-sm font-bold text-primary">
-                                                {isIndividualPlan ? 'Plano Individual' : (currentUser?.plan === 'Vitalício' ? 'Plano Vitalício' : 'Plano Empresa')}
+                                                {currentUser?.plan || 'Plano Empresa'}
                                             </p>
                                         </div>
 

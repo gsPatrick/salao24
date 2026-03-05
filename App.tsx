@@ -68,15 +68,22 @@ import { User, Client, Plan, Contract } from './types';
 // Removed Interfaces (User, Client, Plan, Contract) as they are now imported
 
 const planDetailsMap: { [key: string]: Plan } = {
+  'individual': { name: 'Plano Individual', price: 'R$ 79,87' },
   'Individual': { name: 'Plano Individual', price: 'R$ 79,87' },
-  'Essencial': { name: 'Plano Empresa Essencial', price: 'R$ 199,90' },
-  'Empresa Essencial': { name: 'Plano Empresa Essencial', price: 'R$ 199,90' },
-  'Pro': { name: 'Plano Empresa Pro', price: 'R$ 349,90' },
-  'Empresa Pro': { name: 'Plano Empresa Pro', price: 'R$ 349,90' },
-  'Premium': { name: 'Plano Empresa Premium', price: 'R$ 599,90' },
-  'Empresa Premium': { name: 'Plano Empresa Premium', price: 'R$ 599,90' },
-  'Vitalício': { name: 'Plano Vitalício', price: 'Gratuito' },
-  'Vitalicio': { name: 'Plano Vitalício', price: 'Gratuito' },
+  'Plano Individual': { name: 'Plano Individual', price: 'R$ 79,87' },
+  'essencial': { name: 'Empresa Essencial', price: 'R$ 199,90' },
+  'Essencial': { name: 'Empresa Essencial', price: 'R$ 199,90' },
+  'Empresa Essencial': { name: 'Empresa Essencial', price: 'R$ 199,90' },
+  'pro': { name: 'Empresa Pro', price: 'R$ 349,90' },
+  'Pro': { name: 'Empresa Pro', price: 'R$ 349,90' },
+  'Empresa Pro': { name: 'Empresa Pro', price: 'R$ 349,90' },
+  'premium': { name: 'Empresa Premium', price: 'R$ 599,90' },
+  'Premium': { name: 'Empresa Premium', price: 'R$ 599,90' },
+  'Empresa Premium': { name: 'Empresa Premium', price: 'R$ 599,90' },
+  'vitalicio': { name: 'Vitalício', price: 'Gratuito' },
+  'Vitalício': { name: 'Vitalício', price: 'Gratuito' },
+  'Vitalicio': { name: 'Vitalício', price: 'Gratuito' },
+  'Plano Vitalício': { name: 'Vitalício', price: 'Gratuito' },
 };
 
 const App: React.FC = () => {
@@ -523,7 +530,8 @@ const App: React.FC = () => {
     }
 
     if (page === 'updatePaymentMethod' && currentUser) {
-      const currentPlan = currentUser.plan ? planDetailsMap[currentUser.plan] : { name: t('currentPlan'), price: 'N/A' };
+      const planKey = (currentUser.plan as any)?.name || currentUser.plan || '';
+      const currentPlan = planDetailsMap[planKey] || { name: planKey || t('currentPlan'), price: 'N/A' };
       return <div key="updatePayment" className="animate-fade-in"><PaymentPage selectedPlan={currentPlan} onUpdateSuccess={goBack} goBack={goBack} currentUser={currentUser} /></div>;
     }
 
@@ -555,9 +563,9 @@ const App: React.FC = () => {
               // Mapeia o plano correspondente ao backend
               const planMapping: Record<string, number> = {
                 'Plano Individual': 1,
-                'Plano Empresa Essencial': 2,
-                'Plano Empresa Pro': 3,
-                'Plano Empresa Premium': 4
+                'Empresa Essencial': 2,
+                'Empresa Pro': 3,
+                'Empresa Premium': 4
               };
               const planIdToSend = planMapping[plan.name] || 1; // Default to Individual if mapping fails
               
@@ -577,8 +585,11 @@ const App: React.FC = () => {
                   // After successful registration, pass the newly authenticated data to the local state
                   const prices = {
                     'Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
+                    'Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
                     'Empresa Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
+                    'Pro': { discounted: 'R$ 349,90', afterYear: 'R$ 449,90' },
                     'Empresa Pro': { discounted: 'R$ 349,90', afterYear: 'R$ 449,90' },
+                    'Premium': { discounted: 'R$ 599,90', afterYear: 'R$ 749,90' },
                     'Empresa Premium': { discounted: 'R$ 599,90', afterYear: 'R$ 749,90' },
                   };
                   const planPrices = prices[user.plan! as keyof typeof prices];

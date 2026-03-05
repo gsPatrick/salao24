@@ -25,7 +25,8 @@ interface AuthUser {
     role: 'admin' | 'gerente' | 'recepcao' | 'profissional' | 'cliente' | 'Administrador' | 'Gerente' | 'Profissional' | 'Concierge';
     tenant_id: number | null;
     is_super_admin: boolean;
-    plan?: Plan;
+    plan?: 'Individual' | 'Empresa' | 'Vitalício' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium' | string;
+    plan_details?: Plan;
     tenant?: {
         id: number;
         name: string;
@@ -118,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 tenant_id: apiUser.tenant_id,
                                 is_super_admin: apiUser.is_super_admin || false,
                                 tenant: apiUser.tenant, // Pass full tenant data including address
-                                plan: plan ? {
+                                plan_details: plan ? {
                                     id: plan.id,
                                     name: plan.name,
                                     features: {
@@ -129,6 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                         marketing_campaigns: plan.marketing_campaigns || false,
                                     },
                                 } : undefined,
+                                plan: plan?.display_name || plan?.name || apiUser.tenant?.plan?.display_name || apiUser.tenant?.plan?.name,
                                 contracts: response.data.contracts || contracts,
                             };
 
@@ -179,7 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     tenant_id: apiUser.tenant_id,
                     is_super_admin: apiUser.is_super_admin || false,
                     tenant: apiUser.tenant, // Pass full tenant data including address
-                    plan: plan ? {
+                    plan_details: plan ? {
                         id: plan.id,
                         name: plan.name,
                         features: {
@@ -190,6 +192,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             marketing_campaigns: plan.marketing_campaigns || false,
                         },
                     } : undefined,
+                    plan: plan?.display_name || plan?.name || apiUser.tenant?.plan?.display_name || apiUser.tenant?.plan?.name,
                     packages: apiUser.packages || [],
                     contracts: [],
                 };
@@ -234,7 +237,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const isAuthenticated = !!token && !!user;
     const isSuperAdmin = user?.is_super_admin || false;
-    const planFeatures = user?.plan?.features || defaultPlanFeatures;
+    const planFeatures = user?.plan_details?.features || defaultPlanFeatures;
 
     return (
         <AuthContext.Provider
