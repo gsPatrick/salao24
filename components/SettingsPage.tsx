@@ -1027,11 +1027,15 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 const { contractsAPI } = await import('../lib/api');
                 const result = await contractsAPI.getAll();
                 // Map API contracts to frontend format if necessary
-                if (result && result.success && Array.isArray(result.data)) {
-                    const mappedContracts: Contract[] = result.data.map((c: any) => ({
-                        planName: c.plan?.name || `Plano ${c.plan_id}`,
+                const rawContracts = (result && result.success && Array.isArray(result.data)) 
+                    ? result.data 
+                    : (Array.isArray(result) ? result : []);
+
+                if (rawContracts.length > 0) {
+                    const mappedContracts: Contract[] = rawContracts.map((c: any) => ({
+                        planName: c.plan?.display_name || c.plan?.name || `Plano ${c.plan_id}`,
                         price: c.plan?.price || '',
-                        date: new Date(c.signed_date).toLocaleDateString('pt-BR'),
+                        date: c.signed_date ? new Date(c.signed_date).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
                         contractText: c.content,
                         signatureImg: c.signature,
                         userPhoto: c.verification_photo,
@@ -1266,14 +1270,16 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
 
             try {
                 if (contract.signatureImg && contract.signatureImg.startsWith('data:image')) {
-                    const sigWidth = 180;
-                    const sigHeight = 90;
+                    const sigWidth = 200;
+                    const sigHeight = 80;
                     const sigX = pageWidth - margin - sigWidth;
                     pdf.addImage(contract.signatureImg, 'PNG', sigX, imageY, sigWidth, sigHeight);
-                    pdf.line(sigX, imageY + sigHeight + 5, sigX + sigWidth, imageY + sigHeight + 5); // Signature line
-                    pdf.setFontSize(9);
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.text('Assinatura Digital do Contratante', sigX + (sigWidth / 2), imageY + sigHeight + 20, { align: 'center' });
+                    pdf.setDrawColor(150);
+                    pdf.line(sigX + 10, imageY + sigHeight + 2, sigX + sigWidth - 10, imageY + sigHeight + 2); // Signature line
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(100);
+                    pdf.text('ASSINATURA DIGITAL DO CONTRATANTE', sigX + (sigWidth / 2), imageY + sigHeight + 15, { align: 'center' });
+                    pdf.text(`IP: ${window.location.hostname}`, sigX + (sigWidth / 2), imageY + sigHeight + 25, { align: 'center' });
                 }
             } catch (e) { console.error("Could not add signature image to PDF", e); }
 

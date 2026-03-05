@@ -31,6 +31,7 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
   const [hasSigned, setHasSigned] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
+  const [capturedSignature, setCapturedSignature] = useState<string | null>(null);
 
   const resetState = () => {
     setPhoto(null);
@@ -39,6 +40,7 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
     setAgreed(false);
     setActiveStep(1);
     setIsSigned(false);
+    setCapturedSignature(null);
     if (signatureCanvasRef.current) {
         const ctx = signatureCanvasRef.current.getContext('2d');
         ctx?.clearRect(0, 0, signatureCanvasRef.current.width, signatureCanvasRef.current.height);
@@ -158,6 +160,7 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
         const ctx = signatureCanvasRef.current.getContext('2d');
         ctx?.clearRect(0, 0, signatureCanvasRef.current.width, signatureCanvasRef.current.height);
         setHasSigned(false);
+        setCapturedSignature(null);
     }
   };
 
@@ -168,12 +171,13 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
     if (!isSigned) {
       setIsSigned(true); // Exibe animação de sucesso
 
-      let signature = 'data:image/png;base64,SIMULATED_SIGNATURE';
-      if (signatureCanvasRef.current) {
+      let signature = capturedSignature || 'data:image/png;base64,SIMULATED_SIGNATURE';
+      
+      if (!capturedSignature && signatureCanvasRef.current) {
         try {
           signature = signatureCanvasRef.current.toDataURL('image/png');
-        } catch {
-          // Mantém a assinatura simulada em caso de erro
+        } catch (e) {
+          console.error("Error capturing signature on confirm:", e);
         }
       }
 
@@ -187,6 +191,14 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
   };
 
   const handleNext = () => {
+      if (activeStep === 2 && signatureCanvasRef.current) {
+        try {
+          const signatureData = signatureCanvasRef.current.toDataURL('image/png');
+          setCapturedSignature(signatureData);
+        } catch (e) {
+          console.error("Error capturing signature on next:", e);
+        }
+      }
       if (activeStep < 3) setActiveStep(prev => prev + 1);
   };
   const handleBack = () => {
