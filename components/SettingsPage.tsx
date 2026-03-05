@@ -1055,10 +1055,14 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
 
     const planDetailsMap = {
         'Individual': { name: t('pricingIndividualPlanName'), desc: t('pricingIndividualPlanDesc') },
+        'Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'Empresa Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
+        'Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'Empresa Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
+        'Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Empresa Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Vitalício': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
+        'Vitalicio': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
         'Empresa': { name: t('pricingEnterprisePlanName'), desc: t('pricingEnterprisePlanDesc') },
     };
 
@@ -1290,7 +1294,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 <h2 className="text-xl font-bold text-secondary">{t('currentPlanTitle')}</h2>
                 <div className="mt-4 p-4 border-2 border-primary rounded-lg bg-primary/5 flex flex-col sm:flex-row items-center gap-6">
                     <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-primary">{currentPlanName}</h3>
+                        <h3 className="text-2xl font-bold text-primary">{currentPlanName} <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{t('subscriptionStatusActive')}</span></h3>
                         <p className="text-gray-600 mt-1">{currentPlanDesc}</p>
                         {businessSegmentLabel && (
                             <p className="text-sm text-gray-700 mt-2">
@@ -1371,7 +1375,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-10 text-center text-gray-500">{t('noInvoicesFound') || 'Nenhuma fatura encontrada.'}</td>
+                                        <td colSpan={4} className="px-6 py-10 text-center text-gray-500">{t('noInvoicesFound') || 'Nenhuma fatura encontrada no momento.'}</td>
                                     </tr>
                                 )}
                             </tbody>

@@ -69,10 +69,14 @@ import { User, Client, Plan, Contract } from './types';
 
 const planDetailsMap: { [key: string]: Plan } = {
   'Individual': { name: 'Plano Individual', price: 'R$ 79,87' },
+  'Essencial': { name: 'Plano Empresa Essencial', price: 'R$ 199,90' },
   'Empresa Essencial': { name: 'Plano Empresa Essencial', price: 'R$ 199,90' },
+  'Pro': { name: 'Plano Empresa Pro', price: 'R$ 349,90' },
   'Empresa Pro': { name: 'Plano Empresa Pro', price: 'R$ 349,90' },
+  'Premium': { name: 'Plano Empresa Premium', price: 'R$ 599,90' },
   'Empresa Premium': { name: 'Plano Empresa Premium', price: 'R$ 599,90' },
   'Vitalício': { name: 'Plano Vitalício', price: 'Gratuito' },
+  'Vitalicio': { name: 'Plano Vitalício', price: 'Gratuito' },
 };
 
 const App: React.FC = () => {
@@ -555,7 +559,7 @@ const App: React.FC = () => {
                 'Plano Empresa Pro': 3,
                 'Plano Empresa Premium': 4
               };
-              const planIdToSend = planMapping[plan.name] || 1; // Default to Individual if selecting it
+              const planIdToSend = planMapping[plan.name] || 1; // Default to Individual if mapping fails
               
               const registerResponse = await authAPI.register({
                 tenantName: user.salonName || `${user.name} Salão`,
