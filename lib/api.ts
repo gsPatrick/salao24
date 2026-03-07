@@ -190,8 +190,12 @@ export const professionalsAPI = {
         const response = await api.get('/professionals/ranking', { params });
         return response.data;
     },
-    submitReview: async (data: { professionalId: number, clientId: number, appointmentId: number, rating: number, comment: string }) => {
+    submitReview: async (data: { professionalId: number, clientId: number, appointmentId: number, rating: number, comment?: string }) => {
         const response = await api.post('/professionals/reviews', data);
+        return response.data;
+    },
+    getReviews: async (id: number) => {
+        const response = await api.get(`/professionals/${id}/reviews`);
         return response.data;
     },
     getFeedbacks: async (params?: { professionalId?: number }) => {

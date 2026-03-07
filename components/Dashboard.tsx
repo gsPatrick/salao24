@@ -456,15 +456,18 @@ const ServicesChart: React.FC<{ data: any; topServices?: any[] }> = ({ data, top
     );
 };
 
-const StarRating = ({ rating }: { rating: number }) => (
-    <div className="flex">
-        {[...Array(5)].map((_, i) => (
-            <svg key={i} className={`w-4 h-4 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8-2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-        ))}
-    </div>
-);
+const StarRating = ({ rating, size = 'sm' }: { rating: number, size?: 'xs' | 'sm' | 'md' }) => {
+    const starSize = size === 'xs' ? 'w-3 h-3' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
+    return (
+        <div className="flex">
+            {[...Array(5)].map((_, i) => (
+                <svg key={i} className={`${starSize} ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8-2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+            ))}
+        </div>
+    );
+};
 
 const PlaceholderComponent: React.FC<{ title: string; onBack?: () => void; }> = ({ title, onBack }) => (
     <div className="container mx-auto px-6 py-8">
@@ -4264,6 +4267,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const [loadingSummary, setLoadingSummary] = useState(false);
         const [rankings, setRankings] = useState<any[]>([]);
         const [loadingRankings, setLoadingRankings] = useState(false);
+        const [expandedProfId, setExpandedProfId] = useState<number | null>(null);
+        const [profReviews, setProfReviews] = useState<any[]>([]);
+        const [loadingProfReviews, setLoadingProfReviews] = useState(false);
+
+        const fetchProfReviews = async (profId: number) => {
+            setLoadingProfReviews(true);
+            try {
+                const response = await professionalsAPI.getReviews(profId);
+                if (response.success) {
+                    setProfReviews(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching professional reviews:', error);
+            } finally {
+                setLoadingProfReviews(false);
+            }
+        };
+
+        const toggleReviews = (profId: number) => {
+            if (expandedProfId === profId) {
+                setExpandedProfId(null);
+            } else {
+                setExpandedProfId(profId);
+                if (profReviews.length === 0 || profReviews[0].professional_id !== profId) {
+                    fetchProfReviews(profId);
+                }
+            }
+        };
 
         useEffect(() => {
             const fetchRankings = async () => {
@@ -4527,8 +4558,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                             const medals = ['🥇', '🥈', '🥉'];
 
+                            const isExpanded = expandedProfId === prof.id;
+
                             return (
-                                <li key={prof.id} className="bg-light p-3 rounded-lg">
+                                <li 
+                                    key={prof.id} 
+                                    className={`bg-light p-4 rounded-xl transition-all border ${isExpanded ? 'border-gray-200 shadow-sm' : 'border-transparent hover:border-gray-100 hover:bg-gray-50'}`}
+                                >
                                     <div className="flex items-center space-x-4">
                                         <div className="flex items-center justify-center w-8 text-lg font-bold text-gray-500">
                                             {index < 3 ? (
@@ -4555,13 +4591,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-sm text-primary font-semibold flex items-center gap-2 mt-1">
-                                                <StarRating rating={rating} />
-                                                <span>{rating.toFixed(1)} · {reviews} avaliações</span>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-1">{prof.occupation}</p>
+                                            <button 
+                                                onClick={() => toggleReviews(prof.id)}
+                                                className="text-[10px] font-bold text-primary mt-2 flex items-center hover:underline bg-white px-2 py-0.5 rounded-full border border-primary/20"
+                                            >
+                                                {isExpanded ? (
+                                                    <><svg className="w-3 h-3 mr-1 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg> Ocultar avaliações</>
+                                                ) : (
+                                                    <><svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg> Ver avaliações</>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
+
+                                    {isExpanded && (
+                                        <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 px-1">Avaliações recentes:</p>
+                                            {loadingProfReviews ? (
+                                                <div className="py-4 text-center text-xs text-gray-400">Carregando...</div>
+                                            ) : profReviews.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    {profReviews.map((review: any) => (
+                                                        <div key={review.id} className="flex justify-between items-start gap-4 p-2 rounded-lg hover:bg-white transition-colors">
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-bold text-secondary mb-0.5">{review.Client?.name || 'Cliente'}</p>
+                                                                <p className="text-xs text-gray-500 italic">"{review.comment || 'Sem comentário'}"</p>
+                                                            </div>
+                                                            <div className="flex flex-col items-end">
+                                                                <StarRating rating={Math.round(review.rating)} size="xs" />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-center text-gray-400 py-2">Nenhuma avaliação detalhada ainda.</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </li>
                             );
                         }) : (

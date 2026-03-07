@@ -430,9 +430,9 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
             service: a.service_name || a.service,
             status: a.status,
             review: a.review,
-            price: typeof a.price === 'number' ? 
-              a.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 
-              (a.price || 'R$ 0,00'),
+            price: a.price ? 
+              new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(a.price.toString())) : 
+              'R$ 0,00',
             duration: a.duration || ''
           })));
         }
