@@ -422,6 +422,10 @@ export const paymentsAPI = {
         const response = await api.post('/payments/cancel');
         return response.data;
     },
+    updatePlan: async (planId: number, paymentMethod: string = 'UNDEFINED') => {
+        const response = await api.post('/payments/update-subscription', { planId, paymentMethod });
+        return response.data;
+    },
 };
 
 export const unitsAPI = {

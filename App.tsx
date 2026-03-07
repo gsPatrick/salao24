@@ -111,7 +111,7 @@ const App: React.FC = () => {
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
   const [activeAIAgent, setActiveAIAgent] = useState<'Básico' | 'Avançada' | null>('Básico');
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [contractForSignature, setContractForSignature] = useState<{ contractText: string; user: User; cpf: string } | null>(null);
+  const [contractForSignature, setContractForSignature] = useState<{ contractText: string; user: User; cpf: string; isUpgrade?: boolean } | null>(null);
   const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null);
   const [subscriptionBlocked, setSubscriptionBlocked] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
@@ -387,7 +387,9 @@ const App: React.FC = () => {
   const navigate = (pageName: string, params?: any) => {
     if (pageName === 'upgrade_to_empresa') {
       setSelectedPlan({ name: 'Empresa Pro', price: 'R$ 349,90' });
-      pageName = 'payment';
+      setPage('trial');
+      setHistory(prev => [...prev, page]);
+      return;
     }
     if (pageName === 'updatePaymentMethod') {
       pageName = 'updatePaymentMethod';
@@ -477,7 +479,7 @@ const App: React.FC = () => {
     navigate('dashboard');
   };
 
-  const handleStartSignatureFlow = (data: { contractText: string; user: User; cpf: string }) => {
+  const handleStartSignatureFlow = (data: { contractText: string; user: User; cpf: string; isUpgrade?: boolean }) => {
     setContractForSignature(data);
   };
 
@@ -544,7 +546,16 @@ const App: React.FC = () => {
     }
 
     if (page === 'trial') {
-      return <div key="trial" className="animate-fade-in"><TrialPage navigate={navigate} goBack={goBack} onTrialSuccess={handleTrialSuccess} selectedPlan={selectedPlan} allClients={allClients} onStartSignatureFlow={handleStartSignatureFlow} /></div>;
+      const isUpgradeMode = !!currentUser;
+      const currentUserData = currentUser ? {
+        fullName: currentUser.name,
+        email: currentUser.email,
+        cpf: (currentUser as any).tenant?.cnpj_cpf || '',
+        adminPhone: (currentUser as any).tenant?.phone || '',
+        salonName: (currentUser as any).tenant?.name || '',
+      } : undefined;
+
+      return <div key="trial" className="animate-fade-in"><TrialPage navigate={navigate} goBack={goBack} onTrialSuccess={handleTrialSuccess} selectedPlan={selectedPlan} allClients={allClients} onStartSignatureFlow={handleStartSignatureFlow} isUpgrade={isUpgradeMode} currentUserData={currentUserData} /></div>;
     }
 
     if (page === 'contractSignature' && contractForSignature) {
@@ -553,12 +564,11 @@ const App: React.FC = () => {
           goBack={goBack}
           contractText={contractForSignature.contractText}
           onSign={async (signatureData) => {
-            const { user, contractText, cpf } = contractForSignature;
+            const { user, contractText, cpf, isUpgrade } = contractForSignature;
             const plan = planDetailsMap[user.plan!];
 
-            // Realize the API Registration
             try {
-              const { authAPI } = await import('./lib/api');
+              const { authAPI, paymentsAPI, contractsAPI } = await import('./lib/api');
               
               // Mapeia o plano correspondente ao backend
               const planMapping: Record<string, number> = {
@@ -567,22 +577,50 @@ const App: React.FC = () => {
                 'Empresa Pro': 3,
                 'Empresa Premium': 4
               };
-              const planIdToSend = planMapping[plan.name] || 1; // Default to Individual if mapping fails
-              
-              const registerResponse = await authAPI.register({
-                tenantName: user.salonName || `${user.name} Salão`,
-                userName: user.name,
-                email: user.email,
-                password: user.password || 'senha123',
-                planId: planIdToSend,
-                userType: 'admin',
-                cnpj_cpf: cpf,
-                segmentType: user.businessSegmentKey || 'outros',
-                adminPhone: user.adminPhone,
-              });
+              const planIdToSend = planMapping[plan.name] || 1;
 
-              if (registerResponse && registerResponse.success) {
-                  // After successful registration, pass the newly authenticated data to the local state
+              let success = false;
+              let finalUser = user;
+
+              if (isUpgrade) {
+                const response = await paymentsAPI.updatePlan(planIdToSend);
+                if (response && response.success) {
+                    success = true;
+                    // For upgrades, we need to refresh the user data from /auth/me or similar
+                    const meResponse = await authAPI.me();
+                    if (meResponse && meResponse.success) {
+                        finalUser = meResponse.data;
+                    }
+                } else {
+                    alert('Falha ao atualizar o plano: ' + (response?.message || 'Erro interno'));
+                }
+              } else {
+                const registerResponse = await authAPI.register({
+                    tenantName: user.salonName || `${user.name} Salão`,
+                    userName: user.name,
+                    email: user.email,
+                    password: user.password || 'senha123',
+                    planId: planIdToSend,
+                    userType: 'admin',
+                    cnpj_cpf: cpf,
+                    segmentType: user.businessSegmentKey || 'outros',
+                    adminPhone: user.adminPhone,
+                });
+
+                if (registerResponse && registerResponse.success) {
+                    success = true;
+                    finalUser = registerResponse.data?.user || user;
+                    const token = registerResponse.data?.token;
+                    if (token) {
+                        localStorage.setItem('token', token);
+                    }
+                } else {
+                    alert('Falha ao registrar a conta: ' + (registerResponse?.message || 'Erro interno'));
+                }
+              }
+
+              if (success) {
+                  // Standard Pricing Display Logic
                   const prices = {
                     'Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
                     'Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
@@ -597,8 +635,8 @@ const App: React.FC = () => {
                   const newContract: Contract = {
                     planName: plan.name,
                     price: plan.price,
-                    discountedPrice: planPrices.discounted,
-                    priceAfterYear: planPrices.afterYear,
+                    discountedPrice: planPrices?.discounted || 'N/A',
+                    priceAfterYear: planPrices?.afterYear || 'N/A',
                     date: new Date().toLocaleDateString('pt-BR'),
                     contractText: contractText,
                     signatureImg: signatureData.signature,
@@ -607,18 +645,8 @@ const App: React.FC = () => {
                     userCpf: cpf,
                   };
                   
-                  // O AuthContext vai se hidratar no próximo reload usando o token (se retornado ou via auto-login futuro)
-                  // Mas para não quebrar o fluxo imediato, chamamos o handleTrialSuccess usando os novos dados estruturados
-                  const registeredUser = registerResponse.data?.user || user;
-                  const token = registerResponse.data?.token;
-
-                  if (token) {
-                    localStorage.setItem('token', token);
-                  }
-                  
                   // Salva o contrato no backend
                   try {
-                    const { contractsAPI } = await import('./lib/api');
                     await contractsAPI.save({
                       plan_id: planIdToSend,
                       content: contractText,
@@ -628,16 +656,19 @@ const App: React.FC = () => {
                     });
                   } catch (apiErr) {
                     console.error('Failed to save contract to API:', apiErr);
-                    // Fallback to local storage is already handled in handleTrialSuccess
                   }
 
-                  handleTrialSuccess(registeredUser, newContract);
-              } else {
-                 alert('Falha ao registrar a conta: ' + (registerResponse.message || 'Erro interno'));
+                  if (isUpgrade) {
+                      updateUser(finalUser);
+                      navigate('dashboard');
+                      alert('Seu plano foi atualizado com sucesso!');
+                  } else {
+                      handleTrialSuccess(finalUser, newContract);
+                  }
               }
             } catch (err: any) {
-               console.error('Registration failed:', err);
-               alert('Erro ao processar o cadastro: ' + (err.response?.data?.message || err.message));
+               console.error('Operation failed:', err);
+               alert('Ocorreu um erro ao processar sua solicitação.');
             }
           }}
         />

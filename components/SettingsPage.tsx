@@ -1077,11 +1077,11 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     };
 
     const planKey = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
-    const currentPlanName = planKey;
+    const currentPlanName = planDetailsMap[planKey as keyof typeof planDetailsMap]?.name || planKey;
     const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || (tenant?.plan?.name ? `Acesso ao plano ${tenant.plan.name}` : '');
     const businessSegmentLabel = tenant?.settings?.segment || currentUser?.businessSegmentLabel;
 
-    const canUpgrade = !['Empresa Premium', 'Premium', 'Empresa Premium', 'Vitalício', 'Vitalicio', 'Plano Vitalício'].includes(planKey);
+    const canUpgrade = !['Empresa Pro', 'Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentPlanName);
 
     const handleCancelSubscription = () => {
         setIsCancelModalOpen(true);

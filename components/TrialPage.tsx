@@ -47,6 +47,16 @@ interface TrialPageProps {
     selectedPlan: Plan | null;
     allClients: Client[];
     onStartSignatureFlow: (data: { contractText: string; user: User; cpf: string }) => void;
+    isUpgrade?: boolean;
+    currentUserData?: {
+        fullName: string;
+        email: string;
+        cpf: string;
+        adminPhone: string;
+        salonName: string;
+        businessSegmentKey?: string;
+        businessSegmentLabel?: string;
+    };
 }
 
 const SuccessView: React.FC<{ title: string; message: string; }> = ({ title, message }) => (
@@ -200,7 +210,7 @@ const segments: { key: SegmentKey; title: string; description: string; Icon: Rea
     },
 ];
 
-const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess, selectedPlan: initialPlan, allClients, onStartSignatureFlow }) => {
+const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess, selectedPlan: initialPlan, allClients, onStartSignatureFlow, isUpgrade = false, currentUserData }) => {
     const { t } = useLanguage();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -213,13 +223,13 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
     const accountSectionRef = useRef<HTMLDivElement | null>(null);
 
     const [formData, setFormData] = useState({
-        salonName: '',
-        fullName: '',
-        cpf: '',
-        email: '',
-        adminPhone: '',
+        fullName: currentUserData?.fullName || '',
+        email: currentUserData?.email || '',
+        cpf: currentUserData?.cpf || '',
+        adminPhone: currentUserData?.adminPhone || '',
         password: '',
         confirmPassword: '',
+        salonName: currentUserData?.salonName || '',
     });
 
     const validate = (name: keyof typeof formData, value: string, allData: typeof formData): string => {
@@ -361,13 +371,16 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         event.preventDefault();
 
         const validationErrors: Partial<Record<keyof typeof formData | 'general', string>> = {};
-        const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'adminPhone', 'password', 'confirmPassword'];
-        fieldsToValidate.forEach(key => {
-            const error = validate(key, formData[key], formData);
-            if (error) {
-                validationErrors[key] = error;
-            }
-        });
+        
+        if (!isUpgrade) {
+            const fieldsToValidate: (keyof typeof formData)[] = ['salonName', 'fullName', 'cpf', 'email', 'adminPhone', 'password', 'confirmPassword'];
+            fieldsToValidate.forEach(key => {
+                const error = validate(key, formData[key], formData);
+                if (error) {
+                    validationErrors[key] = error;
+                }
+            });
+        }
 
         if (!chosenPlan) {
             validationErrors.general = 'Por favor, selecione um plano para o seu teste.';
@@ -475,6 +488,7 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
             user: newUser,
             contractText: contractText,
             cpf: formData.cpf,
+            isUpgrade: isUpgrade
         });
         navigate('contractSignature');
     };
@@ -504,7 +518,7 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                     <span>Criando sua conta...</span>
                 </>
             ) : (
-                'Começar a experiência por 15 dias'
+                isUpgrade ? 'Confirmar Novo Plano' : 'Começar a experiência por 15 dias'
             )}
         </>
     );
@@ -611,54 +625,56 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                     </div>
 
                     {/* Step 2: Account Creation */}
-                    <div ref={accountSectionRef} className="space-y-6">
-                        <h3 className="font-bold text-lg text-secondary">2. Crie sua conta</h3>
-                        {/* Manual Form */}
-                        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="salonName" className="sr-only">Nome do Espaço</label>
-                                    <input id="salonName" name="salonName" type="text" required value={formData.salonName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.salonName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Espaço Beleza Fictício" />
-                                    {errors.salonName && <p className="text-xs text-red-600 mt-1">{errors.salonName}</p>}
+                    {!isUpgrade && (
+                        <div ref={accountSectionRef} className="space-y-6">
+                            <h3 className="font-bold text-lg text-secondary">2. Crie sua conta</h3>
+                            {/* Manual Form */}
+                            <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="salonName" className="sr-only">Nome do Espaço</label>
+                                        <input id="salonName" name="salonName" type="text" required value={formData.salonName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.salonName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Espaço Beleza Fictício" />
+                                        {errors.salonName && <p className="text-xs text-red-600 mt-1">{errors.salonName}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="fullName" className="sr-only">Seu Nome Completo</label>
+                                        <input id="fullName" name="fullName" type="text" autoComplete="name" required value={formData.fullName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.fullName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Maria da Silva" />
+                                        {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="cpf" className="sr-only">CPF / CNPJ</label>
+                                        <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="CPF ou CNPJ" />
+                                        {errors.cpf && <p className="text-xs text-red-600 mt-1">{errors.cpf}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
+                                        <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
+                                        {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label htmlFor="adminPhone" className="sr-only">Telefone Pessoal (Admin)</label>
+                                        <input id="adminPhone" name="adminPhone" type="tel" required value={formData.adminPhone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.adminPhone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu Telefone / WhatsApp" />
+                                        {errors.adminPhone && <p className="text-xs text-red-600 mt-1">{errors.adminPhone}</p>}
+                                    </div>
                                 </div>
-                                <div>
-                                    <label htmlFor="fullName" className="sr-only">Seu Nome Completo</label>
-                                    <input id="fullName" name="fullName" type="text" autoComplete="name" required value={formData.fullName} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.fullName ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Maria da Silva" />
-                                    {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
+                                <div className="relative">
+                                    <label htmlFor="password" className="sr-only">Senha</label>
+                                    <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.password} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm pr-10 ${errors.password ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Crie uma senha" />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 transition-transform active:scale-90"><span className="sr-only">Mostrar/Ocultar senha</span>{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
+                                    {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
                                 </div>
-                                <div>
-                                    <label htmlFor="cpf" className="sr-only">CPF / CNPJ</label>
-                                    <input id="cpf" name="cpf" type="text" autoComplete="off" required value={formData.cpf} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.cpf ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="CPF ou CNPJ" />
-                                    {errors.cpf && <p className="text-xs text-red-600 mt-1">{errors.cpf}</p>}
+                                <div className="relative">
+                                    <label htmlFor="confirmPassword" className="sr-only">Confirme a Senha</label>
+                                    <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm pr-10 ${errors.confirmPassword ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Confirme sua senha" />
+                                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 transition-transform active:scale-90"><span className="sr-only">Mostrar/Ocultar senha</span>{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
+                                    {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
                                 </div>
-                                <div>
-                                    <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
-                                    <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
-                                    {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label htmlFor="adminPhone" className="sr-only">Telefone Pessoal (Admin)</label>
-                                    <input id="adminPhone" name="adminPhone" type="tel" required value={formData.adminPhone} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.adminPhone ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Seu Telefone / WhatsApp" />
-                                    {errors.adminPhone && <p className="text-xs text-red-600 mt-1">{errors.adminPhone}</p>}
-                                </div>
-                            </div>
-                            <div className="relative">
-                                <label htmlFor="password" className="sr-only">Senha</label>
-                                <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.password} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm pr-10 ${errors.password ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Crie uma senha" />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 transition-transform active:scale-90"><span className="sr-only">Mostrar/Ocultar senha</span>{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
-                                {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
-                            </div>
-                            <div className="relative">
-                                <label htmlFor="confirmPassword" className="sr-only">Confirme a Senha</label>
-                                <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm pr-10 ${errors.confirmPassword ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="Confirme sua senha" />
-                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 transition-transform active:scale-90"><span className="sr-only">Mostrar/Ocultar senha</span>{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
-                                {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
-                            </div>
-                            <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]">
-                                <SubmitButtonContent />
-                            </button>
-                        </form>
-                    </div>
+                                <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]">
+                                    <SubmitButtonContent />
+                                </button>
+                            </form>
+                        </div>
+                    )}
 
                     <div className="text-center text-sm text-gray-500">
                         <a href="#" onClick={(e) => { e.preventDefault(); goBack(); }} className="font-medium text-primary hover:text-primary-dark transition-opacity duration-300 active:opacity-75">&larr; Voltar</a>
