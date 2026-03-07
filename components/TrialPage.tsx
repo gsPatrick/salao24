@@ -1,43 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { User, Contract, Plan, Client } from '../types';
 
-interface User {
-    name: string;
-    email: string;
-    avatarUrl: string;
-    role?: 'admin' | 'gerente' | 'concierge' | 'profissional';
-    plan?: 'Individual' | 'Empresa' | 'Empresa Essencial' | 'Empresa Pro' | 'Empresa Premium';
-    businessSegmentKey?: string;
-    businessSegmentLabel?: string;
-    password?: string;
-    salonName?: string;
-}
-
-interface Contract {
-    planName: string;
-    price: string;
-    discountedPrice: string;
-    priceAfterYear: string;
-
-    date: string;
-    contractText: string;
-    signatureImg: string;
-    userPhoto: string;
-    userName: string;
-    userCpf: string;
-}
-
-interface Plan {
-    name: string;
-    price: string;
-    description?: string;
-}
-
-interface Client {
-    id: number;
-    name: string;
-    cpf?: string;
-}
 
 
 interface TrialPageProps {
@@ -98,7 +62,7 @@ const AppleIcon: React.FC = () => (
 );
 
 const plans: Plan[] = [
-    { name: 'Individual', price: 'R$ 79,87', description: 'Para 1 usuário' },
+    { name: 'Plano Individual', price: 'R$ 79,87', description: 'Para 1 usuário' },
     { name: 'Empresa Essencial', price: 'R$ 199,90', description: 'Até 5 usuários' },
     { name: 'Empresa Pro', price: 'R$ 349,90', description: 'Até 10 usuários' },
     { name: 'Empresa Premium', price: 'R$ 599,90', description: 'Usuários ilimitados' }
@@ -411,7 +375,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
 
         // Generate Contract
         const prices = {
-            'Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
+            'Plano Individual': { discounted: 'R$ 79,87', afterYear: 'R$ 129,87' },
             'Empresa Essencial': { discounted: 'R$ 199,90', afterYear: 'R$ 249,90' },
             'Empresa Pro': { discounted: 'R$ 349,90', afterYear: 'R$ 449,90' },
             'Empresa Premium': { discounted: 'R$ 599,90', afterYear: 'R$ 749,90' },
@@ -420,7 +384,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
 
         const getExtenso = (planName: string) => {
             switch (planName) {
-                case 'Individual': return 'setenta e nove reais e oitenta e sete centavos';
+                case 'Plano Individual': return 'setenta e nove reais e oitenta e sete centavos';
                 case 'Empresa Essencial': return 'cento e noventa e nove reais e noventa centavos';
                 case 'Empresa Pro': return 'trezentos e quarenta e nove reais e noventa centavos';
                 case 'Empresa Premium': return 'quinhentos e noventa e nove reais e noventa centavos';

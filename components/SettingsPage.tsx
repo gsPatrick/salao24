@@ -1070,10 +1070,10 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
         'premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Empresa Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
-        'vitalicio': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
-        'Vitalício': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
-        'Vitalicio': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
-        'Plano Vitalício': { name: 'Plano Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
+        'vitalicio': { name: 'Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
+        'Vitalício': { name: 'Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
+        'Vitalicio': { name: 'Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
+        'Plano Vitalício': { name: 'Vitalício', desc: 'Acesso completo e gratuito à plataforma.' },
     };
 
     const planKey = tenant?.plan?.display_name || currentUser?.plan || 'Individual';

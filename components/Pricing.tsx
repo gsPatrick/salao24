@@ -120,7 +120,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                     t('pricingIndividualFeature6'),
                     t('pricingIndividualFeature7')
                 ]}
-                onStartTrial={() => onSelectPlan({ name: 'Individual', price: 'R$ 79,87' })}
+                onStartTrial={() => onSelectPlan({ name: 'Plano Individual', price: 'R$ 79,87' })}
                 ctaText={t('pricingStartTrialButton')}
             />
             <Plan

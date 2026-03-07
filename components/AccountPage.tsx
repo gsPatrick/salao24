@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { displayCurrency } from '../lib/formatUtils';
 
-interface User {
-    name: string;
-    email: string;
-    avatarUrl: string;
-    role?: 'admin';
-}
+import { User } from '../types';
 
 interface Unit {
     id: number;
