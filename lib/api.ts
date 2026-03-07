@@ -103,6 +103,10 @@ export const authAPI = {
         const response = await api.get(`/auth/check-cpf/${cpf}`);
         return response.data;
     },
+    checkEmail: async (email: string) => {
+        const response = await api.get('/auth/check-email', { params: { email } });
+        return response.data;
+    },
     me: async () => {
         const response = await api.get('/auth/me');
         return response.data;

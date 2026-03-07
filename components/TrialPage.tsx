@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { User, Contract, Plan, Client } from '../types';
+import { authAPI } from '../lib/api';
 
 
 
@@ -184,6 +185,8 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
     const [chosenPlan, setChosenPlan] = useState<Plan | null>(initialPlan);
     const [selectedSegment, setSelectedSegment] = useState<SegmentKey | null>(null);
     const [otherSegmentText, setOtherSegmentText] = useState('');
+    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+    const [emailExistsError, setEmailExistsError] = useState('');
     const accountSectionRef = useRef<HTMLDivElement | null>(null);
 
     const [formData, setFormData] = useState({
@@ -211,11 +214,12 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
             case 'email':
                 if (!value.trim()) error = t('errorRequired');
                 else if (!/\S+@\S+\.\S+/.test(value)) error = t('errorInvalidEmail');
+                else if (emailExistsError) error = emailExistsError;
                 break;
             case 'adminPhone':
                 const cleanPhone = value.replace(/\D/g, '');
                 if (!cleanPhone) error = t('errorRequired') || 'Campo obrigatório';
-                else if (cleanPhone.length < 10) error = 'Telefone inválido';
+                else if (cleanPhone.length < 11) error = 'Número de telefone inválido. Insira o DDD + 9 dígitos.';
                 break;
             case 'password':
                 if (!value) error = t('errorRequired');
@@ -268,7 +272,7 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
     };
 
     const formatPhone = (value: string) => {
-        const cleanValue = value.replace(/\D/g, '');
+        const cleanValue = value.replace(/\D/g, '').slice(0, 11);
         if (cleanValue.length <= 10) {
             return cleanValue.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
         }
@@ -309,8 +313,25 @@ const TrialPage: React.FC<TrialPageProps> = ({ navigate, goBack, onTrialSuccess,
         });
     };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        
+        if (name === 'email' && value.trim() && !/\S+@\S+\.\S+/.test(value) === false) {
+            setIsCheckingEmail(true);
+            setEmailExistsError('');
+            try {
+                const result = await authAPI.checkEmail(value.trim());
+                if (result.success && result.data.exists) {
+                    setEmailExistsError('Este e-mail já está cadastrado. Tente outro ou faça login.');
+                    setErrors(prev => ({ ...prev, email: 'Este e-mail já está cadastrado. Tente outro ou faça login.' }));
+                }
+            } catch (err) {
+                console.error('Email check error:', err);
+            } finally {
+                setIsCheckingEmail(false);
+            }
+        }
+        
         setErrors(prev => ({ ...prev, [name]: validate(name as keyof typeof formData, value, formData) }));
     };
 
@@ -459,6 +480,8 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
 
     const isFormValid = useMemo(() => {
         return !Object.values(errors).some(Boolean) &&
+            !emailExistsError &&
+            !isCheckingEmail &&
             !!chosenPlan &&
             !!selectedSegment &&
             (selectedSegment !== 'outros' || !!otherSegmentText.trim()) &&
@@ -467,9 +490,10 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
             !!formData.cpf &&
             !!formData.email &&
             !!formData.adminPhone &&
+            formData.adminPhone.replace(/\D/g, '').length === 11 &&
             !!formData.password &&
             !!formData.confirmPassword;
-    }, [errors, chosenPlan, selectedSegment, otherSegmentText, formData]);
+    }, [errors, emailExistsError, isCheckingEmail, chosenPlan, selectedSegment, otherSegmentText, formData]);
 
     const SubmitButtonContent = () => (
         <>
@@ -612,7 +636,14 @@ Ao contratar o plano, o CONTRATANTE declara estar ciente e de acordo com os Term
                                     </div>
                                     <div>
                                         <label htmlFor="email" className="sr-only">Endereço de e-mail</label>
-                                        <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
+                                        <div className="relative">
+                                            <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} onBlur={handleBlur} className={`appearance-none rounded-md relative block w-full px-3 py-3 border bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500' : 'border-gray-600 focus:ring-primary focus:border-primary'}`} placeholder="maria.silva@example.com" />
+                                            {isCheckingEmail && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                    <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                                </div>
+                                            )}
+                                        </div>
                                         {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                                     </div>
                                     <div className="md:col-span-2">
