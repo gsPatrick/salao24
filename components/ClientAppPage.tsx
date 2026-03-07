@@ -657,43 +657,46 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                     {pastAppointments.map(item => {
                       const prof = professionals.find(p => p.id === item.professionalId);
                       return (
-                        <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                          <div className="flex justify-between items-start mb-1">
+                        <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm">
+                          <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-bold text-secondary text-lg">{item.service}</p>
-                              <p className="text-sm text-gray-400 font-medium">
-                                {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} com {prof?.name || item.professional}
+                              <p className="font-bold text-secondary">{item.service}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
+                                {prof && <span> com {prof.name}</span>}
                               </p>
-                              <p className="font-bold text-secondary mt-1">{item.price}</p>
+                              <div className="flex gap-3 mt-1 mb-2">
+                                {item.duration && <p className="text-xs text-gray-400 font-medium">Duração: {item.duration}</p>}
+                                {item.price && <p className="text-xs text-gray-400 font-medium font-bold">Valor: {item.price}</p>}
+                              </div>
                             </div>
                             <div className="flex flex-col items-end gap-2">
+                              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                {item.status}
+                              </span>
                               {['Atendido', 'Concluído', 'atendido', 'concluido'].includes(item.status) && !item.review ? (
                                 <button
                                   onClick={() => setServiceToReview(item)}
-                                  className="text-xs font-bold bg-[#10b981] hover:bg-[#0da06f] text-white px-4 py-1.5 rounded-full shadow-sm transition-all"
+                                  className="text-xs font-bold bg-[#10b981] hover:bg-[#0da06f] text-white px-3 py-1.5 rounded-lg shadow-sm transition-all"
                                 >
                                   Avaliar
                                 </button>
                               ) : item.review ? (
-                                <span className="text-[10px] font-bold bg-blue-50 text-blue-500 px-3 py-1 rounded-full uppercase border border-blue-100">
+                                <span className="text-[10px] font-bold bg-blue-50 text-blue-500 px-2 py-0.5 rounded uppercase border border-blue-100">
                                   Avaliado
                                 </span>
-                              ) : (
-                                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
-                                  {item.status}
-                                </span>
-                              )}
+                              ) : null}
                             </div>
                           </div>
 
                           {item.review && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100/50">
-                              <div className="flex items-center gap-2 mb-2">
+                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                              <div className="flex items-center gap-2 mb-1">
                                 <StarRating rating={Math.round(item.review.rating)} />
                                 <span className="text-xs text-gray-400 font-bold">({item.review.rating}/5)</span>
                               </div>
                               {item.review.comment && (
-                                <p className="text-sm text-gray-600 italic leading-relaxed">
+                                <p className="text-sm text-gray-600 italic">
                                   "{item.review.comment}"
                                 </p>
                               )}
