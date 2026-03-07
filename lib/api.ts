@@ -752,6 +752,10 @@ export const packagesAPI = {
 };
 
 export const contractsAPI = {
+    list: async () => {
+        const response = await api.get('/contracts/templates');
+        return response.data;
+    },
     listTemplates: async () => {
         const response = await api.get('/contracts/templates');
         return response.data;

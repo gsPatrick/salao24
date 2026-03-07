@@ -4521,9 +4521,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {loadingRankings ? (
                             <div className="text-center py-4">Carregando ranking...</div>
                         ) : rankings.length > 0 ? rankings.map((rank: any, index: number) => {
-                            const prof = rank.professional;
+                            const prof = rank.professional || rank;
                             const rating = parseFloat(rank.average_rating) || 0;
-                            const reviews = rank.review_count;
+                            const reviews = parseInt(rank.review_count) || 0;
 
                             const medals = ['🥇', '🥈', '🥉'];
 
@@ -4537,7 +4537,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 <span>{index + 1}.</span>
                                             )}
                                         </div>
-                                        {prof.photo && !prof.photo.includes('pravatar') ? (
+                                        {prof?.photo && !prof.photo.includes('pravatar') ? (
                                             <img src={prof.photo} alt={prof.name} className="w-12 h-12 rounded-full object-cover" />
                                         ) : (
                                             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">

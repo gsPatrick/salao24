@@ -812,9 +812,9 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
           {/* Header */}
           <header className="flex-shrink-0 bg-white p-4 flex justify-between items-center border-b">
             <div className="flex items-center gap-3">
-              <img src={clientData.photo} alt={clientData.name} className="w-10 h-10 rounded-full" />
+              <img src={clientData?.photo} alt={clientData?.name} className="w-10 h-10 rounded-full" />
               <div>
-                <p className="font-bold text-secondary text-sm">Olá, {clientData.name.split(' ')[0]}!</p>
+                <p className="font-bold text-secondary text-sm">Olá, {clientData?.name?.split(' ')[0]}!</p>
                 <p className="text-xs text-gray-500">Bem-vindo(a) ao seu portal</p>
               </div>
             </div>
