@@ -290,7 +290,7 @@ const ServiceReviewModal: React.FC<{ serviceToReview: any; onReviewSubmit: (feed
 
   if (!serviceToReview) return null;
 
-  const professionalDetails = professionals.find(p => p.name === serviceToReview.professional);
+  const professionalDetails = professionals.find(p => p.id === serviceToReview.professionalId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,11 +323,11 @@ const ServiceReviewModal: React.FC<{ serviceToReview: any; onReviewSubmit: (feed
         <p className="text-center text-sm text-gray-600 mb-4">{t('yourFeedbackIsImportant')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-4 p-3 bg-light rounded-lg">
-            <img src={professionalDetails?.photo} alt={serviceToReview.professional} className="w-14 h-14 rounded-full" />
+            <img src={professionalDetails?.photo} alt={professionalDetails?.name} className="w-14 h-14 rounded-full object-cover" />
             <div>
-              <p className="font-semibold text-gray-500 text-sm">{t('professional')}</p>
-              <p className="font-bold text-secondary">{serviceToReview.professional}</p>
-              <p className="text-sm text-primary">{serviceToReview.name}</p>
+              <p className="font-semibold text-gray-500 text-sm">Profissional</p>
+              <p className="font-bold text-secondary">{professionalDetails?.name}</p>
+              <p className="text-sm text-primary font-medium">{serviceToReview.service}</p>
             </div>
           </div>
           <div>
@@ -665,6 +665,10 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                                 {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {item.time}
                                 {prof && <span> com {prof.name}</span>}
                               </p>
+                              <div className="flex gap-3 mt-1">
+                                {item.duration && <p className="text-xs text-gray-400 font-medium">Duração: {item.duration}</p>}
+                                {item.price && <p className="text-xs text-gray-400 font-medium">Valor: {item.price}</p>}
+                              </div>
                               {item.review && (
                                 <div className="mt-2 flex items-center gap-2">
                                   <StarRating rating={Math.round(item.review.rating)} />
@@ -676,18 +680,18 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                               <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
                                 {item.status}
                               </span>
-                              {!item.review ? (
+                              {['Atendido', 'Concluído', 'atendido', 'concluido'].includes(item.status) && !item.review ? (
                                 <button
                                   onClick={() => setServiceToReview(item)}
                                   className="text-xs font-bold bg-[#10b981] hover:bg-[#0da06f] text-white px-3 py-1.5 rounded-lg shadow-sm transition-all"
                                 >
-                                  {t('evaluate')}
+                                  Avaliar
                                 </button>
-                              ) : (
+                              ) : item.review ? (
                                 <span className="text-[10px] font-bold bg-blue-50 text-blue-500 px-2 py-0.5 rounded uppercase border border-blue-100">
                                   Avaliado
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                         </div>
