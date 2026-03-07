@@ -716,6 +716,8 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         settingsSubtitle: 'Gerencie as preferências e configurações do seu espaço e conta.',
         settingsTabSpace: 'Espaço',
         settingsTabAccountData: 'Plano',
+        subscriptionStatusActive: 'Assinatura Ativa',
+        noInvoicesFound: 'Nenhuma fatura encontrada no momento.',
         settingsTabUser: 'Usuário',
         settingsTabUnit: 'Unidade',
         settingsTabPlan: 'Plano',

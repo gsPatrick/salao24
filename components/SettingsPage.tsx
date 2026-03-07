@@ -1003,7 +1003,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [invoices, setInvoices] = useState<AsaasPayment[]>([]);
     const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
-    const [signedContracts, setSignedContracts] = useState<Contract[]>(currentUser?.contracts || []);
+    const [signedContracts, setSignedContracts] = useState<Contract[]>([]);
     const [isLoadingContracts, setIsLoadingContracts] = useState(false);
 
     useEffect(() => {
@@ -1265,21 +1265,31 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
 
             // Add images with error handling
             const imageY = y;
+            // 1. Photo of Verification
             try {
-                if (contract.userPhoto && contract.userPhoto.startsWith('data:image')) {
-                    pdf.addImage(contract.userPhoto, 'PNG', margin, imageY, 100, 100);
+                if (contract.userPhoto) {
+                    const photoData = contract.userPhoto.startsWith('data:image') 
+                        ? contract.userPhoto 
+                        : `data:image/png;base64,${contract.userPhoto}`;
+                    pdf.addImage(photoData, 'PNG', margin, imageY, 100, 100);
                     pdf.setFontSize(9);
                     pdf.setFont('helvetica', 'normal');
                     pdf.text('Foto de Verificação', margin + 50, imageY + 115, { align: 'center' });
                 }
             } catch (e) { console.error("Could not add user photo to PDF", e); }
 
+            // 2. Digital Signature
             try {
-                if (contract.signatureImg && contract.signatureImg.startsWith('data:image')) {
+                if (contract.signatureImg) {
+                    const sigData = contract.signatureImg.startsWith('data:image') 
+                        ? contract.signatureImg 
+                        : `data:image/png;base64,${contract.signatureImg}`;
+                    
                     const sigWidth = 200;
                     const sigHeight = 80;
                     const sigX = pageWidth - margin - sigWidth;
-                    pdf.addImage(contract.signatureImg, 'PNG', sigX, imageY, sigWidth, sigHeight);
+                    
+                    pdf.addImage(sigData, 'PNG', sigX, imageY, sigWidth, sigHeight);
                     pdf.setDrawColor(150);
                     pdf.line(sigX + 10, imageY + sigHeight + 2, sigX + sigWidth - 10, imageY + sigHeight + 2); // Signature line
                     pdf.setFontSize(8);
@@ -1287,25 +1297,31 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                     pdf.text('ASSINATURA DIGITAL DO CONTRATANTE', sigX + (sigWidth / 2), imageY + sigHeight + 15, { align: 'center' });
                     pdf.text(`IP: ${window.location.hostname}`, sigX + (sigWidth / 2), imageY + sigHeight + 25, { align: 'center' });
                 } else {
-                    // Typed Signature Fallback
+                    // Typed Signature Fallback (only if no image at all)
                     const sigWidth = 200;
                     const sigHeight = 80;
                     const sigX = pageWidth - margin - sigWidth;
                     
                     pdf.setFont('cursive', 'normal');
                     pdf.setFontSize(24);
-                    pdf.setTextColor(0, 0, 150); // Direct blue for typed signature
+                    pdf.setTextColor(0, 0, 150);
                     pdf.text(contract.userName || 'Assinado Digitalmente', sigX + (sigWidth / 2), imageY + (sigHeight / 2), { align: 'center' });
                     
                     pdf.setFont('helvetica', 'normal');
                     pdf.setDrawColor(150);
-                    pdf.line(sigX + 10, imageY + sigHeight + 2, sigX + sigWidth - 10, imageY + sigHeight + 2); // Signature line
+                    pdf.line(sigX + 10, imageY + sigHeight + 2, sigX + sigWidth - 10, imageY + sigHeight + 2); 
                     pdf.setFontSize(8);
                     pdf.setTextColor(100);
                     pdf.text('ASSINATURA DIGITAL (TIPO FONTE)', sigX + (sigWidth / 2), imageY + sigHeight + 15, { align: 'center' });
-                    pdf.text(`Audit ID: ${Date.now().toString(36).toUpperCase()}`, sigX + (sigWidth / 2), imageY + sigHeight + 25, { align: 'center' });
                 }
-            } catch (e) { console.error("Could not add signature image to PDF", e); }
+            } catch (e) { 
+                console.error("Could not add signature image to PDF", e);
+                // Last resort fallback if addImage fails
+                const sigWidth = 200;
+                const sigX = pageWidth - margin - sigWidth;
+                pdf.setFontSize(10);
+                pdf.text('Assinatura Digital Processada', sigX + (sigWidth / 2), imageY + 40, { align: 'center' });
+            }
 
             y += 150;
 
@@ -1419,8 +1435,9 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
                 <p className="text-gray-600 mt-1">{t('signedContractsDesc')}</p>
                 <div className="mt-6 space-y-4">
                     {isLoadingContracts ? (
-                        <div className="text-center py-10">
-                            <p className="text-gray-500">Carregando contratos...</p>
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                            <p className="text-gray-500 animate-pulse">Carregando seus contratos...</p>
                         </div>
                     ) : signedContracts.length > 0 ? (
                         signedContracts.map((contract, index) => (

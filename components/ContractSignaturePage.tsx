@@ -171,7 +171,7 @@ const ContractSignaturePage: React.FC<ContractSignaturePageProps> = ({ goBack, o
     if (!isSigned) {
       setIsSigned(true); // Exibe animação de sucesso
 
-      let signature = capturedSignature || 'data:image/png;base64,SIMULATED_SIGNATURE';
+      let signature = capturedSignature || '';
       
       if (!capturedSignature && signatureCanvasRef.current) {
         try {
