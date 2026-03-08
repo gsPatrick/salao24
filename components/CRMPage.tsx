@@ -386,149 +386,25 @@ const KanbanColumn: React.FC<{
                     </button>
                 </div>
                 {isConfigOpen && (
-                    isPlanRestricted ? (
-                        <div className="relative bg-gray-100 p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in text-center">
-                            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-4 rounded-md">
-                                <LockIcon />
-                                <h4 className="font-bold text-gray-800">CRM Inteligente - Exclusivo Pro</h4>
-                                <p className="text-sm text-gray-600 mt-1 mb-3">Automatize tarefas com a IA fazendo o upgrade para o plano Pro.</p>
-                                <button
-                                    onClick={() => navigate('upgrade_to_empresa')}
-                                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-full text-sm transition-transform transform hover:scale-105"
-                                >
-                                    Fazer Upgrade
-                                </button>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1">Título da Ação</label>
-                                <input type="text" disabled className="w-full p-2 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1">Descrição (Instrução para IA)</label>
-                                <div className="relative">
-                                    <textarea rows={3} disabled className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md bg-gray-200 cursor-not-allowed" />
-                                    <div className="absolute bottom-2 right-2 p-1 text-gray-400 cursor-not-allowed">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                    </div>
+                    <div className="bg-white p-4 rounded-md mb-4 border border-gray-200 shadow-inner space-y-3 animate-fade-in">
+                        {(config.ai_actions || []).map((action, index) => (
+                            <div key={action.id || index} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-bold text-secondary">{action.title || 'Automação CRM'}</h4>
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-green-100 text-green-700">
+                                        Automação Ativa
+                                    </span>
                                 </div>
+                                <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
+                                    {action.description ? action.description.substring(0, 200) + (action.description.length > 200 ? '...' : '') : 'Régua de automação configurada.'}
+                                </p>
                             </div>
-                            <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-200' : 'bg-gray-200'}`}>
-                                <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-gray-400'}`}>Executar Ação com IA</label>
-                                <div className="w-11 h-6 bg-gray-300 rounded-full relative">
-                                    <div className="absolute top-0.5 left-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 transition-all"></div>
-                                </div>
-                            </div>
+                        ))}
+                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span className="text-[11px] text-gray-400">Funis e automações são gerenciados pelo sistema.</span>
                         </div>
-                    ) : (
-                        <div className="space-y-4 animate-fade-in">
-                            {(config.ai_actions || []).map((action, index) => (
-                                <div key={action.id || index} className="bg-white p-4 rounded-md border border-gray-200 shadow-inner space-y-3 relative group/action">
-                                    {config.ai_actions!.length > 1 && (
-                                        <button
-                                            onClick={() => onRemoveAction(columnId, action.id)}
-                                            className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover/action:opacity-100 transition-opacity"
-                                            title="Remover Ação"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-600 mb-1">Título da Ação</label>
-                                        <input
-                                            type="text"
-                                            value={action.title || ''}
-                                            onChange={(e) => onActionChange(columnId, action.id, 'title', e.target.value)}
-                                            className="w-full p-2 text-sm border border-gray-300 rounded-md"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor={`config-desc-${columnId}-${action.id}`} className="block text-xs font-bold text-gray-600 mb-1">Descrição (Instrução para IA)</label>
-                                        <div className="relative">
-                                            <textarea
-                                                id={`config-desc-${columnId}-${action.id}`}
-                                                value={action.description || ''}
-                                                onChange={(e) => onActionChange(columnId, action.id, 'description', e.target.value)}
-                                                rows={3}
-                                                className="w-full p-2 pr-10 text-sm border border-gray-300 rounded-md"
-                                                placeholder="Ex: Enviar mensagem de boas-vindas..."
-                                            />
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={(e) => {
-                                                    if (e.target.files && e.target.files[0]) {
-                                                        onActionChange(columnId, action.id, 'attachmentName', e.target.files[0].name);
-                                                    }
-                                                }}
-                                                className="hidden"
-                                                aria-hidden="true"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="absolute bottom-2 right-2 p-1 text-gray-400 hover:text-primary rounded-full transition-colors"
-                                                title="Anexar imagem ou documento"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        {action.attachmentName && (
-                                            <div className="mt-2 p-2 bg-gray-100 rounded-md text-xs flex items-center justify-between animate-fade-in border">
-                                                <span className="truncate text-gray-700 font-medium">{action.attachmentName}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onActionChange(columnId, action.id, 'attachmentName', undefined)}
-                                                    className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
-                                                    title="Remover anexo"
-                                                >
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={`flex items-center justify-between p-2 rounded-md ${isPlanRestricted ? 'bg-gray-100' : 'bg-primary/10'}`}>
-                                        <label className={`text-sm font-semibold ${isPlanRestricted ? 'text-gray-400' : 'text-primary'}`}>
-                                            Executar Ação com IA
-                                            {isPlanRestricted && (
-                                                <svg className="w-4 h-4 ml-1 inline" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-                                                </svg>
-                                            )}
-                                        </label>
-                                        {isPlanRestricted ? (
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-xs text-gray-500">Upgrade</span>
-                                            </div>
-                                        ) : (
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={action.active || false}
-                                                    onChange={(e) => onActionChange(columnId, action.id, 'active', e.target.checked)}
-                                                />
-                                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                            <button
-                                type="button"
-                                onClick={() => onCreateAction(columnId)}
-                                className="w-full text-center font-semibold py-2 px-4 rounded-md border-2 border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition-colors text-sm flex items-center justify-center bg-white/50"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                Criar Nova Ação
-                            </button>
-                        </div>
-                    )
+                    </div>
                 )}
                 <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                     {safeClients.map(client => (
@@ -630,7 +506,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'new',
             title: 'Novos Clientes',
-            description: "Objetivo: Converter novos contatos em agendamento. Se o cliente agendar, mover para Agendados. Se ficar 30 dias sem interagir, mover para Inativo.",
+            description: "Converter novos contatos em agendamento. 8 tentativas com intervalos progressivos. Se agendar → Agendados. Se não responder → Inativos.",
             icon: '⭐',
             tagIcon: '⭐',
             tagTitle: 'Novos Clientes',
@@ -638,8 +514,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             deletable: false,
             ai_actions: [
                 {
-                    title: 'Funil Novo Clientes',
-                    description: "Objetivo: Converter novos contatos em agendamento.\nO cliente permanece neste funil até realizar o primeiro agendamento.\nFluxo:\nEnviar mensagem de boas-vindas.\nRealizar tentativas de agendamento:\n1ª tentativa: no mesmo dia do primeiro contato.\n2ª tentativa: 2º dia após o primeiro contato.\n3ª tentativa: 3º dia após o primeiro contato.\n4ª tentativa: 7 dias após o primeiro contato.\n5ª tentativa: 14 dias após o primeiro contato.\n6ª tentativa: 21 dias após o primeiro contato.\nRegras:\nSe o cliente agendar → alterar status na agenda para Agendado e mover para Funil Agendados.\nSe não responder ou não agendar após todas as tentativas → mover para Funil Inativos (60+ dias).",
+                    title: 'Funil Novos Clientes',
+                    description: "Objetivo: Converter novos contatos em agendamento.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe agendar → Funil Agendados.\nSe não responder após 8ª tentativa → Funil Inativos.",
                     active: true
                 }
             ]
@@ -647,7 +523,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'scheduled',
             title: 'Agendados',
-            description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente. Se confirmou, manter. Se faltou, mover para Faltantes. Se concluiu, mover para Recorrente.",
+            description: "Garantir comparecimento. Lembretes 48h, 24h e 2h antes. Confirmação com opções 1/2/3. Se faltar → Faltantes. Se concluir → Recorrente.",
             icon: '✅',
             tagIcon: '✅',
             tagTitle: 'Agendados',
@@ -656,7 +532,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Agendados',
-                    description: "Objetivo: Gestão de clientes com agendamento confirmado ou pendente.\nPermanece neste funil todo cliente com agendamento futuro.\nMensagens automáticas:\nLembrete 72h antes do agendamento.\nMensagem de confirmação 24h antes.\nLembrete final 3h antes.\nRegras:\nConfirmou → alterar status para Confirmado na agenda.\nDesmarcou  →  alterar status para Faltou na agenda, remover o cliente da agenda, mover para Funil Faltantes. \nConcluiu atendimento e não possui novo agendamento → mover para Funil Recorrentes.",
+                    description: "Objetivo: Garantir comparecimento do cliente.\nLembrete 48h antes, Confirmação 24h antes (1=Confirmar, 2=Desmarcar, 3=Reagendar), Lembrete 2h antes.\nSe desmarcar/faltar → Funil Faltantes.\nSe concluir sem novo agendamento → Funil Recorrentes.",
                     active: true
                 }
             ]
@@ -664,7 +540,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'absent',
             title: 'Faltantes',
-            description: "Objetivo: Recuperar clientes que faltaram. Tentar reagendar. Se reagendar, mover para Agendados. Se não reagendar em 60 dias, mover para Inativo.",
+            description: "Recuperar clientes que faltaram. 8 tentativas de reagendamento. Se reagendar → Agendados. Se não reagendar → Inativos.",
             icon: '❌',
             tagIcon: '❌',
             tagTitle: 'Faltantes',
@@ -673,7 +549,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Faltantes',
-                    description: "Objetivo: Recuperar clientes que faltaram ou desmarcaram.\nEntram neste funil clientes com status Faltou na agenda.\nTentativas de reagendamento:\n1ª tentativa: no mesmo dia da falta.\n2ª tentativa: 2º dia após a falta.\n3ª tentativa: 3º dia após a falta.\n4ª tentativa: 7 dias após a falta.\n5ª tentativa: 14 dias após a falta.\n6ª tentativa: 21 dias após a falta.\nRegras:\nSe reagendar → alterar status para Agendado e mover para Funil Agendados.\nSe não responder ou não reagendar → mover para Funil Inativos (60+ dias).",
+                    description: "Objetivo: Recuperar clientes que faltaram.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe reagendar → Funil Agendados.\nSe não reagendar após 8ª tentativa → Funil Inativos.",
                     active: true
                 }
             ]
@@ -681,7 +557,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'recurrent',
             title: 'Recorrente',
-            description: "Objetivo: Manter clientes ativos. Se ficar 60 dias sem agendar, mover para Inativo.",
+            description: "Clientes ativos e fidelizados. Monitoramento passivo. Se ficar 60 dias sem agendar → Inativos.",
             icon: '💎',
             tagIcon: '💎',
             tagTitle: 'Recorrente',
@@ -690,7 +566,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Recorrente',
-                    description: "Objetivo: Clientes ativos que costumam retornar.\nPermanecem neste funil os clientes que concluem seus agendamentos normalmente.\nCaso o cliente fique 59 dias sem novo agendamento, ao completar 60+ dias, ele deve ser automaticamente movido para o Funil Inativos (60+ dias).\nSe houver novo agendamento dentro do prazo, permanece como recorrente.",
+                    description: "Objetivo: Manter clientes ativos.\n60 dias sem agendamento → mover para Funil Inativos.\nNovo agendamento dentro do prazo → permanece recorrente.",
                     active: true
                 }
             ]
@@ -698,7 +574,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         {
             id: 'inactive',
             title: 'Inativo',
-            description: "Objetivo: Reativar clientes antigos. Tentar contato para novo agendamento. Se agendar, mover para Agendados.",
+            description: "Reativar clientes inativos. 2 ciclos de 8 tentativas com 30 dias de intervalo. Se agendar → Agendados.",
             icon: '⏳',
             tagIcon: '⏳',
             tagTitle: 'Inativo',
@@ -707,7 +583,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             ai_actions: [
                 {
                     title: 'Funil Inativo',
-                    description: "Objetivo: Reativar clientes sem movimentação há mais de 60 dias.\nEntram neste funil clientes que:\nEstão há mais de 60 dias sem atendimento.\nEstão há mais de 60 dias sem agendamento.\nAbordagem:\nCliente já atendido:\nMensagem cordial de retorno:\n“Faz tempo que não te vejo por aqui. Seu último atendimento foi no dia ___. Vamos agendar seu retorno?”\nCliente que nunca agendou:\nMensagem convidativa:\n“Faz um tempo que conversamos. Que tal agendar sua primeira experiência? Tenho certeza que você vai amar o atendimento.”\nTentativas:\n1ª tentativa: mesmo dia.\n2ª tentativa: 2º dia após a primeira tentativa.\n3ª tentativa: 3º dia após a primeira tentativa.\n4ª tentativa: 7 dias após a primeira tentativa.\n5ª tentativa: 14 dias após a primeira tentativa.\n6ª tentativa: 21 dias após a primeira tentativa.\nRegras:\nSe agendar →  alterar status para Agendado na agenda, mover para Funil Agendados.\nSe não agendar → reiniciar ciclo com novo contato após 30 dias da última tentativa.",
+                    description: "Objetivo: Reativar clientes inativos (60+ dias).\n2 ciclos de 8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nIntervalo de 30 dias entre ciclos.\nSe agendar → Funil Agendados.\nSe não agendar após 2 ciclos → permanecer inativo.",
                     active: true
                 }
             ]
@@ -725,11 +601,8 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages) {
-            // Determine if user can customize (delete) default columns
-            const canCustomize = currentUser?.is_super_admin || currentUser?.plan === 'Pro' || currentUser?.plan === 'Premium';
-
             let processedStages = crmSettings.funnel_stages.map(stage => {
-                // Auto-fix titles and icons on load to match "standard/basic" standard
+                // Enforce fixed titles and icons — these cannot be changed
                 let title = stage.title;
                 let icon = stage.icon;
 
@@ -753,18 +626,17 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                     ai_actions,
                     tagIcon: stage.tagIcon || defaultStage?.tagIcon || icon,
                     tagTitle: stage.tagTitle || defaultStage?.tagTitle || title,
-                    // If user can customize, ALL columns are deletable. Otherwise, respect the default/native 'deletable' flag.
-                    deletable: canCustomize ? true : stage.deletable,
-                    visible: stage.visible !== false // Default to true if undefined
+                    deletable: false, // Funnels are FIXED and cannot be deleted
+                    visible: stage.visible !== false
                 };
-            }).filter(stage => stage.id !== 'birthday'); // Specifically remove birthday if it was somehow persisted for a basic user
+            }).filter(stage => ['new', 'scheduled', 'absent', 'recurrent', 'inactive'].includes(stage.id)); // Only allow fixed funnels
 
             setColumnsConfig(processedStages);
         }
         if (crmSettings?.classifications) {
             setClassifications(crmSettings.classifications);
         }
-    }, [crmSettings, currentUser]);
+    }, [crmSettings]);
 
     const handleSaveClassifications = async (updatedClassifications: Classification[]) => {
         setClassifications(updatedClassifications);
@@ -1795,16 +1667,6 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 </div>
 
                 <div className="bg-white p-4 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row gap-4 items-center flex-wrap">
-                    <div className="flex w-full sm:w-auto items-center gap-2 mb-2 sm:mb-0">
-                        <button
-                            onClick={() => setIsRulesModalOpen(true)}
-                            className="bg-white border text-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm hover:shadow hover:bg-gray-50 transition-all flex items-center gap-2 whitespace-nowrap"
-                        >
-                            <span className="text-lg">⚙️</span>
-                            <span className="hidden sm:inline">Configurar Regras IA</span>
-                            <span className="inline sm:hidden">Regras IA</span>
-                        </button>
-                    </div>
 
                     <div className="relative flex-grow w-full sm:w-auto">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
