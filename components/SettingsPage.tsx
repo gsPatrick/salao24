@@ -169,6 +169,8 @@ const rolePermissions: { [key in User['role']]: { [key: string]: PermissionDetai
     profissional: { ...defaultPermissions, minhhAgenda: { create: true, view: true, delete: false, export: true } }
 };
 
+const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>;
+
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     onBack,
     selectedUnit,
@@ -385,15 +387,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     disabled={!canRegisterNewUser}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                    {t('settingsUserButtonAdd')}
+                                    {t('settingsUserButtonAdd')} {!canRegisterNewUser && '🚫'}
                                 </button>
                                 {!canRegisterNewUser && (
-                                    <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
-                                        Limite atingido para o seu plano atual.
+                                    <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center shadow-xl">
+                                        <div className="font-bold mb-1 flex items-center justify-center gap-1">
+                                            <LockIcon /> {t('planEnterprise')}
+                                        </div>
+                                        <p className="mb-2">Limite de usuários atingido para o seu plano atual.</p>
+                                        <button
+                                            onClick={() => navigate?.('upgrade_to_empresa')}
+                                            className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
+                                        >
+                                            {t('upgradeButton')}
+                                        </button>
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
                                     </div>
                                 )}
-
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
@@ -457,15 +467,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     disabled={!canRegisterNewUnit}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                    {t('settingsUnitButtonAdd')}
+                                    {t('settingsUnitButtonAdd')} {!canRegisterNewUnit && '🚫'}
                                 </button>
                                 {!canRegisterNewUnit && (
-                                    <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
-                                        Limite atingido para o seu plano atual.
+                                    <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center shadow-xl">
+                                        <div className="font-bold mb-1 flex items-center justify-center gap-1">
+                                            <LockIcon /> {t('planEnterprise')}
+                                        </div>
+                                        <p className="mb-2">Limite de unidades atingido para o seu plano atual.</p>
+                                        <button
+                                            onClick={() => navigate?.('upgrade_to_empresa')}
+                                            className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
+                                        >
+                                            {t('upgradeButton')}
+                                        </button>
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
                                     </div>
                                 )}
-
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
