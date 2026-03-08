@@ -252,23 +252,34 @@ export const generateCommissionReport = (t: (key: string) => string, appointment
     const professionalStats: { [key: string]: { name: string, total: number } } = {};
 
     const details = completedServices.map(appt => {
-        const professional = professionals.find(p => p.id === appt.professionalId || p.name === appt.professionalName);
-        const commissionPercent = parseFloat(professional?.commission) || 0;
+        const professional = professionals.find(p => p.id === appt.professionalId || p.professional_id === appt.professional_id || p.name === appt.professionalName);
+        
+        // Priority: persistent backend data > current professional rate fallback
+        const commissionPercent = appt.commission_rate !== undefined && appt.commission_rate !== null 
+            ? parseFloat(appt.commission_rate) 
+            : (parseFloat(professional?.commission) || 0);
+        
         const servicePrice = parseFloat(appt.price) || 0;
-        const commissionValue = servicePrice * (commissionPercent / 100);
+        
+        const commissionValue = appt.commission_value !== undefined && appt.commission_value !== null
+            ? parseFloat(appt.commission_value)
+            : (servicePrice * (commissionPercent / 100));
 
         totalCommission += commissionValue;
 
         // Track stats per professional for summary
-        const profId = appt.professionalId || appt.professionalName || 'unknown';
+        const profId = appt.professional_id || appt.professionalId || appt.professionalName || 'unknown';
         if (!professionalStats[profId]) {
             professionalStats[profId] = { name: appt.professionalName || professional?.name || 'N/A', total: 0 };
         }
         professionalStats[profId].total += commissionValue;
 
+        // Service name resolution (Never show just 'Serviço' if possible)
+        const serviceName = appt.service || appt.service_name || 'Serviço';
+
         return {
             [t('reportHeaderProfessional')]: appt.professionalName || professional?.name || 'N/A',
-            [t('reportHeaderService')]: appt.service || 'N/A',
+            [t('reportHeaderService')]: serviceName,
             [t('reportHeaderDate')]: appt.date ? new Date(appt.date).toLocaleDateString('pt-BR') : 'N/A',
             [t('reportHeaderValue')]: formatCurrency(servicePrice),
             [t('commissionPercentage')]: `${commissionPercent}%`,

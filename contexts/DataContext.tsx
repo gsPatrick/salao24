@@ -524,18 +524,22 @@ export const mapProfessionalFromAPI = (apiProfessional: any): Professional => {
     };
 };
 
-export const mapAppointmentFromAPI = (apiAppointment: any): Appointment => ({
-    ...apiAppointment,
-    professionalId: apiAppointment.professional_id,
-    clientId: apiAppointment.client_id,
-    service: typeof apiAppointment.service === 'string'
-        ? apiAppointment.service
-        : (apiAppointment.service?.name || apiAppointment.package?.name || apiAppointment.salon_plan?.name || apiAppointment.service_name || 'Serviço'),
-    endTime: apiAppointment.end_time || apiAppointment.endTime,
-    service_id: apiAppointment.service_id,
-    package_id: apiAppointment.package_id,
-    salon_plan_id: apiAppointment.salon_plan_id,
-});
+export const mapAppointmentFromAPI = (apiAppointment: any): Appointment => {
+    const fallbackName = apiAppointment.service_id ? `Serviço #${apiAppointment.service_id}` : (apiAppointment.package_id ? `Pacote #${apiAppointment.package_id}` : (apiAppointment.salon_plan_id ? `Plano #${apiAppointment.salon_plan_id}` : 'Serviço'));
+    
+    return {
+        ...apiAppointment,
+        professionalId: apiAppointment.professional_id,
+        clientId: apiAppointment.client_id,
+        service: typeof apiAppointment.service === 'string'
+            ? apiAppointment.service
+            : (apiAppointment.service?.name || apiAppointment.package?.name || apiAppointment.salon_plan?.name || apiAppointment.service_name || fallbackName),
+        endTime: apiAppointment.end_time || apiAppointment.endTime,
+        service_id: apiAppointment.service_id,
+        package_id: apiAppointment.package_id,
+        salon_plan_id: apiAppointment.salon_plan_id,
+    };
+};
 
 export const mapTransactionFromAPI = (apiTransaction: any): Transaction => ({
     ...apiTransaction,
