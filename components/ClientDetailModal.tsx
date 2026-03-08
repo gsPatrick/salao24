@@ -1752,9 +1752,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             const consumed = consumedCount;
                                             const total = contract.total_sessions || 0;
 
-                                            // Realized = fully finalized (all sessions are Done/Missed/Paid)
-                                            // Bug fix: 'Agendado' counts towards 'consumed' (usage) but NOT 'isRealized' (archiving)
-                                            const isRealized = total > 0 && finalizedCount >= total;
+                                            // Realized = fully scheduled or consumed (all sessions are booked or done)
+                                            // Feature request: move to realized as soon as the last session is scheduled.
+                                            const isRealized = total > 0 && consumed >= total;
 
                                             // Active = not realized AND not manually archived/cancelled
                                             const isActive = !isRealized && (contract.status === 'active' || !contract.status);
