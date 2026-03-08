@@ -4,6 +4,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { formatPhone, formatCEP, formatCPFOrCNPJ } from '../lib/maskUtils';
 import { useData } from '../contexts/DataContext';
 import { getImageUrl, uploadAPI } from '../lib/api';
+import { SearchableSelect } from './SearchableSelect';
+
+const BRAZILIAN_STATES = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
 
 // --- Interfaces ---
 interface AdditionalPhone {
@@ -111,6 +118,8 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isFetchingCities, setIsFetchingCities] = useState(false);
 
   // New states
   const [logo, setLogo] = useState<string | null>(null);
@@ -177,8 +186,34 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
         setSettings(initialSettings);
       }
       setErrors({});
+      setSubmitError(null);
     }
   }, [isOpen, unitToEdit, defaultWorkingHours]);
+
+  useEffect(() => {
+    if (formData.state) {
+      const fetchCities = async () => {
+        setIsFetchingCities(true);
+        try {
+          const response = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${formData.state}`);
+          if (response.ok) {
+            const data = await response.json();
+            setCities(data.map((c: any) => c.nome).sort());
+          } else {
+            setCities([]);
+          }
+        } catch (error) {
+          console.error("Erro ao buscar cidades:", error);
+          setCities([]);
+        } finally {
+          setIsFetchingCities(false);
+        }
+      };
+      fetchCities();
+    } else {
+      setCities([]);
+    }
+  }, [formData.state]);
 
   const handleClose = () => {
     setIsExiting(true);
@@ -208,7 +243,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
     } finally { setIsFetchingCep(false); }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
@@ -403,8 +438,8 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
               </CollapsibleSection>
 
               <CollapsibleSection title={t('unitModalSectionAddress')}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-1">
                     <label htmlFor="cep" className="block text-sm font-medium text-gray-700">{t('unitModalLabelCEP')}</label>
                     <div className="relative">
                       <input type="text" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} required maxLength={9} placeholder="00000-000" className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
@@ -412,13 +447,49 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
                     </div>
                     {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="md:col-span-3">
                     <label htmlFor="street" className="block text-sm font-medium text-gray-700">{t('unitModalLabelStreet')}</label>
                     <input type="text" id="street" name="street" value={formData.street} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.street ? 'border-red-500' : 'border-gray-300'}`} />
                   </div>
-                  <div>
+                  <div className="md:col-span-1">
                     <label htmlFor="number" className="block text-sm font-medium text-gray-700">{t('unitModalLabelNumber')}</label>
                     <input type="text" id="number" name="number" value={formData.number} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700">Bairro</label>
+                    <input type="text" id="neighborhood" name="neighborhood" value={formData.neighborhood} onChange={handleChange} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'}`} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <SearchableSelect
+                      label="Estado"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      options={[
+                        { value: '', label: 'Selecione o Estado' },
+                        ...BRAZILIAN_STATES.map(uf => ({ value: uf, label: uf }))
+                      ]}
+                      required
+                      error={errors.state}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <SearchableSelect
+                      label="Cidade"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      options={
+                        isFetchingCities
+                          ? [{ value: '', label: 'Carregando...' }]
+                          : [
+                            { value: '', label: 'Selecione a Cidade' },
+                            ...cities.map(c => ({ value: c, label: c }))
+                          ]
+                      }
+                      required
+                      error={errors.city}
+                    />
                   </div>
                 </div>
               </CollapsibleSection>
