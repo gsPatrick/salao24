@@ -72,9 +72,10 @@ const Plan: React.FC<{
 
 interface PricingProps {
   onSelectPlan: (plan: { name: string; price: string; }) => void;
+  currentUser: any;
 }
 
-const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
+const Pricing: React.FC<PricingProps> = ({ onSelectPlan, currentUser }) => {
   const { t } = useLanguage();
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -121,7 +122,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                     t('pricingIndividualFeature7')
                 ]}
                 onStartTrial={() => onSelectPlan({ name: 'Plano Individual', price: 'R$ 79,87' })}
-                ctaText={t('pricingStartTrialButton')}
+                ctaText={currentUser ? t('upgradeButton') : t('pricingStartTrialButton')}
             />
             <Plan
                 name='Empresa Essencial'
@@ -134,7 +135,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                     t('Gestão de Comissões'),
                 ]}
                 onStartTrial={() => onSelectPlan({ name: 'Empresa Essencial', price: 'R$ 199,90' })}
-                ctaText={t('pricingStartTrialButton')}
+                ctaText={currentUser ? t('upgradeButton') : t('pricingStartTrialButton')}
             />
             <Plan
                 name='Empresa Pro'
@@ -149,7 +150,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                 ]}
                 isFeatured
                 onStartTrial={() => onSelectPlan({ name: 'Empresa Pro', price: 'R$ 349,90' })}
-                ctaText={t('pricingStartTrialButton')}
+                ctaText={currentUser ? t('upgradeButton') : t('pricingStartTrialButton')}
             />
             <Plan
                 name='Empresa Premium'
@@ -163,7 +164,7 @@ const Pricing: React.FC<PricingProps> = ({ onSelectPlan }) => {
                     t('Gerente de Contas'),
                 ]}
                 onStartTrial={() => onSelectPlan({ name: 'Empresa Premium', price: 'R$ 599,90' })}
-                ctaText={t('pricingStartTrialButton')}
+                ctaText={currentUser ? t('upgradeButton') : t('pricingStartTrialButton')}
             />
         </div>
       </div>

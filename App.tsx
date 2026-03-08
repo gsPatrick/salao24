@@ -386,7 +386,8 @@ const App: React.FC = () => {
 
   const navigate = (pageName: string, params?: any) => {
     if (pageName === 'upgrade_to_empresa') {
-      setSelectedPlan({ name: 'Empresa Pro', price: 'R$ 349,90' });
+      const planToUpgrade = planDetailsMap['Empresa Pro'];
+      setSelectedPlan(planToUpgrade);
       setPage('payment');
       setHistory(prev => [...prev, page]);
       return;
@@ -413,7 +414,11 @@ const App: React.FC = () => {
 
   const handlePlanSelection = (plan: Plan) => {
     setSelectedPlan(plan);
-    navigate('trial');
+    if (currentUser || authUser) {
+      navigate('payment');
+    } else {
+      navigate('trial');
+    }
   };
 
   const handleServicePayment = (service: { name: string, price: string }) => {
@@ -510,7 +515,7 @@ const App: React.FC = () => {
       <AIAssistant />
       <AppMockup navigate={navigate} />
       <AboutUs />
-      <Pricing onSelectPlan={handlePlanSelection} />
+      <Pricing onSelectPlan={handlePlanSelection} currentUser={currentUser} />
       <ComparisonTable />
       <MobileExperience />
       <QRCodeCheckin />
