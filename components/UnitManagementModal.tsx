@@ -110,6 +110,7 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
   const [isExiting, setIsExiting] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // New states
   const [logo, setLogo] = useState<string | null>(null);
@@ -296,8 +297,11 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors as { [key: string]: string });
+      setSubmitError(t('fillAllFields'));
       return;
     }
+
+    setSubmitError(null);
 
     const unitData = {
       id: unitToEdit?.id,
@@ -489,13 +493,20 @@ const UnitManagementModal: React.FC<UnitManagementModalProps> = ({ isOpen, onClo
 
             </div>
           </div>
-          <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
-            <button type="submit" disabled={!isFormValid || isUploading} className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
-              {t('save')}
-            </button>
-            <button type="button" onClick={handleClose} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
-              {t('cancel')}
-            </button>
+          <div className="bg-gray-50 px-6 py-3 flex flex-col rounded-b-lg">
+            {submitError && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md animate-pulse">
+                {submitError}
+              </div>
+            )}
+            <div className="flex flex-row-reverse">
+              <button type="submit" disabled={isUploading} className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dark sm:ml-3 sm:w-auto sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+                {t('save')}
+              </button>
+              <button type="button" onClick={handleClose} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
+                {t('cancel')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
