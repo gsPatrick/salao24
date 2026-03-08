@@ -243,3 +243,56 @@ export const generateServiceReport = (t: (key: string) => string, appointments: 
         details
     };
 };
+
+export const generateCommissionReport = (t: (key: string) => string, appointments: any[], professionals: any[]) => {
+    // Only count completed/attended services
+    const completedServices = appointments.filter(a => a.status === 'Atendido' || a.status === 'completed');
+    
+    let totalCommission = 0;
+    const professionalStats: { [key: string]: { name: string, total: number } } = {};
+
+    const details = completedServices.map(appt => {
+        const professional = professionals.find(p => p.id === appt.professionalId || p.name === appt.professionalName);
+        const commissionPercent = parseFloat(professional?.commission) || 0;
+        const servicePrice = parseFloat(appt.price) || 0;
+        const commissionValue = servicePrice * (commissionPercent / 100);
+
+        totalCommission += commissionValue;
+
+        // Track stats per professional for summary
+        const profId = appt.professionalId || appt.professionalName || 'unknown';
+        if (!professionalStats[profId]) {
+            professionalStats[profId] = { name: appt.professionalName || professional?.name || 'N/A', total: 0 };
+        }
+        professionalStats[profId].total += commissionValue;
+
+        return {
+            [t('reportHeaderProfessional')]: appt.professionalName || professional?.name || 'N/A',
+            [t('reportHeaderService')]: appt.service || 'N/A',
+            [t('reportHeaderDate')]: appt.date ? new Date(appt.date).toLocaleDateString('pt-BR') : 'N/A',
+            [t('reportHeaderValue')]: formatCurrency(servicePrice),
+            [t('commissionPercentage')]: `${commissionPercent}%`,
+            [t('commissionValue')]: formatCurrency(commissionValue)
+        };
+    });
+
+    // Find top performing professional
+    let topProfessional = 'N/A';
+    let maxCommission = -1;
+    Object.values(professionalStats).forEach(stat => {
+        if (stat.total > maxCommission) {
+            maxCommission = stat.total;
+            topProfessional = stat.name;
+        }
+    });
+
+    return {
+        summary: {
+            [t('reportSummaryTotalCommission')]: formatCurrency(totalCommission),
+            [t('reportSummaryTotalServices')]: completedServices.length,
+            [t('reportSummaryTopCommissioner')]: topProfessional,
+            [t('reportSummaryAverageCommission')]: formatCurrency(completedServices.length > 0 ? totalCommission / completedServices.length : 0)
+        },
+        details
+    };
+};

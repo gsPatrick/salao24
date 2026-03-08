@@ -158,7 +158,7 @@ const ReportViewerModal: React.FC<ReportViewerModalProps> = ({ isOpen, onClose, 
         setSortConfig({ key, direction });
     };
 
-    const currencyKeys = ['faturamento', 'receita', 'despesas', 'lucro', 'gasto', 'valor', 'saldo', 'revenue', 'expense', 'profit', 'investment', 'cost', 'cac'];
+    const currencyKeys = ['faturamento', 'receita', 'despesas', 'lucro', 'gasto', 'valor', 'saldo', 'revenue', 'expense', 'profit', 'investment', 'cost', 'cac', 'commissionvalue', 'totalcommission', 'averagecommission'];
 
     const handleExport = () => {
         if (!sortedFilteredData || sortedFilteredData.length === 0) return;
@@ -205,6 +205,20 @@ const ReportViewerModal: React.FC<ReportViewerModalProps> = ({ isOpen, onClose, 
     if (!isOpen && !isExiting) return null;
 
     const headers = (reportData?.details?.length > 0) ? Object.keys(reportData.details[0]) : [];
+
+    const formatHeader = (key: string) => {
+        const mapping: { [key: string]: string } = {
+            'REPORTHEADERSERVICES': 'Total de Serviços',
+            'ReportSummaryTotalCommission': 'Total de Comissões',
+            'totalServices': 'Total de Serviços',
+            'totalCommission': 'Total de Comissões',
+            'reportSummaryTotalServices': 'Total de Serviços',
+            'reportSummaryTotalCommission': 'Total de Comissões',
+            'reportSummaryTopCommissioner': 'Maior Comissionado',
+            'reportSummaryAverageCommission': 'Média de Comissões'
+        };
+        return mapping[key] || key;
+    };
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 report-modal-wrapper ${isOpen ? 'opacity-100' : 'opacity-0'}`} aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -287,7 +301,7 @@ const ReportViewerModal: React.FC<ReportViewerModalProps> = ({ isOpen, onClose, 
                                 const shouldFormatAsCurrency = typeof value === 'number' && currencyKeys.some(k => key.toLowerCase().includes(k));
                                 return (
                                     <div key={key} className="bg-light p-3 rounded-lg text-center">
-                                        <p className="text-sm text-gray-500 font-medium capitalize">{key}</p>
+                                        <p className="text-sm text-gray-500 font-medium capitalize">{formatHeader(key)}</p>
                                         <p className="text-xl font-bold text-secondary">{shouldFormatAsCurrency ? formatCurrency(value as number) : String(value)}</p>
                                     </div>
                                 );
@@ -365,7 +379,7 @@ const ReportViewerModal: React.FC<ReportViewerModalProps> = ({ isOpen, onClose, 
                         <button onClick={handlePrint} className="flex items-center py-2 px-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                             <PrintIcon /> {t('printReport')}
                         </button>
-                        <button onClick={handleExport} className="flex items-center py-2 px-4 border border-transparent rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        <button onClick={handleExport} className="flex items-center py-2 px-4 border border-transparent rounded-lg text-sm font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg transform hover:scale-105 transition-transform duration-300">
                             <DownloadIcon /> {t('exportPDF')}
                         </button>
                     </div>

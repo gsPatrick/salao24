@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { uploadAPI } from '../lib/api';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -107,10 +108,12 @@ const initialFormData = {
     lunchStart: '',
     lunchEnd: '',
     endTime: '',
+    commission: '',
 };
 
 const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onClose, onSave, professionalToEdit }) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const { units, refreshUnits, occupations, addOccupation, deleteOccupation } = useData();
     const [formData, setFormData] = useState(initialFormData);
 
@@ -306,6 +309,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                     lunchStart: professionalToEdit.lunchStart || '',
                     lunchEnd: professionalToEdit.lunchEnd || '',
                     endTime: professionalToEdit.endTime || '',
+                    commission: professionalToEdit.commission?.toString() || '',
                 });
                 setPhoto(professionalToEdit.photo || null);
                 setSelectedSpecialties(professionalToEdit.specialties || []);
@@ -443,7 +447,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: { [key: string]: string } = {};
-        const requiredFields: (keyof typeof initialFormData)[] = ['name', 'email', 'cpf', 'phone', 'birthdate', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'unit', 'occupation', 'startTime', 'lunchStart', 'lunchEnd', 'endTime'];
+        const requiredFields: (keyof typeof initialFormData)[] = ['name', 'email', 'cpf', 'phone', 'birthdate', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'unit', 'occupation', 'startTime', 'lunchStart', 'lunchEnd', 'endTime', 'commission'];
         requiredFields.forEach(field => { const error = validateField(field, formData[field as keyof typeof formData]); if (error) newErrors[field] = error; });
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
@@ -675,6 +679,32 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             )}
 
                             {errors.occupation && <p className="text-xs text-red-600 mt-1">{errors.occupation}</p>}
+                        </div>
+                        <div className="relative">
+                            <label htmlFor="commission" className="flex items-center text-sm font-medium text-gray-700">
+                                {t('commissionPercentage')} *
+                                {user?.plan === 'Individual' && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                    </svg>
+                                )}
+                            </label>
+                            <input
+                                type="number"
+                                id="commission"
+                                name="commission"
+                                value={formData.commission}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                disabled={user?.plan === 'Individual'}
+                                className={`mt-1 block w-full p-2 border rounded-md shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.commission ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="0.00"
+                                required
+                            />
+                            {errors.commission && <p className="text-xs text-red-600 mt-1">{errors.commission}</p>}
                         </div>
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700">Especialidades</label>

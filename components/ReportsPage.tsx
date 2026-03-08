@@ -14,7 +14,8 @@ import {
     generateSalesReport,
     generatePaymentReport,
     generateMarketingReport,
-    generateServiceReport
+    generateServiceReport,
+    generateCommissionReport
 } from '../utils/reportGenerators';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
@@ -102,6 +103,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
         { key: 'Financial', icon: <FinanceIcon />, generate: (t: any, data: any) => generateFinancialReport(t, data.transactions) },
         { key: 'Payment', icon: <PaymentIcon />, generate: (t: any, data: any) => generatePaymentReport(t) },
         { key: 'Contracts', icon: <ContractIcon />, generate: (t: any, data: any) => generateContractReport(t, data.clients) },
+        { key: 'Commission', icon: <PercentageIcon />, generate: (t: any, data: any) => generateCommissionReport(t, data.appointments, data.professionals) },
     ];
 
     // Use hardcoded units for now as we assumed single tenant context
@@ -117,6 +119,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
         'Relatório de Taxa de Conversão',
         'Relatório de Contratos',
         'Relatório de Ponto',
+        'Relatório de Comissões',
     ];
 
 
