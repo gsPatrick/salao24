@@ -682,7 +682,7 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
                               <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
                                 {item.status}
                               </span>
-                              {['Atendido', 'Concluído', 'atendido', 'concluido'].includes(item.status) && !item.review ? (
+                              {['atendido', 'concluido', 'concluído'].includes(item.status?.toLowerCase()) && !item.review ? (
                                 <button
                                   onClick={() => setServiceToReview(item)}
                                   className="text-xs font-bold bg-[#10b981] hover:bg-[#0da06f] text-white px-3 py-1.5 rounded-lg shadow-sm transition-all"

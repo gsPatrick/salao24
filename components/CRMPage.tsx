@@ -223,7 +223,7 @@ const ClientCard: React.FC<{
                             return `${year}-${month}-${day}`;
                         };
                         const todayKey = formatDateForLookup(today);
-                        const clientAppointments = appointments.filter(a => a.clientId == client.id && a.date >= todayKey).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                        const clientAppointments = (client.history || []).filter((a: any) => (a.status || '').toLowerCase() === 'agendado' && a.date >= todayKey).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
                         if (clientAppointments.length > 0) {
                             const nextAppointment = clientAppointments[0];
@@ -271,7 +271,6 @@ const ClientCard: React.FC<{
                         if (pkg.type === 'plan' && pkg.plan_id) return h.salon_plan_id === pkg.plan_id;
                         return false;
                     }).length;
-                    if (total > 0 && used >= total) return false;
                     return true;
                 });
 
@@ -295,7 +294,9 @@ const ClientCard: React.FC<{
                                     <div key={idx} className="space-y-1.5">
                                         <div className="flex justify-between items-center gap-2">
                                             <span className={`text-xs font-semibold truncate ${isBirthdayMonth ? 'text-black' : 'text-secondary'}`}>{pkg.name}</span>
-                                            <span className="text-xs font-bold text-primary flex-shrink-0">{used} / {total}</span>
+                                            <span className="text-xs font-bold text-primary flex-shrink-0">
+                                                {pkg.type === 'plan' ? `${used}/${total} x` : `${used} de ${total} vezes`}
+                                            </span>
                                         </div>
                                         <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                             <div

@@ -872,14 +872,54 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         try {
             const { jsPDF } = jspdf;
             const pdf = new jsPDF();
-            pdf.text(`Documento: ${doc.name}`, 10, 10);
-            pdf.text(`Cliente: ${localClient.name}`, 10, 20);
-            pdf.text(`CPF: ${localClient.cpf}`, 10, 30);
-            pdf.text(`Status: ${doc.signed ? 'Assinado' : 'Pendente'}`, 10, 40);
+            const margin = 10;
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const usableWidth = pageWidth - margin * 2;
+            let currentY = 20;
+
+            const addText = (text: string, options: any = {}) => {
+                const lines = pdf.splitTextToSize(text, usableWidth);
+                const textHeight = lines.length * (options.fontSize || 10) * 0.35;
+                if (currentY + textHeight > pdf.internal.pageSize.getHeight() - 20) {
+                    pdf.addPage();
+                    currentY = margin;
+                }
+                pdf.text(lines, margin, currentY, options);
+                currentY += textHeight + 2;
+            };
+
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'bold');
+            addText(doc.name || 'Documento');
+            currentY += 5;
+
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'normal');
+            addText(`Cliente: ${localClient.name}`);
+            addText(`CPF: ${localClient.cpf || 'N/A'}`);
+            addText(`Status: ${doc.signed ? 'Assinado Digitalmente' : 'Pendente'}`);
+            currentY += 10;
+
             if (doc.content) {
-                const splitText = pdf.splitTextToSize(doc.content, 180);
-                pdf.text(splitText, 10, 50);
+                pdf.setFontSize(10);
+                addText(doc.content);
             }
+
+            if (doc.signed) {
+                currentY += 10;
+                if (doc.userPhoto) {
+                    addText('Foto do Cliente:');
+                    pdf.addImage(doc.userPhoto, 'JPEG', margin, currentY, 40, 40);
+                    currentY += 45;
+                }
+                if (doc.signatureImg) {
+                    addText('Assinatura:');
+                    pdf.addImage(doc.signatureImg, 'PNG', margin, currentY, 80, 40);
+                    currentY += 45;
+                }
+                addText(`Data da Assinatura: ${new Date().toLocaleString('pt-BR')}`);
+            }
+
             const filename = `${(doc.name || '').replace(/ /g, '_')}_${(localClient.name || '').replace(/ /g, '_')}.pdf`;
             pdf.save(filename);
         } catch (error) {
@@ -1250,6 +1290,56 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     </div>
                 </InfoSection>
 
+                <InfoSection title="Próximo Agendamento">
+                    {(() => {
+                        const nextApt = (localClient.history || [])
+                            .filter((h: any) => {
+                                const status = (h.status || '').toLowerCase();
+                                const isFuture = ['agendado', 'confirmado', 'reagendado', 'a realizar'].includes(status);
+                                if (!isFuture) return false;
+                                
+                                const aptDate = new Date(h.date + 'T00:00:00');
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                return aptDate >= today;
+                            })
+                            .sort((a: any, b: any) => {
+                                const dateA = new Date(a.date + 'T' + (a.time || '00:00')).getTime();
+                                const dateB = new Date(b.date + 'T' + (b.time || '00:00')).getTime();
+                                return dateA - dateB;
+                            })[0];
+
+                        if (!nextApt) return <p className="text-sm text-gray-500">Nenhum agendamento futuro.</p>;
+
+                        return (
+                            <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex justify-between items-center shadow-sm">
+                                <div className="flex gap-4 items-center">
+                                    <div className="bg-white p-2.5 rounded-lg shadow-sm border border-primary/10">
+                                        <CalendarIcon className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-gray-900 text-lg leading-tight">{nextApt.name}</p>
+                                        <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-600">
+                                            <span className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-gray-100 italic">
+                                                {new Date(nextApt.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })}
+                                            </span>
+                                            <span className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-gray-100 font-medium">
+                                                {nextApt.time?.substring(0, 5)}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1 font-medium">Profissional: <span className="text-gray-600 italic">{nextApt.professional}</span></p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] uppercase font-black bg-white text-primary px-2 py-1 rounded-full border border-primary/30 shadow-sm tracking-wider">
+                                        Confirmado
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </InfoSection>
+
                 <InfoSection title="Planos e Pacotes">
                     {isLoadingDetails ? (
                         <div className="flex items-center space-x-2 text-sm text-gray-500 py-2">
@@ -1259,24 +1349,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     ) : localClient.packages && localClient.packages.length > 0 ? (
                         <div className="space-y-3">
                             {localClient.packages.filter((pkg: any) => {
-                                const total = Number(pkg.total_sessions || pkg.sessions || 0);
-                                const used = (localClient.history || []).filter((h: any) => {
-                                    const statusLower = (h.status || '').toLowerCase();
-                                    const isExcluded = ['cancelado', 'desmarcou', 'faltou'].includes(statusLower);
-                                    if (isExcluded) return false;
-
-                                    if (pkg.type === 'package' && pkg.package_id) {
-                                        return h.package_id === pkg.package_id;
-                                    }
-                                    if (pkg.type === 'plan' && pkg.plan_id) {
-                                        return h.salon_plan_id === pkg.plan_id;
-                                    }
-                                    return false;
-                                }).length;
-
-                                // Hide if completed (used >= total and total > 0)
-                                if (total > 0 && used >= total) return false;
-                                return true;
+                                const status = (pkg.status || 'active').toLowerCase();
+                                return status === 'active';
                             }).map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
@@ -1308,8 +1382,8 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                    {used}/{total} sessões
+                                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                                    {isPlan ? `${used}/${total} x` : `${used} de ${total} vezes`}
                                                 </span>
                                                 {pkg.start_date && (
                                                     <p className="text-[10px] text-gray-500">Início: {new Date(pkg.start_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
@@ -1331,6 +1405,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                 </InfoSection>
                 <InfoSection title={t('financialSummary')}>
                     <div className="space-y-3">
+                        <p className="flex justify-between text-sm"><span className="text-black">Total de Atendimentos:</span> <span className="font-bold text-black">{localClient.total_visits || 0}</span></p>
                         <p className="flex justify-between text-sm"><span className="text-black">{t('totalSpent')}:</span> <span className="font-bold text-black">{financialSummary.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
                         <p className="flex justify-between text-sm"><span className="text-black">{t('averageTicket')}:</span> <span className="font-bold text-black">{financialSummary.averageTicket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></p>
                         <p className="flex justify-between text-sm"><span className="text-black">{t('mostFrequentService')}:</span> <span className="font-bold text-black">{financialSummary.mostFrequentService}</span></p>
@@ -1605,9 +1680,9 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     label = 'Faltou';
                                 } else if (total > 0) {
                                     if (item.salon_plan_id) { // Plan nomenclature
-                                        label = `Vez ${current} de ${total}`;
+                                        label = `${current}/${total} x`;
                                     } else {
-                                        label = `Sessão ${current} de ${total}`; // Package nomenclature
+                                        label = `${current} de ${total} vezes`; // Package nomenclature
                                     }
                                 } else {
                                     label = `Sessão ${current}`; // Fallback
@@ -1736,6 +1811,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                             (h.package_id || h.salon_plan_id)
                                         ).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+                                        const nextApt = (localClient.history || [])
+                                            .filter(a => (a.status || '').toLowerCase() === 'agendado' && new Date(a.date + 'T00:00:00') >= new Date(new Date().setHours(0,0,0,0)))
+                                            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
                                         return (
                                             <div className="space-y-6">
                                                 {/* Active Contracts */}
@@ -1751,10 +1830,10 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                             // Nomenclature
                                                             const sessionLabel = total > 0
                                                                 ? (contract.type === 'plan'
-                                                                    ? `Vez ${consumed} de ${total}`
-                                                                    : `Sessão ${consumed} de ${total}`)
+                                                                    ? `${consumed}/${total} x`
+                                                                    : `${consumed} de ${total} vezes`)
                                                                 : (consumed > 0
-                                                                    ? (contract.type === 'plan' ? `${consumed} vezes` : `${consumed} sessões`)
+                                                                    ? (contract.type === 'plan' ? `${consumed} x` : `${consumed} vezes`)
                                                                     : 'Nenhuma sessão');
 
                                                             // Find a representative history item for ScheduleInternalModal
@@ -2064,7 +2143,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                 <p className={`font-semibold text-base ${isRefunded ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{item.name}</p>
                                                                                 {consumptionState && (
-                                                                                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
+                                                                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wide">
                                                                                         {consumptionState.label}
                                                                                     </span>
                                                                                 )}
@@ -2282,12 +2361,12 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                     {t('edit')}
                                 </button>
                             )}
-                            <button
-                                onClick={() => navigate('scheduling', { clientId: client.id })}
-                                disabled={isBlocked}
-                                className="py-2 px-4 text-sm font-semibold rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                {t('schedule')}
-                            </button>
+                             <button
+                                 onClick={() => navigate('scheduling', { clientId: client.id })}
+                                 disabled={isBlocked}
+                                 className="py-2 px-6 text-sm font-bold rounded-md bg-primary text-white hover:bg-primary-dark shadow-md transition-all active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                                 {t('schedule')}
+                             </button>
                         </div>
                         <button
                             type="button"
