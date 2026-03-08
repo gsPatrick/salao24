@@ -764,11 +764,24 @@ export const contractsAPI = {
         const response = await api.get('/contracts/templates');
         return response.data;
     },
-    createTemplate: async (data: { title: string; type: 'Contrato' | 'Termo'; content: string }) => {
+    create: async (data: any) => {
         const response = await api.post('/contracts/templates', data);
         return response.data;
     },
-    updateTemplate: async (id: number, data: { title: string; content: string }) => {
+    update: async (id: number, data: any) => {
+        const response = await api.put(`/contracts/templates/${id}`, data);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/contracts/templates/${id}`);
+        return response.data;
+    },
+    // Keep legacy names for backward compatibility if used elsewhere
+    createTemplate: async (data: any) => {
+        const response = await api.post('/contracts/templates', data);
+        return response.data;
+    },
+    updateTemplate: async (id: number, data: any) => {
         const response = await api.put(`/contracts/templates/${id}`, data);
         return response.data;
     },

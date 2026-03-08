@@ -245,7 +245,7 @@ const ClientCard: React.FC<{
                                     </div>
                                     <div className="flex justify-between items-start">
                                         <span className="font-medium text-secondary flex-shrink-0 mr-4">Serviço:</span>
-                                        <span className="text-right break-words font-semibold">{nextAppointment.service}</span>
+                                        <span className="text-right break-words font-semibold">{nextAppointment.name}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium text-secondary">Profissional:</span>
@@ -271,7 +271,7 @@ const ClientCard: React.FC<{
                         if (pkg.type === 'plan' && pkg.plan_id) return h.salon_plan_id === pkg.plan_id;
                         return false;
                     }).length;
-                    return true;
+                    return total > 0 ? used < total : true;
                 });
 
                 if (activePackages.length === 0) return null;
