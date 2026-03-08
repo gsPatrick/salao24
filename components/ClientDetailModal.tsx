@@ -2207,7 +2207,11 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Histórico de Sessões</p>
                                                                             {(() => {
                                                                                 let validSessionCount = 0;
-                                                                                return sessions.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s: any) => {
+                                                                                return [...sessions].sort((a: any, b: any) => {
+                                                                                    const dateTimeA = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
+                                                                                    const dateTimeB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
+                                                                                    return dateTimeA - dateTimeB;
+                                                                                }).map((s: any) => {
                                                                                     // Only count valid sessions for the ordinal label
                                                                                     const isSkipped = ['cancelado', 'desmarcou', 'faltou'].includes((s.status || '').toLowerCase());
                                                                                     if (!isSkipped) validSessionCount++;
