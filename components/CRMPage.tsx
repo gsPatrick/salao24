@@ -601,37 +601,28 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
     // Load persisted settings
     useEffect(() => {
         if (crmSettings?.funnel_stages) {
-            let processedStages = crmSettings.funnel_stages.map(stage => {
-                // Enforce fixed titles and icons — these cannot be changed
-                let title = stage.title;
-                let icon = stage.icon;
+            // Start with the full mandatory list (from state's initial value)
+            const baseStages = [
+                { id: 'new', title: 'Novos Clientes', icon: '⭐', description: "Converter novos contatos em agendamento. 8 tentativas com intervalos progressivos. Se agendar → Agendados. Se não responder → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Novos Clientes', description: "Objetivo: Converter novos contatos em agendamento.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe agendar → Funil Agendados.\nSe não responder após 8ª tentativa → Funil Inativos.", active: true }] },
+                { id: 'scheduled', title: 'Agendados', icon: '✅', description: "Garantir comparecimento. Lembretes 48h, 24h e 2h antes. Confirmação com opções 1/2/3. Se faltar → Faltantes. Se concluir → Recorrente.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Agendados', description: "Objetivo: Garantir comparecimento do cliente.\nLembrete 48h antes, Confirmação 24h antes (1=Confirmar, 2=Desmarcar, 3=Reagendar), Lembrete 2h antes.\nSe desmarcar/faltar → Funil Faltantes.\nSe concluir sem novo agendamento → Funil Recorrentes.", active: true }] },
+                { id: 'absent', title: 'Faltantes', icon: '❌', description: "Recuperar clientes que faltaram. 8 tentativas de reagendamento. Se reagendar → Agendados. Se não reagendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Faltantes', description: "Objetivo: Recuperar clientes que faltaram.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe reagendar → Funil Agendados.\nSe não reagendar após 8ª tentativa → Funil Inativos.", active: true }] },
+                { id: 'recurrent', title: 'Recorrente', icon: '💎', description: "Clientes ativos e fidelizados. Monitoramento passivo. Se ficar 60 dias sem agendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Recorrente', description: "Objetivo: Manter clientes ativos.\n60 dias sem agendamento → mover para Funil Inativos.\nNovo agendamento dentro do prazo → permanece recorrente.", active: true }] },
+                { id: 'inactive', title: 'Inativo', icon: '⏳', description: "Reativar clientes inativos. 2 ciclos de 8 tentativas com 30 dias de intervalo. Se agendar → Agendados.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Inativo', description: "Objetivo: Reativar clientes inativos (60+ dias).\n2 ciclos de 8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nIntervalo de 30 dias entre ciclos.\nSe agendar → Funil Agendados.\nSe não agendar após 2 ciclos → permanecer inativo.", active: true }] }
+            ];
 
-                if (stage.id === 'new') { title = 'Novos Clientes'; icon = '⭐'; }
-                if (stage.id === 'scheduled') { title = 'Agendados'; icon = '✅'; }
-                if (stage.id === 'absent') { title = 'Faltantes'; icon = '❌'; }
-                if (stage.id === 'recurrent') { title = 'Recorrente'; icon = '💎'; }
-                if (stage.id === 'inactive') { title = 'Inativo'; icon = '⏳'; }
-
-                // SELF-HEALING AI RULES: If standard rules are missing or empty, restore defaults
-                const defaultStage = columnsConfig.find(cs => cs.id === stage.id);
-                let ai_actions = stage.ai_actions;
-                if (!ai_actions || ai_actions.length === 0) {
-                    ai_actions = defaultStage?.ai_actions || [];
-                }
+            const mergedStages = baseStages.map(baseStage => {
+                const dbStage = crmSettings.funnel_stages.find(s => s.id === baseStage.id);
+                if (!dbStage) return baseStage;
 
                 return {
-                    ...stage,
-                    title,
-                    icon,
-                    ai_actions,
-                    tagIcon: stage.tagIcon || defaultStage?.tagIcon || icon,
-                    tagTitle: stage.tagTitle || defaultStage?.tagTitle || title,
-                    deletable: false, // Funnels are FIXED and cannot be deleted
-                    visible: stage.visible !== false
+                    ...baseStage,
+                    visible: dbStage.visible !== false,
+                    // If DB has custom AI actions, it might be legacy, but we'll respect 'active' flag if we ever add a toggle.
+                    // For now, we enforce our detailed descriptions but preserve visibility.
                 };
-            }).filter(stage => ['new', 'scheduled', 'absent', 'recurrent', 'inactive'].includes(stage.id)); // Only allow fixed funnels
+            });
 
-            setColumnsConfig(processedStages);
+            setColumnsConfig(mergedStages);
         }
         if (crmSettings?.classifications) {
             setClassifications(crmSettings.classifications);
