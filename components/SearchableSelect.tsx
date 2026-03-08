@@ -31,6 +31,21 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const selectedOption = options.find((opt) => opt.value === value);
     const displayValue = selectedOption ? selectedOption.label : '';
 
+    const [openUpward, setOpenUpward] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && wrapperRef.current) {
+            const rect = wrapperRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const dropdownHeight = 250; // Approximated max-h-60
+            if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                setOpenUpward(true);
+            } else {
+                setOpenUpward(false);
+            }
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -54,7 +69,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     };
 
     return (
-        <div className={`relative ${className} ${isOpen ? 'z-[1000]' : 'z-10'}`} ref={wrapperRef}>
+        <div className={`relative ${className} ${isOpen ? 'z-[9999]' : 'z-10'}`} ref={wrapperRef}>
             {label && (
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     {label} {required && <span className="text-red-500">*</span>}
@@ -77,7 +92,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </div>
 
             {isOpen && (
-                <div className="absolute z-[1001] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col transition-all duration-200 ease-out origin-top">
+                <div className={`absolute z-[9999] w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col transition-all duration-200 ease-out origin-top ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                     <div className="p-2 border-b border-gray-100 bg-gray-50/50">
                         <input
                             type="text"
