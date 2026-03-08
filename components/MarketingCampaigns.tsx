@@ -996,8 +996,8 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
                 <div className="relative group">
                     <button
                         onClick={handleAddNew}
-                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
                         disabled={isIndividualPlan}
+                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
                     >
                         + {t('newAcquisitionChannel')} {isIndividualPlan && '🚫'}
                     </button>
