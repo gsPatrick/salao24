@@ -174,7 +174,7 @@ const ClientCard: React.FC<{ client: any, onClick: () => void, onOpenChat?: (cli
                         <a href={`mailto:${client.email}`} className="flex items-center gap-2 text-current hover:text-primary transition-colors">
                             <MailIcon /><span>{client.email}</span>
                         </a>
-                        <p className="flex items-center gap-2 text-primary font-bold"><HistoryIcon /><span>{client.total_visits || client.totalVisits || 0} Atendimentos</span></p>
+                        <p className="flex items-center gap-2"><HistoryIcon /><span>{client.total_visits || client.totalVisits || 0} Atendimentos</span></p>
                         <p className="flex items-center gap-2"><CakeIcon /><span>{formattedBirthdate}</span></p>
                     </div>
                 </div>

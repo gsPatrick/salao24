@@ -493,7 +493,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
             return {
                 totalSpent: parseFloat(localClient.totalSpent),
                 averageTicket: parseFloat(localClient.averageTicket) || 0,
-                mostFrequentService: localClient.mostFrequentService || t('noServicesYet')
+                mostFrequentService: (localClient.mostFrequentService && localClient.mostFrequentService !== 'Serviço' && localClient.mostFrequentService !== 'Atendimento') ? localClient.mostFrequentService : 'N/A'
             };
         }
 
@@ -535,7 +535,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
         return {
             totalSpent: displayCurrency(totalSpent),
             averageTicket: displayCurrency(averageTicket),
-            mostFrequentService: localClient.mostFrequentService || t('noServicesYet')
+            mostFrequentService: (localClient.mostFrequentService && localClient.mostFrequentService !== 'Serviço' && localClient.mostFrequentService !== 'Atendimento') ? localClient.mostFrequentService : 'N/A'
         };
     }, [localClient, t]);
 
