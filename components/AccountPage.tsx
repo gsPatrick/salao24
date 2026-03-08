@@ -17,6 +17,7 @@ interface AccountPageProps {
     navigate: (page: string) => void;
     isIndividualPlan?: boolean;
     selectedUnit?: string;
+    selectedUnitId?: number | null;
     onUnitChange?: (unit: string) => void;
     units?: any[];
     promotions?: any[];
@@ -223,7 +224,7 @@ const CardUsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h
 const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z" /></svg>;
 
 
-const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndividualPlan, selectedUnit, onUnitChange, units, promotions = [], onOpenPromoModal, unitData }) => {
+const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndividualPlan, selectedUnit, selectedUnitId, onUnitChange, units, promotions = [], onOpenPromoModal, unitData }) => {
     const { t } = useLanguage();
     const [timePeriod, setTimePeriod] = useState<'dia' | 'semana' | 'mensal' | 'anual'>('mensal');
     const [data, setData] = useState<any>({
@@ -289,12 +290,12 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
     // --- Real-time Data Integration ---
     useEffect(() => {
         const fetchSummary = async () => {
-            const selectedUnitId = units?.find((u: any) => u.name === selectedUnit)?.id || '';
+            const unitIdToUse = selectedUnitId || units?.find((u: any) => u.name === selectedUnit)?.id || '';
             try {
                 const response = await financeAPI.getSummary({
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
-                    unitId: selectedUnitId
+                    unitId: unitIdToUse
                 });
 
                 if (response.success && response.data) {

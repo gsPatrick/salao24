@@ -4663,6 +4663,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 navigate={navigate}
                 isIndividualPlan={isIndividualPlan}
                 selectedUnit={selectedUnit}
+                selectedUnitId={selectedUnitId}
                 onUnitChange={onUnitChange}
                 units={units.map(u => ({ id: u.id, name: u.name }))}
                 promotions={filteredPromotions.filter(p => p.type === 'exclusive')}
