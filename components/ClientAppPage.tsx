@@ -511,7 +511,15 @@ const ClientAppPage: React.FC<ClientAppPageProps> = ({ currentClient, onLogout, 
   const today = new Date();
 
   // Use clientAppointments fetched directly, fallback to prop appointments
-  const effectiveAppointments = clientAppointments.length > 0 ? clientAppointments : (appointments || []).filter(a => a.clientId === clientData.id);
+  const effectiveAppointments = (clientAppointments.length > 0 ? clientAppointments : (appointments || []).filter(a => a.clientId === clientData.id))
+    .map(a => {
+      const rawPrice = a.price ? a.price.toString() : '';
+      const formattedPrice = rawPrice.includes('R$') 
+        ? rawPrice 
+        : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(rawPrice.replace(',', '.')) || 0);
+      
+      return { ...a, price: formattedPrice };
+    });
 
   const upcomingAppointments = effectiveAppointments
     .filter(a => new Date(a.date) >= today)

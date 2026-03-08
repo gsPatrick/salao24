@@ -4591,12 +4591,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     </span>
                                                 )}
                                             </div>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <StarRating rating={rating} size="xs" />
+                                                <span className="text-xs font-bold text-primary">{rating.toFixed(1)}</span>
+                                                <span className="text-xs font-bold text-[#10b981]">· {reviews} avaliações no mês</span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-0.5">{prof.occupation}</p>
+                                            
                                             <button 
                                                 onClick={() => toggleReviews(prof.id)}
-                                                className="text-[10px] font-bold text-primary mt-2 flex items-center hover:underline bg-white px-2 py-0.5 rounded-full border border-primary/20"
+                                                className="text-[10px] font-bold text-[#10b981] mt-1 flex items-center hover:underline"
                                             >
                                                 {isExpanded ? (
-                                                    <><svg className="w-3 h-3 mr-1 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg> Ocultar avaliações</>
+                                                    <><svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg> Ocultar avaliações</>
                                                 ) : (
                                                     <><svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg> Ver avaliações</>
                                                 )}
