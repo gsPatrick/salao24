@@ -259,7 +259,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             case 'birthdate': if (!value) error = t('errorRequired'); else if (new Date(value) > new Date()) error = t('errorDateInFuture'); break;
             case 'maritalStatus': if (!value) error = t('errorRequired'); break;
             case 'cep': if (!value) error = t('errorRequired'); else if (value.replace(/\D/g, '').length !== 8) error = t('errorInvalidCEP'); break;
-            case 'street': case 'number': case 'neighborhood': case 'city': case 'state': case 'unit': case 'occupation': case 'startTime': case 'lunchStart': case 'lunchEnd': case 'endTime':
+            case 'street': case 'number': case 'neighborhood': case 'city': case 'state': case 'unit': case 'occupation': case 'startTime': case 'lunchStart': case 'lunchEnd': case 'endTime': case 'commission':
                 if (!value) error = t('errorRequired'); break;
         }
         return error;
@@ -477,12 +477,13 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 };
             }));
 
-            const { cep, street, number, addressComplement, neighborhood, city, state, ...restOfData } = formData;
+            const { cep, street, number, addressComplement, neighborhood, city, state, commission, ...restOfData } = formData;
 
             const finalData = {
                 id: professionalToEdit?.id,
                 photo: photo || '',
                 ...restOfData,
+                commission: commission ? parseFloat(commission.toString().replace(',', '.')) : 0,
                 address: { cep, street, number, complement: addressComplement, neighborhood, city, state },
                 specialties: selectedSpecialties,
                 openSchedule: openSchedule,
