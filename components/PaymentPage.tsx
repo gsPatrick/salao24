@@ -328,12 +328,12 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
     }
   };
 
-  const handlePaymentSimulation = (e: React.FormEvent) => {
+  const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
     handleRealAsaasPayment('CREDIT_CARD');
   };
 
-  const handlePixSimulation = () => {
+  const handlePixPayment = () => {
     handleRealAsaasPayment('PIX');
   }
 
@@ -432,7 +432,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
 
           <div className="mt-6">
             {paymentMethod === 'card' && (
-              <form className="space-y-4 animate-fade-in" onSubmit={handlePaymentSimulation} noValidate>
+              <form className="space-y-4 animate-fade-in" onSubmit={handleCardPayment} noValidate>
                 {errors.global && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{errors.global}</div>}
                 <div className="space-y-4">
                   <div>
@@ -517,7 +517,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
                     <h4 className="mt-6 text-xl font-bold text-secondary">Assinar via Pix</h4>
                     <p className="mt-2 text-gray-500 max-w-xs mx-auto">Gere o código Pix para assinar o plano <span className="font-bold">{localPlan.name}</span> instantaneamente.</p>
                     <button 
-                      onClick={handlePixSimulation} 
+                      onClick={handlePixPayment} 
                       disabled={isProcessing}
                       className="mt-8 px-10 py-4 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50"
                     >
