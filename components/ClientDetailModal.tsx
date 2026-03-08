@@ -1350,12 +1350,27 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                         <div className="space-y-3">
                             {localClient.packages.filter((pkg: any) => {
                                 const status = (pkg.status || 'active').toLowerCase();
-                                return status === 'active';
+                                if (status !== 'active') return false;
+
+                                const total = Number(pkg.total_sessions || pkg.sessions || 0);
+                                if (total === 0) return true; // Plans without total sessions are always visible
+
+                                const used = (localClient.history || []).filter((h: any) => {
+                                    if (pkg.type === 'package' && pkg.package_id) {
+                                        return h.package_id === pkg.package_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
+                                    }
+                                    if (pkg.type === 'plan' && pkg.plan_id) {
+                                        return h.salon_plan_id === pkg.plan_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
+                                    }
+                                    return false;
+                                }).length;
+
+                                return used < total;
                             }).map((pkg: any, idx: number) => {
                                 const isPlan = pkg.type === 'plan';
                                 const total = Number(pkg.total_sessions || pkg.sessions || 0);
 
-                                // Dynamic Calculation to match History Tab
+                                // Redundant calculation for display inside map
                                 const used = (localClient.history || []).filter((h: any) => {
                                     if (pkg.type === 'package' && pkg.package_id) {
                                         return h.package_id === pkg.package_id && !['cancelado', 'desmarcou', 'faltou'].includes((h.status || '').toLowerCase());
