@@ -185,30 +185,91 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
             {/* Fixed Funnels Section (Read-Only) */}
             <div>
               <h4 className="text-lg font-semibold text-gray-800">Funis do CRM</h4>
-              <p className="text-sm text-gray-500 mb-4">Os funis são fixos e gerenciados automaticamente pelo sistema.</p>
-              <div className="space-y-2">
-                {editableColumns.map((col) => (
-                  <div key={col.id} className="flex items-center gap-3 bg-light p-3 rounded-xl border border-gray-100">
-                    <span className="text-xl">{col.icon}</span>
-                    <div className="flex-1">
-                      <span className="text-sm font-semibold text-secondary">{col.title}</span>
-                      {col.ai_actions && col.ai_actions.length > 0 && col.ai_actions[0].active && (
-                        <span className="ml-2 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-green-100 text-green-700">Ativo</span>
-                      )}
+              <p className="text-sm text-gray-500 mb-4">Personalize o ícone e o título da tag de cada etapa do funil.</p>
+              <div className="space-y-4">
+                {editableColumns.map((col, index) => (
+                  <div key={col.id} className="bg-light p-4 rounded-xl border border-gray-100 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{col.icon}</span>
+                      <div className="flex-1">
+                        <span className="text-sm font-bold text-secondary">{col.title}</span>
+                        {col.ai_actions && col.ai_actions.length > 0 && col.ai_actions[0].active && (
+                          <span className="ml-2 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-green-100 text-green-700">Automação Ativa</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={col.visible} onChange={(e) => handleFieldChange(editableColumns.indexOf(col), 'visible', e.target.checked)} />
-                        <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                        <span className="ml-2 text-[11px] font-bold text-gray-500 uppercase tracking-tight">Visível</span>
-                      </label>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8 py-2 border-t border-gray-100">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Emoji da Tag</label>
+                        <div className="relative">
+                          <button 
+                            type="button" 
+                            onClick={() => setOpenTagIconPicker(openTagIconPicker === index ? null : index)} 
+                            className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md text-lg hover:border-primary transition-colors"
+                          >
+                            <span>{col.tagIcon || col.icon}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          
+                          {openTagIconPicker === index && (
+                            <div className="absolute z-20 mt-1 w-64 bg-white shadow-xl rounded-md border border-gray-200 animate-fade-in">
+                              <div className="border-b border-gray-200 bg-gray-50 p-1">
+                                <div className="flex flex-wrap gap-1">
+                                  {iconCategories.map(category => (
+                                    <button
+                                      key={category.name}
+                                      type="button"
+                                      onClick={() => setSelectedCategory(category.name)}
+                                      className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${selectedCategory === category.name
+                                        ? 'bg-primary text-white'
+                                        : 'text-gray-500 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                      {category.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-6 gap-1 p-2 max-h-48 overflow-y-auto">
+                                {iconCategories
+                                  .find(cat => cat.name === selectedCategory)
+                                  ?.icons.map(icon => (
+                                    <button
+                                      key={icon}
+                                      type="button"
+                                      onClick={() => {
+                                        handleFieldChange(index, 'tagIcon', icon);
+                                        setOpenTagIconPicker(null);
+                                      }}
+                                      className="p-1 rounded-md hover:bg-primary/10 text-xl transition-colors"
+                                    >
+                                      {icon}
+                                    </button>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Título da Tag</label>
+                        <input 
+                          type="text" 
+                          value={col.tagTitle || col.title} 
+                          onChange={(e) => handleFieldChange(index, 'tagTitle', e.target.value)}
+                          placeholder="Ex: Novo Lead"
+                          className="w-full p-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-2 mt-3 px-1">
+              <div className="flex items-center gap-2 mt-4 px-1">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="text-[11px] text-gray-400">Funis e automações são nativos do sistema e não podem ser editados. Apenas a visibilidade pode ser alterada.</span>
+                <span className="text-[11px] text-gray-400">Os funis são nativos e não podem ser desativados. Customize as tags para melhor identificação visual.</span>
               </div>
             </div>
 
