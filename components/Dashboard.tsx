@@ -4614,7 +4614,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     {profReviews.map((review: any) => (
                                                         <div key={review.id} className="flex justify-between items-start gap-4 p-2 rounded-lg hover:bg-white transition-colors">
                                                             <div className="flex-1">
-                                                                <p className="text-xs font-bold text-secondary mb-0.5">{review.Client?.name || 'Cliente'}</p>
+                                                                <p className="text-xs font-bold text-secondary mb-0.5">{review.client?.name || 'Cliente'}</p>
                                                                 <p className="text-xs text-gray-500 italic">"{review.comment || 'Sem comentário'}"</p>
                                                             </div>
                                                             <div className="flex flex-col items-end">
