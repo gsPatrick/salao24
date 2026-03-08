@@ -218,7 +218,39 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
     return allFieldsFilled && noErrors && allFieldsValid;
   }, [formData, errors, validateField]);
 
-  const { subscribeToPlan } = useData();
+  const { subscribeToPlan, getPaymentStatus, refreshTenant } = useData();
+
+  const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
+
+  const pollPaymentStatus = useCallback(async (paymentId: string) => {
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes (5s interval)
+    
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(interval);
+        return;
+      }
+
+      try {
+        const result = await getPaymentStatus(paymentId);
+        if (result && (result.status === 'CONFIRMED' || result.status === 'RECEIVED')) {
+            clearInterval(interval);
+            await refreshTenant();
+            setIsSuccess(true);
+            setSuccessInfo({
+              title: 'Pagamento Confirmado',
+              message: 'Sua assinatura foi ativada com sucesso! Você já pode aproveitar todos os recursos do plano.'
+            });
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [getPaymentStatus, refreshTenant]);
 
   const handleRealAsaasPayment = async (method: 'CREDIT_CARD' | 'PIX' | 'BOLETO' | 'UNDEFINED') => {
     setIsProcessing(true);
@@ -256,16 +288,34 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
       const response = await subscribeToPlan(planId, method, billingInfo, creditCardInfo);
 
       if (response && response.success) {
-        if (method === 'PIX' && response.data?.pixData) {
-            setPixData(response.data.pixData);
+        const data = response.data;
+        if (method === 'PIX' && data?.pixData) {
+            setPixData(data.pixData);
             setPixStatus('waiting');
-        } else if (response.data?.invoiceUrl) {
-            window.location.href = response.data.invoiceUrl;
+            if (data.paymentId) {
+                setCurrentPaymentId(data.paymentId);
+                pollPaymentStatus(data.paymentId);
+            }
+        } else if (method === 'CREDIT_CARD') {
+            if (data?.paymentStatus === 'CONFIRMED' || data?.paymentStatus === 'RECEIVED') {
+                setIsSuccess(true);
+                setSuccessInfo({
+                  title: 'Pagamento Processado',
+                  message: 'Sua assinatura foi atualizada com sucesso!'
+                });
+            } else if (data?.paymentId) {
+                setCurrentPaymentId(data.paymentId);
+                pollPaymentStatus(data.paymentId);
+                // Optionally show a "Processing" state for CC
+            }
+        } else if (data?.invoiceUrl) {
+            window.location.href = data.invoiceUrl;
         } else {
+            // Fallback for immediate activation cases
             setIsSuccess(true);
             setSuccessInfo({
               title: 'Pagamento Processado',
-              message: 'Sua assinatura foi atualizada com sucesso!'
+              message: 'Sua assinatura foi solicitada com sucesso!'
             });
         }
       } else {

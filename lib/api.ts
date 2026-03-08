@@ -434,6 +434,10 @@ export const paymentsAPI = {
         const response = await api.post('/payments/update-subscription', { planId, paymentMethod, billingInfo, creditCardInfo });
         return response.data;
     },
+    getStatus: async (paymentId: string) => {
+        const response = await api.get(`/payments/status/${paymentId}`);
+        return response.data;
+    },
 };
 
 export const unitsAPI = {

@@ -437,6 +437,7 @@ export interface DataContextType {
     getProfessionalById: (id: number) => Professional | undefined;
     getServiceById: (id: number) => Service | undefined;
     subscribeToPlan: (planId: number, paymentMethod?: string, billingInfo?: any, creditCardInfo?: any) => Promise<any>;
+    getPaymentStatus: (paymentId: string) => Promise<any>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -1986,6 +1987,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const getPaymentStatus = async (paymentId: string): Promise<any> => {
+        try {
+            return await paymentsAPI.getStatus(paymentId);
+        } catch (error) {
+            console.error('Error getting payment status:', error);
+            return { success: false, status: 'ERROR' };
+        }
+    };
+
     return (
         <DataContext.Provider
             value={{
@@ -2084,6 +2094,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 selectedUnitId,
                 setSelectedUnitId,
                 subscribeToPlan,
+                getPaymentStatus,
             }}
         >
             {children}
