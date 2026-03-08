@@ -418,8 +418,8 @@ export const tenantsAPI = {
 };
 
 export const paymentsAPI = {
-    subscribe: async (planId: number, paymentMethod: string = 'UNDEFINED') => {
-        const response = await api.post('/payments/subscribe', { planId, paymentMethod });
+    subscribe: async (planId: number, paymentMethod: string = 'UNDEFINED', billingInfo?: any, creditCardInfo?: any) => {
+        const response = await api.post('/payments/subscribe', { planId, paymentMethod, billingInfo, creditCardInfo });
         return response.data;
     },
     getInvoices: async () => {
@@ -430,8 +430,8 @@ export const paymentsAPI = {
         const response = await api.post('/payments/cancel');
         return response.data;
     },
-    updatePlan: async (planId: number, paymentMethod: string = 'UNDEFINED') => {
-        const response = await api.post('/payments/update-subscription', { planId, paymentMethod });
+    updatePlan: async (planId: number, paymentMethod: string = 'UNDEFINED', billingInfo?: any, creditCardInfo?: any) => {
+        const response = await api.post('/payments/update-subscription', { planId, paymentMethod, billingInfo, creditCardInfo });
         return response.data;
     },
 };

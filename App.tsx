@@ -647,7 +647,7 @@ const App: React.FC = () => {
                     signatureImg: signatureData.signature,
                     userPhoto: signatureData.photo,
                     userName: user.name,
-                    userCpf: cpf,
+                            userCpf: cpf,
                   };
                   
                   // Salva o contrato no backend

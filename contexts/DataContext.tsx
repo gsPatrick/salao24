@@ -436,7 +436,7 @@ export interface DataContextType {
     getClientById: (id: number) => Client | undefined;
     getProfessionalById: (id: number) => Professional | undefined;
     getServiceById: (id: number) => Service | undefined;
-    subscribeToPlan: (planId: number, paymentMethod?: string) => Promise<any>;
+    subscribeToPlan: (planId: number, paymentMethod?: string, billingInfo?: any, creditCardInfo?: any) => Promise<any>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -1970,9 +1970,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const getProfessionalById = (id: number) => professionals.find(p => p.id === id);
     const getServiceById = (id: number) => services.find(s => s.id === id);
 
-    const subscribeToPlan = async (planId: number, paymentMethod: string = 'UNDEFINED'): Promise<any> => {
+    const subscribeToPlan = async (
+        planId: number, 
+        paymentMethod: string = 'UNDEFINED',
+        billingInfo?: any,
+        creditCardInfo?: any
+    ): Promise<any> => {
         try {
-            const response = await paymentsAPI.subscribe(planId, paymentMethod);
+            const response = await paymentsAPI.subscribe(planId, paymentMethod, billingInfo, creditCardInfo);
             await refreshTenant(); // Update tenant plan and status
             return response;
         } catch (error) {

@@ -24,7 +24,15 @@ const VisaIcon = () => <svg viewBox="0 0 80 80" className="w-8 h-8"><text x="10"
 const MastercardIcon = () => <svg viewBox="0 0 80 80" className="w-8 h-8"><circle cx="30" cy="40" r="20" fill="#EB001B" /><circle cx="50" cy="40" r="20" fill="#F79E1B" /><path d="M40,40 a 20,20 0 0,1 0,-40 a 20,20 0 0,1 0,40 M40,40 a 20,20 0 0,0 0,-40 a 20,20 0 0,0 0,40" fill="#FF5F00" /></svg>;
 const AmexIcon = () => <svg viewBox="0 0 80 80" className="w-8 h-8"><rect width="60" height="40" x="10" y="20" fill="#0077CC" rx="5" /><text x="22" y="48" fontFamily="Arial, sans-serif" fontSize="20" fill="white">AMEX</text></svg>;
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
-const PixIcon = () => <svg className="w-5 h-5" viewBox="0 0 205 205" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M102.5 205C159.109 205 205 159.109 205 102.5C205 45.891 159.109 0 102.5 0C45.891 0 0 45.891 0 102.5C0 159.109 45.891 205 102.5 205Z" fill="#32BCAD" /><path d="M110.191 64.9189L143.514 115.137C146.405 119.554 143.435 125.311 138.401 125.311H70.1873C65.6562 125.311 62.7744 120.373 64.881 116.142L81.0401 85.3417C82.1764 83.0933 82.686 80.592 82.5222 78.113L81.0401 54.4533C80.666 48.0699 88.0069 44.9788 91.597 50.4851L110.191 64.9189Z" fill="white" /><path d="M123.013 87.7346L143.514 121.725C146.405 126.142 143.435 131.899 138.401 131.899H70.1873C65.6562 131.899 62.7744 126.961 64.881 122.73L81.0401 91.9292C82.1764 89.6808 82.686 87.1795 82.5222 84.7005L81.0401 61.0408C80.666 54.6574 88.0069 51.5663 91.597 57.0726L110.191 71.5064C113.116 73.7441 114.773 77.1685 114.773 80.7251V111.895C114.773 116.329 119.349 118.905 123.013 116.102L135.596 92.5694C137.994 88.3075 133.561 83.1856 129.15 85.4542L123.013 87.7346Z" fill="#f0f0f0" /></svg>;
+const PixIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M117.4 345.5L160.7 394C164.1 397.7 169.9 397.7 173.2 394L216.5 345.5C219 342.8 219 338.7 216.5 336L173.2 287.5C169.9 283.8 164.1 283.8 160.7 287.5L117.4 336C114.9 338.7 114.9 342.8 117.4 345.5Z" fill="#32BCAD"/>
+    <path d="M295.5 345.5L338.8 394C342.2 397.7 348 397.7 351.3 394L394.6 345.5C397.1 342.8 397.1 338.7 394.6 336L351.3 287.5C348 283.8 342.2 283.8 338.8 287.5L295.5 336C293 338.7 293 342.8 295.5 345.5Z" fill="#32BCAD"/>
+    <path d="M206.5 245.5L249.8 294C253.2 297.7 259 297.7 262.3 294L305.6 245.5C308.1 242.8 308.1 238.7 305.6 236L262.3 187.5C259 183.8 253.2 183.8 249.8 187.5L206.5 236C204 238.7 204 242.8 206.5 245.5Z" fill="#32BCAD"/>
+    <path d="M117.4 145.5L160.7 194C164.1 197.7 169.9 197.7 173.2 194L216.5 145.5C219 142.8 219 138.7 216.5 136L173.2 87.5C169.9 83.8 164.1 83.8 160.7 87.5L117.4 136C114.9 138.7 114.9 142.8 117.4 145.5Z" fill="#32BCAD"/>
+    <path d="M295.5 145.5L338.8 194C342.2 197.7 348 197.7 351.3 194L394.6 145.5C397.1 142.8 397.1 138.7 394.6 136L351.3 87.5C348 83.8 342.2 83.8 338.8 87.5L295.5 136C293 138.7 293 142.8 295.5 145.5Z" fill="#32BCAD"/>
+  </svg>
+);
 const QRIcon = () => <svg className="w-48 h-48 mx-auto" viewBox="0 0 256 256"><path fill="#000" d="M128 256a128 128 0 1 0 0-256a128 128 0 1 0 0 256ZM48 48v64h64V48H48Zm16 16h32v32H64V64Zm80-16v64h64V48h-64Zm16 16h32v32h-32V64ZM48 144v64h64v-64H48Zm16 16h32v32H64v-32Zm80-16h16v16h-16v-16Zm16 16h16v16h-16v-16Zm16-16h16v16h-16v-16Zm-16 32h16v16h-16v-16Zm16 16h16v16h-16v-16Zm-32-16h16v16h-16v-16Zm0 16h16v16h-16v-16Zm-16-16h16v16h-16v-16Zm-16 32h16v16H96v-16Zm32 0h16v16h-16v-16Zm-16-16h16v16h-16v-16Z" /></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
@@ -73,15 +81,17 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
 
   const [localPlan, setLocalPlan] = useState(initialPlan);
 
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'other'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card');
   const [cardType, setCardType] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [formData, setFormData] = useState({
-    cardNumber: '', expiry: '', cvc: '', name: currentUser?.name || ''
+    cardNumber: '', expiry: '', cvc: '', name: currentUser?.name || '',
+    cep: '', street: '', number: '', neighborhood: '', city: '', state: ''
   });
   const [isCopied, setIsCopied] = useState(false);
   const [pixStatus, setPixStatus] = useState<'idle' | 'waiting'>('idle');
+  const [pixData, setPixData] = useState<{ pixEncodedCode: string; payload: string } | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successInfo, setSuccessInfo] = useState({ title: '', message: '' });
 
@@ -111,6 +121,24 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
         break;
       case 'cvc':
         if (!value || value.length < 3 || value.length > 4) error = t('errorInvalidCVC');
+        break;
+      case 'cep':
+        if (!value || value.replace(/\D/g, '').length !== 8) error = 'CEP inválido';
+        break;
+      case 'street':
+        if (!value) error = t('errorRequired');
+        break;
+      case 'number':
+        if (!value) error = t('errorRequired');
+        break;
+      case 'neighborhood':
+        if (!value) error = t('errorRequired');
+        break;
+      case 'city':
+        if (!value) error = t('errorRequired');
+        break;
+      case 'state':
+        if (!value || value.length !== 2) error = 'UF inválida';
         break;
     }
     return error;
@@ -152,9 +180,34 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
       formattedValue = formatExpiryDate(value);
     } else if (name === 'cvc') {
       formattedValue = value.replace(/\D/g, '').slice(0, 4);
+    } else if (name === 'cep') {
+      formattedValue = value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+      if (formattedValue.length === 9) {
+          fetchAddressByCep(formattedValue.replace('-', ''));
+      }
+    } else if (name === 'state') {
+        formattedValue = value.toUpperCase().slice(0, 2);
     }
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
+  };
+
+  const fetchAddressByCep = async (cep: string) => {
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      if (!data.erro) {
+        setFormData(prev => ({
+          ...prev,
+          street: data.logradouro,
+          neighborhood: data.bairro,
+          city: data.localidade,
+          state: data.uf
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching CEP:', error);
+    }
   };
 
   const isCardFormValid = useMemo(() => {
@@ -167,11 +220,10 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
 
   const { subscribeToPlan } = useData();
 
-  const handleRealAsaasPayment = async (paymentMethod: 'CREDIT_CARD' | 'PIX' | 'BOLETO' | 'UNDEFINED') => {
+  const handleRealAsaasPayment = async (method: 'CREDIT_CARD' | 'PIX' | 'BOLETO' | 'UNDEFINED') => {
     setIsProcessing(true);
     setErrors({});
     try {
-      // Map plan names to IDs (Ideally these should come from the API/Context)
       const planMap: { [key: string]: number } = {
         'Individual': 1,
         'Empresa Essencial': 2,
@@ -180,19 +232,48 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
       };
       const planId = localPlan.id || planMap[localPlan.name] || 1;
 
-      const response = await subscribeToPlan(planId, paymentMethod);
+      const billingInfo = method === 'CREDIT_CARD' ? {
+        name: formData.name,
+        email: currentUser?.email,
+        cpfCnpj: '', // Should be collected if not in tenant
+        postalCode: formData.cep.replace(/\D/g, ''),
+        address: formData.street,
+        addressNumber: formData.number,
+        complement: '',
+        province: formData.neighborhood,
+        city: formData.city,
+        state: formData.state
+      } : null;
 
-      if (response && response.invoiceUrl) {
-        // Redirect to Asaas payment page
-        window.location.href = response.invoiceUrl;
-      } else if (response && response.invoiceCustomizationUrl) {
-        window.location.href = response.invoiceCustomizationUrl;
+      const creditCardInfo = method === 'CREDIT_CARD' ? {
+        holderName: formData.name,
+        number: formData.cardNumber.replace(/\s/g, ''),
+        expiryMonth: formData.expiry.split(' / ')[0],
+        expiryYear: '20' + formData.expiry.split(' / ')[1],
+        ccv: formData.cvc
+      } : null;
+
+      const response = await subscribeToPlan(planId, method, billingInfo, creditCardInfo);
+
+      if (response && response.success) {
+        if (method === 'PIX' && response.data?.pixData) {
+            setPixData(response.data.pixData);
+            setPixStatus('waiting');
+        } else if (response.data?.invoiceUrl) {
+            window.location.href = response.data.invoiceUrl;
+        } else {
+            setIsSuccess(true);
+            setSuccessInfo({
+              title: 'Pagamento Processado',
+              message: 'Sua assinatura foi atualizada com sucesso!'
+            });
+        }
       } else {
-        throw new Error('Link de pagamento não gerado');
+        throw new Error(response?.message || 'Erro ao processar assinatura');
       }
     } catch (error: any) {
       console.error('Payment Error:', error);
-      setErrors({ global: 'Erro ao processar pagamento. Tente novamente.' });
+      setErrors({ global: error.message || 'Erro ao processar pagamento. Tente novamente.' });
     } finally {
       setIsProcessing(false);
     }
@@ -208,16 +289,18 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
   }
 
   const handleCopyPix = () => {
-    navigator.clipboard.writeText('00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-4266141740005204000053039865802BR5913NOME_DA_EMPRESA6009SAO_PAULO62070503***6304E2A4');
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    if (pixData?.payload) {
+        navigator.clipboard.writeText(pixData.payload);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    }
   }
 
   if (isSuccess) {
     return <SuccessView title={successInfo.title} message={successInfo.message} />;
   }
 
-  const PaymentMethodButton: React.FC<{ method: 'card' | 'pix' | 'other', label: string, icon: React.ReactNode }> = ({ method, label, icon }) => (
+  const PaymentMethodButton: React.FC<{ method: 'card' | 'pix', label: string, icon: React.ReactNode }> = ({ method, label, icon }) => (
     <button
       type="button"
       onClick={() => setPaymentMethod(method)}
@@ -295,13 +378,13 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
             <nav className="-mb-px flex space-x-4" aria-label="Tabs">
               <PaymentMethodButton method="card" label="Cartão" icon={<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fillRule="evenodd" d="M18 9H2v6a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" /></svg>} />
               <PaymentMethodButton method="pix" label="Pix" icon={<PixIcon />} />
-              <PaymentMethodButton method="other" label="Outros" icon={<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" /></svg>} />
             </nav>
           </div>
 
           <div className="mt-6">
             {paymentMethod === 'card' && (
               <form className="space-y-4 animate-fade-in" onSubmit={handlePaymentSimulation} noValidate>
+                {errors.global && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">{errors.global}</div>}
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome no Cartão</label>
@@ -330,6 +413,41 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
                       {errors.cvc && <p className="text-xs text-red-600 mt-1">{errors.cvc}</p>}
                     </div>
                   </div>
+
+                  {/* Billing Address Details */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Endereço de Cobrança</h4>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="col-span-1">
+                        <label htmlFor="cep" className="block text-sm font-medium text-gray-700">CEP</label>
+                        <input type="tel" id="cep" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleBlur} placeholder="00000-000" className={`mt-1 w-full p-3 border rounded-md ${errors.cep ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                      <div className="col-span-2">
+                        <label htmlFor="street" className="block text-sm font-medium text-gray-700">Logradouro</label>
+                        <input type="text" id="street" name="street" value={formData.street} onChange={handleChange} onBlur={handleBlur} className={`mt-1 w-full p-3 border rounded-md ${errors.street ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label htmlFor="number" className="block text-sm font-medium text-gray-700">Número</label>
+                        <input type="text" id="number" name="number" value={formData.number} onChange={handleChange} onBlur={handleBlur} className={`mt-1 w-full p-3 border rounded-md ${errors.number ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                      <div className="col-span-2">
+                        <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700">Bairro</label>
+                        <input type="text" id="neighborhood" name="neighborhood" value={formData.neighborhood} onChange={handleChange} onBlur={handleBlur} className={`mt-1 w-full p-3 border rounded-md ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-3">
+                        <label htmlFor="city" className="block text-sm font-medium text-gray-700">Cidade</label>
+                        <input type="text" id="city" name="city" value={formData.city} onChange={handleChange} onBlur={handleBlur} className={`mt-1 w-full p-3 border rounded-md ${errors.city ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                      <div>
+                        <label htmlFor="state" className="block text-sm font-medium text-gray-700">UF</label>
+                        <input type="text" id="state" name="state" value={formData.state} onChange={handleChange} onBlur={handleBlur} placeholder="SP" className={`mt-1 w-full p-3 border rounded-md ${errors.state ? 'border-red-500' : 'border-gray-300'}`} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
                   <button type="button" onClick={goBack} className="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
@@ -345,57 +463,75 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
             {paymentMethod === 'pix' && (
               <div className="text-center animate-fade-in">
                 {pixStatus === 'idle' ? (
-                  <>
-                    <QRIcon />
-                    <p className="mt-4 font-semibold">Escaneie o QR Code para pagar</p>
-                    <div className="my-4">
-                      <p className="text-sm text-gray-500 mb-2">Ou use o Pix Copia e Cola:</p>
-                      <div className="flex items-center justify-center">
-                        <button onClick={handleCopyPix} className="flex items-center gap-2 py-2 px-4 bg-light rounded-md border text-sm font-medium hover:bg-gray-200">
-                          {isCopied ? <CheckIcon /> : <CopyIcon />}
-                          {isCopied ? 'Copiado!' : 'Copiar Chave'}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
-                      <button type="button" onClick={goBack} className="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        {t('back')}
-                      </button>
-                      <button onClick={handlePixSimulation} className="w-full py-3 px-4 bg-primary text-white font-bold rounded-md">Já paguei, confirmar</button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64">
-                    <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p className="mt-4 font-semibold text-secondary">Aguardando confirmação do pagamento...</p>
-                    <button type="button" onClick={goBack} className="mt-6 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  <div className="py-8 flex flex-col items-center">
+                    <PixIcon />
+                    <h4 className="mt-6 text-xl font-bold text-secondary">Assinar via Pix</h4>
+                    <p className="mt-2 text-gray-500 max-w-xs mx-auto">Gere o código Pix para assinar o plano <span className="font-bold">{localPlan.name}</span> instantaneamente.</p>
+                    <button 
+                      onClick={handlePixSimulation} 
+                      disabled={isProcessing}
+                      className="mt-8 px-10 py-4 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50"
+                    >
+                      {isProcessing ? 'Gerando...' : 'Gerar Chave Pix'}
+                    </button>
+                    <button type="button" onClick={goBack} className="mt-4 text-gray-400 font-bold hover:text-gray-600 uppercase text-xs tracking-widest">
                       {t('back')}
                     </button>
+                  </div>
+                ) : (
+                  <div className="animate-fade-in">
+                    {pixData ? (
+                      <>
+                        <div className="relative p-4 bg-white border-2 border-primary/20 rounded-3xl mb-6 shadow-inner mx-auto w-fit">
+                            <img 
+                                src={`data:image/png;base64,${pixData.pixEncodedCode}`} 
+                                alt="Pix QR Code" 
+                                className="w-48 h-48"
+                            />
+                        </div>
+                        <p className="mt-4 font-bold text-secondary">Escaneie o QR Code para pagar</p>
+                        <div className="my-6">
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-3">Ou use o Pix Copia e Cola:</p>
+                          <div className="flex items-center justify-center">
+                            <button onClick={handleCopyPix} className="flex items-center gap-3 py-3 px-6 bg-primary/5 text-primary border border-primary/20 rounded-2xl font-bold transition-all hover:bg-primary/10 active:scale-95">
+                              {isCopied ? <CheckIcon /> : <CopyIcon />}
+                              {isCopied ? 'Copiado!' : 'Copiar Chave Pix'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-3 mt-6 border-t pt-6">
+                          <p className="text-xs text-gray-400 italic mb-2">A confirmação é imediata após o pagamento.</p>
+                          <div className="flex gap-3">
+                            <button type="button" onClick={() => setPixStatus('idle')} className="w-full flex justify-center py-3 px-4 border border-gray-200 text-sm font-bold rounded-xl text-gray-400 bg-white hover:bg-gray-50 uppercase tracking-widest">
+                              Alterar
+                            </button>
+                            <button 
+                                onClick={() => setIsSuccess(true)} 
+                                className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-100 uppercase tracking-widest text-sm"
+                            >
+                                Confirmar Pagamento
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-64">
+                        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                        <p className="font-bold text-secondary">Aguardando confirmação do pagamento...</p>
+                        <button type="button" onClick={() => setPixStatus('idle')} className="mt-6 py-2 px-4 text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest underline underline-offset-4">
+                          Cancelar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {paymentMethod === 'other' && (
-              <div className="space-y-4 animate-fade-in">
-                <button className="w-full flex items-center justify-center gap-4 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-800 bg-white hover:bg-gray-50"><ApplePayIcon /> Apple Pay</button>
-                <button className="w-full flex items-center justify-center gap-4 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-800 bg-white hover:bg-gray-50"><GooglePayIcon /> Google Pay</button>
-                <button className="w-full flex items-center justify-center gap-4 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-lg font-medium text-gray-800 bg-white hover:bg-gray-50"><PayPalIcon /> PayPal</button>
-                <div className="mt-6 pt-6 border-t">
-                  <button type="button" onClick={goBack} className="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    {t('back')}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
-
           <div className="mt-8 text-center text-xs text-gray-500 flex items-center justify-center">
             <LockIcon />
-            <span className="ml-1">Pagamento seguro processado pela Stripe.</span>
+            <span className="ml-1">Pagamento seguro processado pela Asaas.</span>
           </div>
         </div>
       </div>

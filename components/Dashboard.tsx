@@ -3228,7 +3228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const [channelToEdit, setChannelToEdit] = useState<AcquisitionChannel | null>(null);
     const [channelView, setChannelView] = useState<'active' | 'archived'>('active');
 
-    const isIndividualPlan = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !isSuperAdmin;
+    const isIndividualPlan = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Plano Individual' || currentUser?.plan === 'Empresa Essencial') && !isSuperAdmin;
 
     const [unreadMessages, setUnreadMessages] = useState<{ [key: number]: number }>({});
     const audioContextRef = useRef<AudioContext | null>(null);
