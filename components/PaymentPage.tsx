@@ -310,13 +310,12 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
             }
         } else if (data?.invoiceUrl) {
             window.location.href = data.invoiceUrl;
+        } else if (method === 'PIX') {
+            // If PIX but no data yet, show waiting/retry state
+            setPixStatus('waiting');
+            setErrors({ global: 'Chave Pix sendo gerada. Por favor, aguarde alguns segundos...' });
         } else {
-            // Fallback for immediate activation cases
-            setIsSuccess(true);
-            setSuccessInfo({
-              title: 'Pagamento Processado',
-              message: 'Sua assinatura foi solicitada com sucesso!'
-            });
+            setErrors({ global: 'Pagamento em processamento. Você será notificado em instantes.' });
         }
       } else {
         throw new Error(response?.message || 'Erro ao processar assinatura');
@@ -550,16 +549,10 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ selectedPlan, onPaymen
                           </div>
                         </div>
                         <div className="flex flex-col gap-3 mt-6 border-t pt-6">
-                          <p className="text-xs text-gray-400 italic mb-2">A confirmação é imediata após o pagamento.</p>
+                          <p className="text-xs text-gray-400 italic mb-2">A confirmação é automática após o pagamento.</p>
                           <div className="flex gap-3">
                             <button type="button" onClick={() => setPixStatus('idle')} className="w-full flex justify-center py-3 px-4 border border-gray-200 text-sm font-bold rounded-xl text-gray-400 bg-white hover:bg-gray-50 uppercase tracking-widest">
                               Alterar
-                            </button>
-                            <button 
-                                onClick={() => setIsSuccess(true)} 
-                                className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-100 uppercase tracking-widest text-sm"
-                            >
-                                Confirmar Pagamento
                             </button>
                           </div>
                         </div>

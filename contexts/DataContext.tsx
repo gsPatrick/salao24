@@ -1979,7 +1979,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ): Promise<any> => {
         try {
             const response = await paymentsAPI.subscribe(planId, paymentMethod, billingInfo, creditCardInfo);
-            await refreshTenant(); // Update tenant plan and status
             return response;
         } catch (error) {
             console.error('Error subscribing to plan:', error);
