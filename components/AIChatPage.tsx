@@ -888,28 +888,55 @@ const AIChatTab: React.FC = () => {
     const [chats, setChats] = useState<any[]>([]);
     const [selectedChat, setSelectedChat] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const lastChatId = useRef<string | null>(null);
 
     const loadChats = useCallback(async () => {
         try {
             // Don't set loading on poll refresh to avoid flicker
             const data = await aiAPI.getChats();
             setChats(data || []);
-
-            // Update selected chat if it exists
-            if (selectedChat) {
-                const updated = data.find((c: any) => c.id === selectedChat.id);
-                if (updated) setSelectedChat(updated);
-            }
         } catch (error) {
             console.error('Error loading AI chats:', error);
         }
-    }, [selectedChat]);
+    }, []);
+
+    // Sync selected chat with refreshed data
+    useEffect(() => {
+        if (selectedChat) {
+            const updated = chats.find((c: any) => c.id === selectedChat.id);
+            if (updated && JSON.stringify(updated.history) !== JSON.stringify(selectedChat.history)) {
+                setSelectedChat(updated);
+            }
+        }
+    }, [chats, selectedChat?.id]);
 
     useEffect(() => {
         loadChats();
         const interval = setInterval(loadChats, 5000); // Polling every 5s for real-time
         return () => clearInterval(interval);
     }, [loadChats]);
+
+    // --- Auto-scroll ---
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+        }
+    }, []);
+
+    useEffect(() => {
+        if (selectedChat?.history?.length) {
+            const isFirstLoad = lastChatId.current !== selectedChat.id;
+            const behavior = isFirstLoad ? 'auto' : 'smooth';
+            
+            const timer = setTimeout(() => {
+                scrollToBottom(behavior as ScrollBehavior);
+                lastChatId.current = selectedChat.id;
+            }, 100);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [selectedChat?.history?.length, selectedChat?.id, scrollToBottom]);
 
     const handleToggleStatus = async () => {
         if (!selectedChat) return;
@@ -990,6 +1017,7 @@ const AIChatTab: React.FC = () => {
                                     </div>
                                 );
                             })}
+                            <div ref={messagesEndRef} />
                         </div>
                         <footer className="p-3 bg-white border-t border-gray-200 text-center">
                             {selectedChat.status === 'active' ? (

@@ -83,20 +83,20 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
                 history: chat.history || []
             }));
             setChats(mapped);
-
-            if (selectedChat) {
-                const refreshed = mapped.find((c: any) => c.id === selectedChat.id);
-                if (refreshed) {
-                    setSelectedChat(prev => ({
-                        ...prev!,
-                        ...refreshed
-                    }));
-                }
-            }
         } catch (error) {
             console.error('Error loading chats:', error);
         }
-    }, [selectedChat]);
+    }, []);
+
+    // Sync selected chat with refreshed data from chats list
+    useEffect(() => {
+        if (selectedChat) {
+            const refreshed = chats.find(c => c.id === selectedChat.id);
+            if (refreshed && JSON.stringify(refreshed.history) !== JSON.stringify(selectedChat.history)) {
+                setSelectedChat(refreshed);
+            }
+        }
+    }, [chats, selectedChat?.id]);
 
     useEffect(() => {
         loadChats();
@@ -152,10 +152,29 @@ const ChatPage: React.FC<ChatPageProps> = ({ onBack, targetClientId, onClearTarg
         }
     }, [targetClientId, onClearTarget, chats, clients]);
 
-    // Auto-scroll
+    // --- Auto-scroll ---
+    const lastChatId = useRef<string | null>(null);
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+        }
+    }, []);
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [selectedChat?.history]);
+        if (selectedChat?.history?.length) {
+            // Use instant scroll for first load of a chat, smooth for new messages
+            const isFirstLoad = lastChatId.current !== selectedChat.id;
+            const behavior = isFirstLoad ? 'auto' : 'smooth';
+            
+            // Small timeout to ensure DOM has updated
+            const timer = setTimeout(() => {
+                scrollToBottom(behavior as ScrollBehavior);
+                lastChatId.current = selectedChat.id;
+            }, 100);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [selectedChat?.history?.length, selectedChat?.id, scrollToBottom]);
 
     // Speech Recognition
     useEffect(() => {
