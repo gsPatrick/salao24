@@ -190,7 +190,54 @@ const CRMSettingsModal: React.FC<CRMSettingsModalProps> = ({ isOpen, onClose, co
                 {editableColumns.map((col, index) => (
                   <div key={col.id} className="bg-light p-4 rounded-xl border border-gray-100 space-y-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">{col.icon}</span>
+                      <div className="relative">
+                        <button 
+                          type="button" 
+                          onClick={() => setOpenIconPicker(openIconPicker === index ? null : index)} 
+                          className="p-2 bg-white border border-gray-200 rounded-md text-xl hover:border-primary transition-colors h-10 w-10 flex items-center justify-center"
+                        >
+                          <span>{col.icon}</span>
+                        </button>
+
+                        {openIconPicker === index && (
+                          <div className="absolute z-30 mt-1 w-64 bg-white shadow-xl rounded-md border border-gray-200 animate-fade-in left-0">
+                            <div className="border-b border-gray-200 bg-gray-50 p-1">
+                              <div className="flex flex-wrap gap-1">
+                                {iconCategories.map(category => (
+                                  <button
+                                    key={category.name}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(category.name)}
+                                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${selectedCategory === category.name
+                                      ? 'bg-primary text-white'
+                                      : 'text-gray-500 hover:bg-gray-200'
+                                      }`}
+                                  >
+                                    {category.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-6 gap-1 p-2 max-h-48 overflow-y-auto">
+                              {iconCategories
+                                .find(cat => cat.name === selectedCategory)
+                                ?.icons.map(icon => (
+                                  <button
+                                    key={icon}
+                                    type="button"
+                                    onClick={() => {
+                                      handleFieldChange(index, 'icon', icon);
+                                      setOpenIconPicker(null);
+                                    }}
+                                    className="p-1 rounded-md hover:bg-primary/10 text-xl transition-colors"
+                                  >
+                                    {icon}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1">
                         <span className="text-sm font-bold text-secondary">{col.title}</span>
                         {col.ai_actions && col.ai_actions.length > 0 && col.ai_actions[0].active && (

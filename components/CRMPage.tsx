@@ -509,7 +509,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             description: "Converter novos contatos em agendamento. 8 tentativas com intervalos progressivos. Se agendar → Agendados. Se não responder → Inativos.",
             icon: '⭐',
             tagIcon: '⭐',
-            tagTitle: 'Novos Clientes',
+            tagTitle: 'Novo',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -526,7 +526,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             description: "Garantir comparecimento. Lembretes 48h, 24h e 2h antes. Confirmação com opções 1/2/3. Se faltar → Faltantes. Se concluir → Recorrente.",
             icon: '✅',
             tagIcon: '✅',
-            tagTitle: 'Agendados',
+            tagTitle: 'Agendado',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -543,7 +543,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
             description: "Recuperar clientes que faltaram. 8 tentativas de reagendamento. Se reagendar → Agendados. Se não reagendar → Inativos.",
             icon: '❌',
             tagIcon: '❌',
-            tagTitle: 'Faltantes',
+            tagTitle: 'Faltou',
             visible: true,
             deletable: false,
             ai_actions: [
@@ -603,11 +603,11 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
         if (crmSettings?.funnel_stages) {
             // Start with the full mandatory list (from state's initial value)
             const baseStages = [
-                { id: 'new', title: 'Novos Clientes', icon: '⭐', description: "Converter novos contatos em agendamento. 8 tentativas com intervalos progressivos. Se agendar → Agendados. Se não responder → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Novos Clientes', description: "Objetivo: Converter novos contatos em agendamento.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe agendar → Funil Agendados.\nSe não responder após 8ª tentativa → Funil Inativos.", active: true }] },
-                { id: 'scheduled', title: 'Agendados', icon: '✅', description: "Garantir comparecimento. Lembretes 48h, 24h e 2h antes. Confirmação com opções 1/2/3. Se faltar → Faltantes. Se concluir → Recorrente.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Agendados', description: "Objetivo: Garantir comparecimento do cliente.\nLembrete 48h antes, Confirmação 24h antes (1=Confirmar, 2=Desmarcar, 3=Reagendar), Lembrete 2h antes.\nSe desmarcar/faltar → Funil Faltantes.\nSe concluir sem novo agendamento → Funil Recorrentes.", active: true }] },
-                { id: 'absent', title: 'Faltantes', icon: '❌', description: "Recuperar clientes que faltaram. 8 tentativas de reagendamento. Se reagendar → Agendados. Se não reagendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Faltantes', description: "Objetivo: Recuperar clientes que faltaram.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe reagendar → Funil Agendados.\nSe não reagendar após 8ª tentativa → Funil Inativos.", active: true }] },
-                { id: 'recurrent', title: 'Recorrente', icon: '💎', description: "Clientes ativos e fidelizados. Monitoramento passivo. Se ficar 60 dias sem agendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Recorrente', description: "Objetivo: Manter clientes ativos.\n60 dias sem agendamento → mover para Funil Inativos.\nNovo agendamento dentro do prazo → permanece recorrente.", active: true }] },
-                { id: 'inactive', title: 'Inativo', icon: '⏳', description: "Reativar clientes inativos. 2 ciclos de 8 tentativas com 30 dias de intervalo. Se agendar → Agendados.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Inativo', description: "Objetivo: Reativar clientes inativos (60+ dias).\n2 ciclos de 8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nIntervalo de 30 dias entre ciclos.\nSe agendar → Funil Agendados.\nSe não agendar após 2 ciclos → permanecer inativo.", active: true }] }
+                { id: 'new', title: 'Novos Clientes', icon: '⭐', tagIcon: '⭐', tagTitle: 'Novo', description: "Converter novos contatos em agendamento. 8 tentativas com intervalos progressivos. Se agendar → Agendados. Se não responder → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Novos Clientes', description: "Objetivo: Converter novos contatos em agendamento.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe agendar → Funil Agendados.\nSe não responder após 8ª tentativa → Funil Inativos.", active: true }] },
+                { id: 'scheduled', title: 'Agendados', icon: '✅', tagIcon: '✅', tagTitle: 'Agendado', description: "Garantir comparecimento. Lembretes 48h, 24h e 2h antes. Confirmação com opções 1/2/3. Se faltar → Faltantes. Se concluir → Recorrente.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Agendados', description: "Objetivo: Garantir comparecimento do cliente.\nLembrete 48h antes, Confirmação 24h antes (1=Confirmar, 2=Desmarcar, 3=Reagendar), Lembrete 2h antes.\nSe desmarcar/faltar → Funil Faltantes.\nSe concluir sem novo agendamento → Funil Recorrentes.", active: true }] },
+                { id: 'absent', title: 'Faltantes', icon: '❌', tagIcon: '❌', tagTitle: 'Faltou', description: "Recuperar clientes que faltaram. 8 tentativas de reagendamento. Se reagendar → Agendados. Se não reagendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Faltantes', description: "Objetivo: Recuperar clientes que faltaram.\n8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nSe reagendar → Funil Agendados.\nSe não reagendar após 8ª tentativa → Funil Inativos.", active: true }] },
+                { id: 'recurrent', title: 'Recorrente', icon: '💎', tagIcon: '💎', tagTitle: 'Recorrente', description: "Clientes ativos e fidelizados. Monitoramento passivo. Se ficar 60 dias sem agendar → Inativos.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Recorrente', description: "Objetivo: Manter clientes ativos.\n60 dias sem agendamento → mover para Funil Inativos.\nNovo agendamento dentro do prazo → permanece recorrente.", active: true }] },
+                { id: 'inactive', title: 'Inativo', icon: '⏳', tagIcon: '⏳', tagTitle: 'Inativo', description: "Reativar clientes inativos. 2 ciclos de 8 tentativas com 30 dias de intervalo. Se agendar → Agendados.", visible: true, deletable: false, ai_actions: [{ title: 'Funil Inativo', description: "Objetivo: Reativar clientes inativos (60+ dias).\n2 ciclos de 8 tentativas: Dia 0, 2, 3, 4, 5, 12, 19, 26.\nIntervalo de 30 dias entre ciclos.\nSe agendar → Funil Agendados.\nSe não agendar após 2 ciclos → permanecer inativo.", active: true }] }
             ];
 
             const mergedStages = baseStages.map(baseStage => {
@@ -617,6 +617,9 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                 return {
                     ...baseStage,
                     visible: dbStage.visible !== false,
+                    icon: dbStage.icon || baseStage.icon,
+                    tagIcon: dbStage.tagIcon || baseStage.tagIcon,
+                    tagTitle: dbStage.tagTitle || baseStage.tagTitle,
                     // If DB has custom AI actions, it might be legacy, but we'll respect 'active' flag if we ever add a toggle.
                     // For now, we enforce our detailed descriptions but preserve visibility.
                 };

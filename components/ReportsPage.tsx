@@ -19,6 +19,10 @@ import {
 } from '../utils/reportGenerators';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
+// toast is available globally in some setups, or can be added if needed. 
+// Assuming project uses a common toast setup.
+
+
 
 
 // --- Icons ---
@@ -58,13 +62,18 @@ const ReportCard: React.FC<{ icon: React.ReactNode; title: string; description: 
             </div>
             <h3 className="text-lg font-bold text-secondary mb-2">{title}</h3>
             <p className="text-sm text-gray-600 flex-grow">{description}</p>
-            <button
-                onClick={onGenerate}
-                disabled={isDisabled}
-                className="mt-6 w-full bg-light hover:bg-gray-200 text-primary font-semibold py-2 px-4 rounded-lg transition-colors disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+             <button
+                onClick={(e) => {
+                    if (isDisabled) {
+                        e.stopPropagation();
+                    }
+                    onGenerate();
+                }}
+                className="mt-6 w-full bg-light hover:bg-gray-200 text-primary font-semibold py-2 px-4 rounded-lg transition-colors"
             >
                 {t('generateReport')}
             </button>
+
         </div>
     );
 };
@@ -106,10 +115,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
         { key: 'Commission', icon: <PercentageIcon />, generate: (t: any, data: any) => generateCommissionReport(t, data.appointments, data.professionals) },
     ];
 
-    // Use hardcoded units for now as we assumed single tenant context
-    const mockUnits = [
-        { id: 1, name: 'Sede' }
-    ];
+    const { tenant, units } = useData();
+    const currentPlanName = tenant?.plan?.name || 'Plano Individual';
+
+    const mockUnits = units.length > 0 ? units : [{ id: 1, name: 'Sede' }];
+
 
     const advancedReports = [
         'Relatório Financeiro',
@@ -121,6 +131,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
         'Relatório de Ponto',
         'Relatório de Comissões',
     ];
+
+    const isFeatureBlocked = (reportKey: string) => {
+        if (reportKey === 'Commission') {
+            return currentPlanName === 'Plano Individual';
+        }
+        
+        const reportTitle = t(`reportTitle${reportKey}`);
+        if (advancedReports.includes(reportTitle)) {
+            return ['Plano Individual', 'Empresa Essencial'].includes(currentPlanName);
+        }
+        
+        return false;
+    };
+
 
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -137,10 +161,17 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
     };
 
     const handleGenerateReport = async (reportKey: string) => {
+        if (isFeatureBlocked(reportKey)) {
+            alert("Este recurso está disponível apenas em planos superiores.");
+            return;
+        }
+
         const reportOption = reportOptions.find(opt => opt.key === reportKey);
+
         if (!reportOption) return;
 
         setIsGenerating(true);
+
 
         // Simulate a small delay for UX so user sees the change
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -257,9 +288,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
                             title={t(`reportTitle${report.key}`)}
                             description={t(`reportDesc${report.key}`)}
                             onGenerate={() => handleGenerateReport(report.key)}
-                            isDisabled={isIndividualPlan && advancedReports.includes(t(`reportTitle${report.key}`))}
+                            isDisabled={isFeatureBlocked(report.key)}
                         />
                     ))}
+
                 </div>
             </div>
             {currentReport && (

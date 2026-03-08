@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useData } from '../contexts/DataContext';
+
 import { aiAPI } from '../lib/api';
+
 
 
 
@@ -368,6 +371,8 @@ interface AIAgentPageProps {
     navigate: (page: string) => void;
 }
 
+
+
 const AudioPlayer: React.FC<{
     duration: string;
     useCustomVoice?: boolean;
@@ -570,22 +575,31 @@ const PlanCard: React.FC<{
     planType: 'Básico' | 'Avançada';
     isDisabled?: boolean;
     navigate?: (page: string) => void;
-    isEssentialPlan?: boolean;
-}> = ({ title, description, features, example, adminConfig, isSelected, isFeatured = false, onSelect, isAIEnabled, onUpdateAgent, planType, isDisabled = false, navigate, isEssentialPlan = false }) => {
+    currentPlanName?: string;
+}> = ({ title, description, features, example, adminConfig, isSelected, isFeatured = false, onSelect, isAIEnabled, onUpdateAgent, planType, isDisabled = false, navigate, currentPlanName = 'Plano Individual' }) => {
+
+
 
     return (
         <div
-            onClick={isDisabled || !isAIEnabled ? undefined : onSelect}
-            className={`relative border-2 rounded-2xl p-6 md:p-8 flex flex-col h-full transition-all duration-300 transform ${isDisabled || !isAIEnabled ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-102'
+            onClick={() => {
+                if (planType === 'Avançada' && isDisabled) {
+                    alert("Este recurso está disponível apenas em planos superiores.");
+                    return;
+                }
+                if (!isDisabled && isAIEnabled) onSelect();
+            }}
+            className={`relative border-2 rounded-2xl p-6 md:p-8 flex flex-col h-full transition-all duration-300 transform ${(!isAIEnabled) ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-102'
                 } ${isSelected ? 'border-primary shadow-2xl scale-105' : 'border-gray-200'
                 } ${isFeatured ? 'bg-secondary text-white' : 'bg-white shadow-lg'
                 }`}>
+
             {isDisabled && (
                 <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-2xl z-10 flex flex-col items-center justify-center p-4 text-center">
                     <LockIcon />
                     <h4 className="text-lg font-bold text-white mt-2">Exclusivo do Plano Empresa</h4>
                     <p className="text-sm text-gray-300 mt-1 mb-4">
-                        {isEssentialPlan
+                        {currentPlanName === 'Empresa Essencial'
                             ? "A agente Avançada está disponível apenas nos planos Empresa Pro e Premium."
                             : "Faça o upgrade para ter uma recepcionista virtual completa por voz e texto."
                         }
@@ -654,11 +668,16 @@ const SliderControl: React.FC<{
 
 
 export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivateAI, activeAIAgent, onBack, isIndividualPlan, navigate }) => {
+
+
+    const { tenant } = useData();
+    const currentPlanName = tenant?.plan?.name || currentUser?.plan || 'Plano Individual';
+
     const [selectedPlan, setSelectedPlan] = useState<'Básico' | 'Avançada' | null>(activeAIAgent);
     const [isAIEnabled, setIsAIEnabled] = useState(activeAIAgent !== null);
 
-    // Verificar se o usuário está no plano Essencial
-    const isEssentialPlan = currentUser?.plan === 'Empresa Essencial' && !currentUser?.is_super_admin;
+    const isVoiceBlocked = ['Plano Individual', 'Empresa Essencial'].includes(currentPlanName);
+
 
     const [basicAgentName, setBasicAgentName] = useState('Júlia');
     const [basicReminderMsg, setBasicReminderMsg] = useState('Olá, [NOME_CLIENTE]! Passando para lembrar do seu horário amanhã às [HORARIO]...');
@@ -858,16 +877,17 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
 
 
     useEffect(() => {
-        if (!isIndividualPlan && !isEssentialPlan) {
+        if (currentPlanName !== 'Plano Individual' && currentPlanName !== 'Empresa Essencial') {
             setSelectedPlan('Avançada');
             if (isAIEnabled) {
                 onActivateAI('Avançada');
             }
-        } else if ((isIndividualPlan || isEssentialPlan) && isAIEnabled && !selectedPlan) {
+        } else if ((currentPlanName === 'Plano Individual' || currentPlanName === 'Empresa Essencial') && isAIEnabled && !selectedPlan) {
             setSelectedPlan('Básico');
             onActivateAI('Básico');
         }
-    }, [isIndividualPlan, isEssentialPlan, isAIEnabled, onActivateAI, selectedPlan]);
+    }, [currentPlanName, isAIEnabled, onActivateAI, selectedPlan]);
+
 
     const handleCloneVoice = async () => {
         if (!customVoiceFile) return;
@@ -959,11 +979,11 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
             onActivateAI(null);
             setSelectedPlan(null);
             setIsChatPanelOpen(false); // Close chat panel when disabling
-        } else if (isIndividualPlan || isEssentialPlan) {
+        } else if (currentPlanName === 'Plano Individual' || currentPlanName === 'Empresa Essencial') {
             // For Individual and Essential plans, default to 'Básico'
             setSelectedPlan('Básico');
             onActivateAI('Básico');
-        } else if (!isIndividualPlan && !isEssentialPlan) { // For Empresa plans, always activate Avançada
+        } else if (currentPlanName !== 'Plano Individual' && currentPlanName !== 'Empresa Essencial') { // For Empresa plans, always activate Avançada
             onActivateAI('Avançada');
             setSelectedPlan('Avançada');
         } else if (enabled && !selectedPlan) {
@@ -974,7 +994,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
     };
 
     const handleUpdateAgent = async () => {
-        const planToActivate = (isIndividualPlan || isEssentialPlan) ? selectedPlan : 'Avançada';
+        const planToActivate = (currentPlanName === 'Plano Individual' || currentPlanName === 'Empresa Essencial') ? selectedPlan : 'Avançada';
 
         try {
             await aiAPI.updateConfig({
@@ -1009,7 +1029,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
 
     const handleSelectPlan = (plan: 'Básico' | 'Avançada') => {
         if (!isAIEnabled) return; // Allow selection if AI is enabled
-        if (plan === 'Avançada' && (isIndividualPlan || isEssentialPlan)) return; // Block advanced plan for individual and essential plans
+        if (plan === 'Avançada' && (currentPlanName === 'Plano Individual' || currentPlanName === 'Empresa Essencial')) return; // Block advanced plan for individual and essential plans
         setSelectedPlan(plan);
     };
 
@@ -1345,7 +1365,7 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
             </div>
 
             <div className={`flex flex-wrap justify-center gap-8 max-w-6xl mx-auto transition-opacity duration-500 ${!isAIEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                {(isIndividualPlan || isEssentialPlan) && (
+                {(currentPlanName === 'Plano Individual' || currentPlanName === 'Empresa Essencial') && (
                     <div className="w-full lg:max-w-lg">
                         <PlanCard
                             title="Agente Básico"
@@ -1374,10 +1394,11 @@ export const AIAgentPage: React.FC<AIAgentPageProps> = ({ currentUser, onActivat
                         isFeatured
                         onUpdateAgent={handleUpdateAgent}
                         planType="Avançada"
-                        isDisabled={isIndividualPlan || isEssentialPlan}
+                        isDisabled={isVoiceBlocked}
                         navigate={navigate}
-                        isEssentialPlan={isEssentialPlan}
+                        currentPlanName={currentPlanName}
                     />
+
                 </div>
             </div>
 

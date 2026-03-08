@@ -195,11 +195,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [isEditingBankInfo, setIsEditingBankInfo] = useState(false);
 
-    const currentPlanName = tenant?.plan?.display_name || currentUser?.plan || 'Individual';
+    const currentPlanName = tenant?.plan?.name || currentUser?.plan || 'Plano Individual';
 
-    const canAddMultipleUnits = ['Empresa Essencial', 'Empresa Pro', 'Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentPlanName);
+    // Limites de Unidades: Individual=1, Essencial=1, Pro=3, Premium=5
+    const getUnitLimit = (planName: string) => {
+        if (planName === 'Empresa Pro') return 3;
+        if (planName === 'Empresa Premium' || planName === 'Vitalício' || planName === 'Plano Vitalício') return 5;
+        return 1;
+    };
 
-    const canRegisterNewUnit = canAddMultipleUnits || units.length === 0;
+    const unitLimit = getUnitLimit(currentPlanName);
+    const canRegisterNewUnit = units.length < unitLimit;
+    const canAddMultipleUnits = unitLimit > 1;
+
+    // Limite de Usuários: Plano Individual = 1
+    const userLimit = tenant?.plan?.max_users || (currentPlanName === 'Plano Individual' ? 1 : 999);
+    const canRegisterNewUser = users.length < userLimit;
+
+
 
     // Overdue Block Logic
     const isOverdue = tenant?.subscription_status === 'OVERDUE';
@@ -369,17 +382,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="relative group">
                                 <button
                                     onClick={() => { setUserToEdit(null); setIsUserModalOpen(true); }}
-                                    disabled={isIndividualPlan}
+                                    disabled={!canRegisterNewUser}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
                                     {t('settingsUserButtonAdd')}
                                 </button>
-                                {isIndividualPlan && (
+                                {!canRegisterNewUser && (
                                     <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
-                                        {t('settingsUserTooltipIndividualPlan')}
+                                        Limite atingido para o seu plano atual.
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
                                     </div>
                                 )}
+
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
@@ -447,10 +461,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 </button>
                                 {!canRegisterNewUnit && (
                                     <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">
-                                        {t('planEnterprise')}
+                                        Limite atingido para o seu plano atual.
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
                                     </div>
                                 )}
+
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
