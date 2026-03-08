@@ -595,19 +595,21 @@ const PlanCard: React.FC<{
                 }`}>
 
             {isDisabled && (
-                <div className="absolute inset-0 bg-gray-800 bg-opacity-75 rounded-2xl z-10 flex flex-col items-center justify-center p-4 text-center">
-                    <LockIcon />
-                    <h4 className="text-lg font-bold text-white mt-2">Exclusivo do Plano Empresa</h4>
-                    <p className="text-sm text-gray-300 mt-1 mb-4">
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-2xl z-20 flex flex-col items-center justify-center p-6 text-white text-center">
+                    <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg animate-pulse">
+                        <LockIcon />
+                    </div>
+                    <h4 className="text-2xl font-bold mb-2">Exclusivo do Plano Empresa</h4>
+                    <p className="text-gray-300 mb-6 max-w-md text-sm">
                         {currentPlanName === 'Empresa Essencial'
-                            ? "A agente Avançada está disponível apenas nos planos Empresa Pro e Premium."
+                            ? "A agente Avançada com IA por voz está disponível apenas nos planos Empresa Pro e Premium."
                             : "Faça o upgrade para ter uma recepcionista virtual completa por voz e texto."
                         }
                     </p>
                     <button
                         type="button"
                         onClick={() => navigate?.('upgrade_to_empresa')}
-                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-6 rounded-full transition duration-300"
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 shadow-xl"
                     >
                         Fazer Upgrade
                     </button>

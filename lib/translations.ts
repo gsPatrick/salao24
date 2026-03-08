@@ -892,6 +892,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
         downloadInvoice: 'Baixar',
         signedContractsTitle: 'Meus Contratos Assinados',
         signedContractsDesc: 'Veja e baixe os contratos de serviço associados à sua conta.',
+        signedOn: 'Assinado em',
         unspecifiedPlan: 'Não especificado',
         unspecifiedClient: 'Cliente não especificado',
         contractTextUnavailable: 'O texto do contrato não está disponível.',

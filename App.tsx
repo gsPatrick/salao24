@@ -387,7 +387,7 @@ const App: React.FC = () => {
   const navigate = (pageName: string, params?: any) => {
     if (pageName === 'upgrade_to_empresa') {
       setSelectedPlan({ name: 'Empresa Pro', price: 'R$ 349,90' });
-      setPage('trial');
+      setPage('payment');
       setHistory(prev => [...prev, page]);
       return;
     }

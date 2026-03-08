@@ -1072,16 +1072,20 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
         fetchContracts();
     }, []);
 
-    const planDetailsMap = {
+    const planDetailsMap: Record<string | number, { name: string, desc: string }> = {
+        '1': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
         'individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
         'Individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
         'Plano Individual': { name: 'Plano Individual', desc: 'Acesso às ferramentas essenciais para um profissional.' },
+        '2': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
         'Empresa Essencial': { name: 'Empresa Essencial', desc: 'Para equipes pequenas com as ferramentas essenciais para crescer.' },
+        '3': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
         'Empresa Pro': { name: 'Empresa Pro', desc: 'A solução ideal para negócios em expansão, com IA por voz e mais automações.' },
+        '4': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
         'Empresa Premium': { name: 'Empresa Premium', desc: 'Para grandes operações e redes, com suporte dedicado e gerente de contas.' },
@@ -1096,7 +1100,7 @@ const PlanSettings: React.FC<PlanSettingsProps> = ({ t, onPayInstallment, curren
     const currentPlanDesc = planDetailsMap[planKey as keyof typeof planDetailsMap]?.desc || (tenant?.plan?.name ? `Acesso ao plano ${tenant.plan.name}` : '');
     const businessSegmentLabel = tenant?.settings?.segment || currentUser?.businessSegmentLabel;
 
-    const canUpgrade = !['Empresa Pro', 'Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentPlanName);
+    const canUpgrade = !['Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(currentPlanName);
 
     const handleCancelSubscription = () => {
         setIsCancelModalOpen(true);

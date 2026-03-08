@@ -376,10 +376,19 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
         setDateRange(firstDay, lastDay);
     };
 
-    const userPlan = (currentUser?.plan as any)?.name || currentUser?.plan || '';
-    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'Administrador';
-    const canUpgrade = isAdmin && !['Empresa Pro', 'Empresa Premium', 'Vitalício', 'Plano Vitalício'].includes(userPlan);
+    const planDetailsMap: Record<string | number, string> = {
+        '1': 'Plano Individual', 'individual': 'Plano Individual', 'Individual': 'Plano Individual', 'Plano Individual': 'Plano Individual',
+        '2': 'Empresa Essencial', 'essencial': 'Empresa Essencial', 'Essencial': 'Empresa Essencial', 'Empresa Essencial': 'Empresa Essencial',
+        '3': 'Empresa Pro', 'pro': 'Empresa Pro', 'Pro': 'Empresa Pro', 'Empresa Pro': 'Empresa Pro',
+        '4': 'Empresa Premium', 'premium': 'Empresa Premium', 'Premium': 'Empresa Premium', 'Empresa Premium': 'Empresa Premium',
+        'vitalicio': 'Vitalício', 'Vitalício': 'Vitalício', 'Vitalicio': 'Vitalício', 'Plano Vitalício': 'Vitalício',
+    };
 
+    const userPlanRaw = (currentUser?.plan as any)?.name || currentUser?.plan || 'Individual';
+    const userPlanName = planDetailsMap[userPlanRaw as keyof typeof planDetailsMap] || userPlanRaw;
+
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'Administrador';
+    const canUpgrade = isAdmin && !['Empresa Premium', 'Vitalício'].includes(userPlanName);
     return (
         <div className="container mx-auto px-6 py-8">
             {canUpgrade && (
