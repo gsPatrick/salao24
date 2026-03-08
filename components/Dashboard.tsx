@@ -3228,7 +3228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const [channelToEdit, setChannelToEdit] = useState<AcquisitionChannel | null>(null);
     const [channelView, setChannelView] = useState<'active' | 'archived'>('active');
 
-    const isIndividualPlan = currentUser?.plan === 'Individual' && !isSuperAdmin;
+    const isIndividualPlan = (currentUser?.plan === 'Individual' || currentUser?.plan === 'Empresa Essencial') && !isSuperAdmin;
 
     const [unreadMessages, setUnreadMessages] = useState<{ [key: number]: number }>({});
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -4773,7 +4773,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             case 'Clientes': return <ClientListPage onBack={handleBackToDashboard} navigate={navigate} clients={clients || []} onAddNewClient={handleSaveClientDashboard} acquisitionChannels={currentUnitData.acquisitionChannels || []} onOpenChat={handleOpenChatForClient} onDeleteClient={handleDeleteClientDashboard} onBlockClient={handleBlockClientDashboard} onUnblockClient={handleUnblockClientDashboard} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
             case 'CRM': return <CRMPage onBack={handleBackToDashboard} currentUser={currentUser} clients={currentUnitData.clients || []} appointments={currentUnitData.appointments || []} navigate={navigate} onOpenChat={handleOpenChatForClient} onComingSoon={onComingSoon} />;
             case 'Profissionais': return <ProfessionalsPage onBack={handleBackToDashboard} isIndividualPlan={isIndividualPlan} />;
-            case 'Registro de Ponto': return <TimeClockPage currentUser={currentUser} onBack={handleBackToDashboard} professional={professionalForTimeClock} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} />;
+            case 'Registro de Ponto': return <TimeClockPage currentUser={currentUser} onBack={handleBackToDashboard} professional={professionalForTimeClock} isIndividualPlan={isIndividualPlan} onComingSoon={onComingSoon} navigate={navigate} />;
             case 'Serviços': return <ServicesPage onBack={handleBackToDashboard} />;
             case 'Estoque': return <StockPage onBack={handleBackToDashboard} />;
             case 'Contratos': return <ContractPage onBack={handleBackToDashboard} currentUser={currentUser} onComingSoon={onComingSoon} />;

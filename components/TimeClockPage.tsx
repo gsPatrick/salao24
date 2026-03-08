@@ -19,6 +19,7 @@ interface TimeClockPageProps {
     currentUser: User | null;
     professional: any | null;
     isIndividualPlan?: boolean;
+    navigate?: (page: string) => void;
 }
 
 interface LogEntry {
@@ -151,7 +152,7 @@ const OvertimeJustificationModal: React.FC<{
 };
 
 
-const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, professional, isIndividualPlan }) => {
+const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, professional, isIndividualPlan, navigate }) => {
     const { t } = useLanguage();
     const [status, setStatus] = useState<'not_clocked_in' | 'clocked_in' | 'on_break' | 'clocked_out'>('not_clocked_in');
     const [log, setLog] = useState<LogEntry[]>([]);
@@ -704,6 +705,8 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
 
     const dayNameKeys = ['daySunday', 'dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday'];
 
+    const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>;
+
     const renderHistoryTable = (historyData: HistoryLog[], forManagement: boolean) => {
         const StatusBadge: React.FC<{ status?: 'pending' | 'approved' | 'rejected' }> = ({ status }) => {
             if (!status) return null;
@@ -875,9 +878,23 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
                             <p className="text-gray-600 mt-2 mb-8">{t('timeClockPrompt')}</p>
                             <div className="relative group w-full max-w-xs mx-auto">
                                 <button onClick={() => handleActionWithLocationCheck('in', handleClockIn)} disabled={isIndividualPlan} className="w-full flex items-center justify-center p-4 bg-primary text-white font-bold rounded-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100">
-                                    <ClockInIcon /> 📍 {t('timeClockClockIn')}
+                                    <ClockInIcon /> 📍 {t('timeClockClockIn')} {isIndividualPlan && '🚫'}
                                 </button>
-                                {isIndividualPlan && <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10">{t('settingsUserTooltipIndividualPlan')}<div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div></div>}
+                                {isIndividualPlan && (
+                                    <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
+                                        <div className="font-bold mb-1 flex items-center justify-center gap-1">
+                                            <LockIcon /> {t('planEnterprise')}
+                                        </div>
+                                        <p className="mb-2">O Registro de Ponto online é exclusivo para o Plano Empresa.</p>
+                                        <button
+                                            onClick={() => navigate?.('upgrade_to_empresa')}
+                                            className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
+                                        >
+                                            {t('upgradeButton')}
+                                        </button>
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

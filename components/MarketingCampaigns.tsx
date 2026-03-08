@@ -143,6 +143,8 @@ const ImageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w
 const AudioIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>;
 const FileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>;
 
+const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>;
+
 const messageTypes = [
     { type: 'texto', icon: <TextIcon />, label: 'Texto' },
     { type: 'imagem', icon: <ImageIcon />, label: 'Imagem' },
@@ -763,7 +765,7 @@ export const MarketingCampaigns: React.FC<MarketingCampaignsProps> = (props) => 
 
 // --- Tab Components ---
 
-const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, onDeleteCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, unitPhone }) => {
+const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaign, onUpdateCampaign, onArchiveCampaign, onUnarchiveCampaign, onDuplicateCampaign, onDeleteCampaign, campaigns, clients, appointments, isIndividualPlan, navigate, unitPhone, onComingSoon }) => {
     const { t } = useLanguage();
     const [isUpsertModalOpen, setIsUpsertModalOpen] = useState(false);
     const [campaignToEdit, setCampaignToEdit] = useState<Campaign | null>(null);
@@ -771,7 +773,6 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
     const [searchQuery, setSearchQuery] = useState('');
     const [detailsModalOpen, setDetailsModalOpen] = useState(false);
     const [selectedCampaignForDetails, setSelectedCampaignForDetails] = useState<Campaign | null>(null);
-    const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>;
 
     const handleViewDetails = (campaign: Campaign) => {
         setSelectedCampaignForDetails(campaign);
@@ -835,7 +836,7 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
                         disabled={isIndividualPlan}
                         className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
                     >
-                        + {t('newCampaign')}
+                        + {t('newCampaign')} {isIndividualPlan && '🚫'}
                     </button>
                     {isIndividualPlan && (
                         <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
@@ -963,7 +964,9 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
     onCloseNewChannelModal,
     channelToEdit,
     clients,
-    onComingSoon
+    onComingSoon,
+    isIndividualPlan,
+    navigate
 }) => {
     const { t } = useLanguage();
     const [view, setView] = useState<'active' | 'archived'>('active');
@@ -990,12 +993,30 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
                     <h2 className="text-2xl font-bold text-secondary">{t('acquisitionChannelTitle')}</h2>
                     <p className="text-sm text-gray-500">{t('acquisitionChannelSubtitle')}</p>
                 </div>
-                <button
-                    onClick={handleAddNew}
-                    className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg"
-                >
-                    + {t('newAcquisitionChannel')}
-                </button>
+                <div className="relative group">
+                    <button
+                        onClick={handleAddNew}
+                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
+                        disabled={isIndividualPlan}
+                    >
+                        + {t('newAcquisitionChannel')} {isIndividualPlan && '🚫'}
+                    </button>
+                    {isIndividualPlan && (
+                        <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
+                            <div className="font-bold mb-1 flex items-center justify-center gap-1">
+                                <LockIcon /> {t('planEnterprise')}
+                            </div>
+                            <p className="mb-2">O Plano Individual não permite a criação de Canais de Aquisição personalizados.</p>
+                            <button
+                                onClick={() => navigate?.('upgrade_to_empresa')}
+                                className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
+                            >
+                                {t('upgradeButton')}
+                            </button>
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="my-6 border-b border-gray-200 flex justify-end">
