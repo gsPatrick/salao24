@@ -329,7 +329,6 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
         <div className="flex-1">
             <p className="text-sm text-gray-500 font-medium">{title}</p>
             <p className="text-2xl font-bold text-secondary">{value}</p>
-            {description && <p className="text-[10px] text-gray-400 mt-1 leading-tight">{description}</p>}
         </div>
     </div>
 );
@@ -1144,6 +1143,7 @@ const ExclusivePromotionsPage: React.FC<{
         const [selectedCity, setSelectedCity] = useState(editingExclusive?.locationCity || '');
         const [cities, setCities] = useState<string[]>([]);
         const [isFetchingCities, setIsFetchingCities] = useState(false);
+        const [searchTerm, setSearchTerm] = useState('');
 
         useEffect(() => {
             if (selectedState) {
@@ -1240,6 +1240,8 @@ const ExclusivePromotionsPage: React.FC<{
                             type="text"
                             placeholder="Filtrar por nome ou descrição..."
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                         <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1258,7 +1260,7 @@ const ExclusivePromotionsPage: React.FC<{
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                    {exclusivePromotions.map((exclusive) => (
+                    {exclusivePromotions.filter(p => !searchTerm || p.title?.toLowerCase().includes(searchTerm.toLowerCase()) || p.description?.toLowerCase().includes(searchTerm.toLowerCase()) || p.callToAction?.toLowerCase().includes(searchTerm.toLowerCase())).map((exclusive) => (
                         <div key={exclusive.id} className="bg-white p-5 rounded-xl shadow-lg border border-transparent hover:border-primary transition-all duration-300 group">
                             <div className="flex justify-between items-start mb-3">
                                 <div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { displayCurrency } from '../lib/formatUtils';
+import { financeAPI } from '../lib/api';
+
 
 import { User } from '../types';
 
@@ -16,6 +18,7 @@ interface AccountPageProps {
     isIndividualPlan?: boolean;
     selectedUnit?: string;
     onUnitChange?: (unit: string) => void;
+    units?: any[];
     promotions?: any[];
     onOpenPromoModal?: () => void;
     unitData?: any;
@@ -207,7 +210,6 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; 
         <div className="flex-1">
             <p className="text-sm text-gray-500 font-medium">{title}</p>
             <p className="text-2xl font-bold text-secondary">{value}</p>
-            {description && <p className="text-[10px] text-gray-400 mt-1 leading-tight">{description}</p>}
         </div>
     </div>
 );
@@ -286,91 +288,36 @@ const AccountPage: React.FC<AccountPageProps> = ({ currentUser, navigate, isIndi
 
     // --- Real-time Data Integration ---
     useEffect(() => {
-        if (!unitData) return;
+        const fetchSummary = async () => {
+            const selectedUnitId = units?.find((u: any) => u.name === selectedUnit)?.id || '';
+            try {
+                const response = await financeAPI.getSummary({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    unitId: selectedUnitId
+                });
 
-        const { transactions = [], appointments = [], clients = [] } = unitData;
+                if (response.success && response.data) {
+                    const sum = response.data;
+                    setData((prev: any) => ({
+                        ...prev,
+                        faturamento: (sum.receitas || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                        atendimentos: (sum.atendimentos || 0).toString(),
+                        ticketMedio: (sum.ticket_medio || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                        clientes: (sum.clients_new || 0).toString(),
+                        transactions: unitData?.transactions ? unitData.transactions.filter((t: any) => {
+                            const d = new Date(t.date);
+                            return d >= startDate && d <= endDate;
+                        }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5) : []
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching finance summary:', error);
+            }
+        };
 
-        // Filter dates
-        const filterStart = new Date(startDate);
-        filterStart.setHours(0, 0, 0, 0);
-        const filterEnd = new Date(endDate);
-        filterEnd.setHours(23, 59, 59, 999);
-
-        const periodTransactions = transactions.filter((t: any) => {
-            const d = new Date(t.date);
-            return d >= filterStart && d <= filterEnd;
-        });
-
-        const periodAppointments = appointments.filter((a: any) => {
-            const d = new Date(a.date);
-            return d >= filterStart && d <= filterEnd;
-        });
-
-        const newClients = clients.filter((c: any) => {
-            const d = new Date(c.registrationDate || c.createdAt);
-            return d >= filterStart && d <= filterEnd;
-        });
-
-        // Totals
-        const faturamentoVal = periodTransactions
-            .filter((t: any) => t.type === 'receita')
-            .reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
-
-        const atendimentosVal = periodAppointments.filter((a: any) => a.status === 'Atendido' || a.status === 'Completed').length;
-        const ticketMedioVal = atendimentosVal > 0 ? faturamentoVal / atendimentosVal : 0;
-        const clientesVal = newClients.length;
-
-        // Charting Logic (simplified mapping for current UI)
-        const labels: string[] = [];
-        const chartDataObj: any = { faturamento: [], atendimentos: [], ticketMedio: [], clientes: [] };
-        const cashFlowObj: any = { receitas: [], despesas: [] };
-
-        // Generate points (daily for now)
-        const diffDays = Math.ceil((filterEnd.getTime() - filterStart.getTime()) / (1000 * 60 * 60 * 24));
-        const step = diffDays > 31 ? Math.ceil(diffDays / 12) : 1;
-
-        for (let d = new Date(filterStart); d <= filterEnd; d.setDate(d.getDate() + step)) {
-            labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
-
-            const sliceStart = new Date(d); sliceStart.setHours(0, 0, 0, 0);
-            const sliceEnd = new Date(d);
-            if (step > 1) sliceEnd.setDate(sliceEnd.getDate() + step - 1);
-            sliceEnd.setHours(23, 59, 59, 999);
-
-            const sliceTrans = periodTransactions.filter((t: any) => {
-                const date = new Date(t.date);
-                return date >= sliceStart && date <= sliceEnd;
-            });
-            const sliceAppts = periodAppointments.filter((a: any) => {
-                const date = new Date(a.date);
-                return date >= sliceStart && date <= sliceEnd;
-            });
-
-            const fat = sliceTrans.filter((t: any) => t.type === 'receita').reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
-            const desp = sliceTrans.filter((t: any) => t.type === 'despesa').reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
-            const atend = sliceAppts.filter((a: any) => a.status === 'Atendido' || a.status === 'Completed').length;
-
-            chartDataObj.faturamento.push(fat);
-            chartDataObj.atendimentos.push(atend);
-            chartDataObj.ticketMedio.push(atend > 0 ? fat / atend : 0);
-            chartDataObj.clientes.push(0);
-
-            cashFlowObj.receitas.push(fat);
-            cashFlowObj.despesas.push(desp);
-        }
-
-        setData({
-            faturamento: displayCurrency(faturamentoVal),
-            atendimentos: atendimentosVal.toString(),
-            ticketMedio: displayCurrency(ticketMedioVal),
-            clientes: clientesVal.toString(),
-            chartLabels: labels,
-            chartData: chartDataObj,
-            cashFlowData: cashFlowObj,
-            transactions: periodTransactions.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5)
-        });
-
-    }, [unitData, startDate, endDate, timePeriod]);
+        fetchSummary();
+    }, [startDate, endDate, selectedUnit, units, unitData]);
 
     // Funções de navegação do carrossel
     const navigateCarousel = (direction: 'prev' | 'next') => {
