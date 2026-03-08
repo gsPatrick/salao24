@@ -620,6 +620,7 @@ const CRMPage: React.FC<CRMPageProps> = ({ onBack, currentUser, navigate, onOpen
                     icon: dbStage.icon || baseStage.icon,
                     tagIcon: dbStage.tagIcon || baseStage.tagIcon,
                     tagTitle: dbStage.tagTitle || baseStage.tagTitle,
+                    title: baseStage.title, // Force updated title even if DB has old one
                     // If DB has custom AI actions, it might be legacy, but we'll respect 'active' flag if we ever add a toggle.
                     // For now, we enforce our detailed descriptions but preserve visibility.
                 };
