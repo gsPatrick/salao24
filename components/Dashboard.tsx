@@ -4319,7 +4319,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             const fetchSummary = async () => {
                 setLoadingSummary(true);
                 try {
-                    const response = await financeAPI.getSummary({ period: derivedPeriod, unitId: selectedUnitId });
+                    const response = await financeAPI.getSummary({ 
+                        period: derivedPeriod, 
+                        unitId: selectedUnitId,
+                        startDate: startDate.toISOString(),
+                        endDate: endDate.toISOString()
+                    });
                     if (response.success) {
                         setSummary(response.data);
                     }
@@ -4330,7 +4335,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }
             };
             fetchSummary();
-        }, [derivedPeriod, selectedUnit, transactions]);
+        }, [derivedPeriod, startDate, endDate, selectedUnit, transactions]);
 
         // Use summary if available, otherwise fallback to local calculation
         const kpisForPeriod = useMemo(() => {
