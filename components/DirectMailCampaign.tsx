@@ -117,27 +117,12 @@ export const DirectMailCampaign: React.FC<DirectMailCampaignProps> = ({ campaign
                         </div>
                         <div className="relative group">
                             <button
-                                onClick={() => { if (!isIndividualPlan) { setCampaignToEdit(null); setIsModalOpen(true); } }}
-                                disabled={isIndividualPlan}
-                                className={`flex-shrink-0 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${isIndividualPlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => { setCampaignToEdit(null); setIsModalOpen(true); }}
+                                className={`flex-shrink-0 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary`}
                             >
-                                Criar Mala Direta {isIndividualPlan && '🚫'}
+                                Criar Mala Direta
                             </button>
-                            {isIndividualPlan && (
-                                <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
-                                    <div className="font-bold mb-1 flex items-center justify-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg> {t('planEnterprise') || 'Plano Empresa'}
-                                    </div>
-                                    <p className="mb-2">O Plano Individual não permite a criação de Mala Direta.</p>
-                                    <button
-                                        onClick={() => (window as any).dashboardNavigate?.('upgrade_to_empresa')}
-                                        className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
-                                    >
-                                        {t('upgradeButton') || 'Fazer Upgrade'}
-                                    </button>
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
-                                </div>
-                            )}
+                            {/* Direct Mail Unlocked */}
                         </div>
                     </div>
 

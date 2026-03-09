@@ -878,7 +878,7 @@ const TimeClockPage: React.FC<TimeClockPageProps> = ({ onBack, currentUser, prof
                             <p className="text-gray-600 mt-2 mb-8">{t('timeClockPrompt')}</p>
                             <div className="relative group w-full max-w-xs mx-auto">
                                 <button onClick={() => handleActionWithLocationCheck('in', handleClockIn)} disabled={isIndividualPlan} className="w-full flex items-center justify-center p-4 bg-primary text-white font-bold rounded-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100">
-                                    <ClockInIcon /> 📍 {t('timeClockClockIn')} {isIndividualPlan && '🚫'}
+                                    <ClockInIcon /> 📍 {t('timeClockClockIn')} {isIndividualPlan && <LockIcon />}
                                 </button>
                                 {isIndividualPlan && (
                                     <div className="absolute bottom-full mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">

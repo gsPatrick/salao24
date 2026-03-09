@@ -257,24 +257,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
           <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
             {/* Unified WhatsApp Card */}
             <div className="relative border p-6 rounded-xl flex flex-col items-center text-center">
-              {isIndividualPlan && (
-                <div className="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-xl z-20 flex flex-col items-center justify-center p-6 text-white">
-                  <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg animate-pulse">
-                    <LockIcon />
-                  </div>
-                  <h4 className="text-2xl font-bold mb-2">{t('planEnterprise')}</h4>
-                  <p className="text-gray-300 mb-6 max-w-md">
-                    Recurso disponível apenas no plano Empresa. Faça o upgrade agora para desbloquear a conexão ilimitada com WhatsApp.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => navigate('upgrade_to_empresa')}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 shadow-xl"
-                  >
-                    Fazer Upgrade
-                  </button>
-                </div>
-              )}
+              {/* WhatsApp Connection Unlocked */}
 
               <div className="p-4 bg-green-100 text-green-600 rounded-full mb-4">
                 <WhatsAppIcon />
@@ -307,7 +290,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
                     <button
                       onClick={handleConnectWhatsApp}
                       className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:-translate-y-1"
-                      disabled={isLoading || isIndividualPlan}
+                      disabled={isLoading}
                     >
                       Gerar QR Code
                     </button>
@@ -318,7 +301,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({ onBack, isIndividualPlan, n
               {connectionStatus === 'connected' && (
                 <button
                   onClick={handleDisconnectWhatsApp}
-                  disabled={isLoading || isIndividualPlan}
+                  disabled={isLoading}
                   className="mt-4 text-red-500 hover:text-red-700 font-medium text-sm underline decoration-red-500 underline-offset-4"
                 >
                   Desconectar Sessão

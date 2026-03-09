@@ -387,7 +387,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     disabled={!canRegisterNewUser}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                    {t('settingsUserButtonAdd')} {!canRegisterNewUser && '🚫'}
+                                    {t('settingsUserButtonAdd')} {!canRegisterNewUser && <LockIcon />}
                                 </button>
                                 {!canRegisterNewUser && (
                                     <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center shadow-xl">
@@ -467,7 +467,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     disabled={!canRegisterNewUnit}
                                     className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                    {t('settingsUnitButtonAdd')} {!canRegisterNewUnit && '🚫'}
+                                    {t('settingsUnitButtonAdd')} {!canRegisterNewUnit && <LockIcon />}
                                 </button>
                                 {!canRegisterNewUnit && (
                                     <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center shadow-xl">

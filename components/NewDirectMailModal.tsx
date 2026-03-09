@@ -287,7 +287,7 @@ export const NewDirectMailModal: React.FC<NewDirectMailModalProps> = ({ isOpen, 
                   <label htmlFor="send-type" className="block text-sm font-medium text-gray-700">Tipo de Envio</label>
                   <select id="send-type" value={sendType} onChange={e => setSendType(e.target.value as any)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                     <option value="Email">Email</option>
-                    <option value="SMS" disabled={isIndividualPlan}>SMS {isIndividualPlan && '(Plano Empresa)'}</option>
+                    <option value="SMS">SMS</option>
                     <option value="WhatsApp">WhatsApp</option>
                   </select>
                 </div>

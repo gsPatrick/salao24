@@ -836,7 +836,7 @@ const CampaignsTab: React.FC<Partial<MarketingCampaignsProps>> = ({ onAddCampaig
                         disabled={isIndividualPlan}
                         className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
                     >
-                        + {t('newCampaign')} {isIndividualPlan && '🚫'}
+                        + {t('newCampaign')} {isIndividualPlan && <LockIcon />}
                     </button>
                     {isIndividualPlan && (
                         <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
@@ -996,26 +996,11 @@ const AcquisitionChannelsTab: React.FC<Partial<MarketingCampaignsProps>> = ({
                 <div className="relative group">
                     <button
                         onClick={handleAddNew}
-                        disabled={isIndividualPlan}
-                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
+                        className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-5 rounded-lg inline-flex items-center gap-2 transition-transform transform hover:scale-105 shadow-lg"
                     >
-                        + {t('newAcquisitionChannel')} {isIndividualPlan && '🚫'}
+                        + {t('newAcquisitionChannel')}
                     </button>
-                    {isIndividualPlan && (
-                        <div className="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-3 px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -translate-x-1/2 left-1/2 z-10 text-center">
-                            <div className="font-bold mb-1 flex items-center justify-center gap-1">
-                                <LockIcon /> {t('planEnterprise')}
-                            </div>
-                            <p className="mb-2">O Plano Individual não permite a criação de Canais de Aquisição personalizados.</p>
-                            <button
-                                onClick={() => navigate?.('upgrade_to_empresa')}
-                                className="w-full mt-2 py-1.5 px-3 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark transition-colors pointer-events-auto"
-                            >
-                                {t('upgradeButton')}
-                            </button>
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
-                        </div>
-                    )}
+                    {/* Acquisition Channel Unlocked */}
                 </div>
             </div>
 

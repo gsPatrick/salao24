@@ -259,8 +259,10 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             case 'birthdate': if (!value) error = t('errorRequired'); else if (new Date(value) > new Date()) error = t('errorDateInFuture'); break;
             case 'maritalStatus': if (!value) error = t('errorRequired'); break;
             case 'cep': if (!value) error = t('errorRequired'); else if (value.replace(/\D/g, '').length !== 8) error = t('errorInvalidCEP'); break;
-            case 'street': case 'number': case 'neighborhood': case 'city': case 'state': case 'unit': case 'occupation': case 'startTime': case 'lunchStart': case 'lunchEnd': case 'endTime': case 'commission':
+            case 'street': case 'number': case 'neighborhood': case 'city': case 'state': case 'unit': case 'occupation': case 'startTime': case 'lunchStart': case 'lunchEnd': case 'endTime':
                 if (!value) error = t('errorRequired'); break;
+            case 'commission':
+                if (!value && currentPlanName !== 'Plano Individual') error = t('errorRequired'); break;
         }
         return error;
     }, [t]);
@@ -450,7 +452,8 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: { [key: string]: string } = {};
-        const requiredFields: (keyof typeof initialFormData)[] = ['name', 'email', 'cpf', 'phone', 'birthdate', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'unit', 'occupation', 'startTime', 'lunchStart', 'lunchEnd', 'endTime', 'commission'];
+        const requiredFields: (keyof typeof initialFormData)[] = ['name', 'email', 'cpf', 'phone', 'birthdate', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'unit', 'occupation', 'startTime', 'lunchStart', 'lunchEnd', 'endTime'];
+        if (currentPlanName !== 'Plano Individual') requiredFields.push('commission');
         requiredFields.forEach(field => { const error = validateField(field, formData[field as keyof typeof formData]); if (error) newErrors[field] = error; });
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
@@ -714,7 +717,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
 
                                 className={`mt-1 block w-full p-2 border rounded-md shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.commission ? 'border-red-500' : 'border-gray-300'}`}
                                 placeholder="0.00"
-                                required
+                                required={currentPlanName !== 'Plano Individual'}
                             />
                             {errors.commission && <p className="text-xs text-red-600 mt-1">{errors.commission}</p>}
                         </div>

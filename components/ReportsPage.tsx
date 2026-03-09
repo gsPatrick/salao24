@@ -133,15 +133,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack, isIndividualPlan }) =
     ];
 
     const isFeatureBlocked = (reportKey: string) => {
-        if (reportKey === 'Commission') {
-            return currentPlanName === 'Plano Individual';
-        }
-        
-        const reportTitle = t(`reportTitle${reportKey}`);
-        if (advancedReports.includes(reportTitle)) {
-            return ['Plano Individual', 'Empresa Essencial'].includes(currentPlanName);
-        }
-        
         return false;
     };
 
