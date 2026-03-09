@@ -454,7 +454,7 @@ export const mapClientFromAPI = (apiClient: any): Client => {
         legalName: originalName,
         socialName: socialName,
         name: (useSocialName && socialName) ? socialName : originalName,
-        photo: apiClient.photo || apiClient.photo_url || apiClient.avatar_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+        photo: apiClient.photo || null,
         birthdate: apiClient.birth_date || apiClient.birthdate,
         howTheyFoundUs: apiClient.how_found_us || apiClient.how_they_found_us || '',
         indicatedBy: apiClient.indicated_by,
@@ -718,10 +718,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         services.forEach(s => s.category && categories.add(s.category));
         packages.forEach(p => p.category && categories.add(p.category));
         salonPlans.forEach(p => p.category && categories.add(p.category));
-        setServiceCategories(prev => {
-            const combined = new Set([...prev, ...Array.from(categories)]);
-            return Array.from(combined).sort();
-        });
+        setServiceCategories(Array.from(categories).sort());
 
         const occSet = new Set<string>([
             'Cabelereiro(a)',

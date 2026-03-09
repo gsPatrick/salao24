@@ -2,6 +2,7 @@ import React from 'react';
 import GlobalReminders from './GlobalReminders';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getImageUrl } from '../lib/api';
+import UserAvatar from './UserAvatar';
 
 interface User {
   name: string;
@@ -66,7 +67,12 @@ const Header: React.FC<HeaderProps> = ({ navigate, currentUser, onLogout, notifi
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-2 sm:gap-4 md:gap-6 bg-black/20 p-2 sm:p-4 rounded-xl backdrop-blur-sm border border-white/10 shadow-xl">
               <div className="flex items-center gap-4">
-                <img src={getImageUrl(currentUser.avatarUrl || (currentUser as any).photo || (currentUser as any).avatar_url)} alt={t('avatarAlt', { name: currentUser.name })} className="w-12 h-12 rounded-full border-2 border-primary object-cover" />
+                <UserAvatar 
+                  src={currentUser.avatarUrl || (currentUser as any).photo || (currentUser as any).avatar_url} 
+                  alt={t('hello') + ', ' + currentUser.name}
+                  size="lg"
+                  className="border-2 border-primary"
+                />
                 <div className="flex flex-col items-start gap-1">
                   <span className="font-bold text-lg text-white">{t('hello')}, {currentUser.name.split(' ')[0]}!</span>
                   {currentUser.role === 'admin' && (

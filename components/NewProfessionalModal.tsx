@@ -4,6 +4,7 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadAPI } from '../lib/api';
 import { SearchableSelect } from './SearchableSelect';
+import UserAvatar from './UserAvatar';
 
 interface NewProfessionalModalProps {
     isOpen: boolean;
@@ -537,15 +538,11 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 <CollapsibleSection title={t('identificationAndAccess')} defaultOpen={true}>
                     <div className="flex items-start space-x-6 pb-4">
                         <div className="shrink-0 text-center">
-                            {photo && !photo.includes('pravatar') ? (
-                                <img className="h-20 w-20 object-cover rounded-full mx-auto" src={photo} alt="Foto" />
-                            ) : (
-                                <div className="h-20 w-20 rounded-full mx-auto bg-gray-100 flex items-center justify-center text-gray-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                </div>
-                            )}
+                            <UserAvatar 
+                                src={photo} 
+                                alt="Foto" 
+                                size="xl" 
+                            />
                         </div>
                         <div className="flex-grow self-start">
                             <div className="flex flex-col sm:flex-row gap-2">

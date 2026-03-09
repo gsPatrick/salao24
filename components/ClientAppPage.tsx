@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Client, Professional } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import api, { professionalsAPI, appointmentsAPI } from '../lib/api';
+import UserAvatar from './UserAvatar';
 
 // --- Interfaces ---
 interface Appointment {
@@ -323,7 +324,7 @@ const ServiceReviewModal: React.FC<{ serviceToReview: any; onReviewSubmit: (feed
         <p className="text-center text-sm text-gray-600 mb-4">{t('yourFeedbackIsImportant')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-4 p-3 bg-light rounded-lg">
-            <img src={professionalDetails?.photo} alt={professionalDetails?.name} className="w-14 h-14 rounded-full object-cover" />
+            <UserAvatar src={professionalDetails?.photo} alt={professionalDetails?.name} size="lg" className="border border-gray-100" />
             <div>
               <p className="font-semibold text-gray-500 text-sm">Profissional</p>
               <p className="font-bold text-secondary">{professionalDetails?.name}</p>
