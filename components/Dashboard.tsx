@@ -4957,10 +4957,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                     className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                    <img
-                                        src={getImageUrl(currentUser?.avatarUrl || (currentUser as any)?.photo || (currentUser as any)?.avatar_url)}
+                                    <UserAvatar
+                                        src={currentUser?.avatarUrl || (currentUser as any)?.photo || (currentUser as any)?.avatar_url}
                                         alt={currentUser ? t('avatarAlt', { name: currentUser.name }) : t('userAvatar')}
-                                        className="w-10 h-10 rounded-full border border-gray-200 object-cover"
+                                        size="md"
+                                        className="border border-gray-200"
                                     />
                                     <div className="hidden sm:block text-left">
                                         <p className="font-bold text-secondary text-sm leading-tight">{currentUser?.name}</p>
