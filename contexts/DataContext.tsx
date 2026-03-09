@@ -720,15 +720,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         salonPlans.forEach(p => p.category && categories.add(p.category));
         setServiceCategories(Array.from(categories).sort());
 
-        const occSet = new Set<string>([
-            'Cabelereiro(a)',
-            'Barbeiro',
-            'Manicure',
-            'Pedicure',
-            'Esteticista',
-            'Recepcionista',
-            'Gerente'
-        ]);
+        const occSet = new Set<string>();
         professionals.forEach(p => p.occupation && occSet.add(p.occupation));
 
         // Add hidden/custom occupations from settings if they exist
