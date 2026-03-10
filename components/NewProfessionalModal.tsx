@@ -119,6 +119,13 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const [formData, setFormData] = useState(initialFormData);
     const { tenant: contextTenant } = useData();
     const currentPlanName = contextTenant?.plan?.name || user?.plan || 'Plano Individual';
+    const isIndividualPlan = (
+        currentPlanName?.toLowerCase().includes('individual') || 
+        currentPlanName?.toLowerCase() === 'empresa essencial' || 
+        currentPlanName?.toLowerCase() === 'essencial' ||
+        currentPlanName === 'Individual' || 
+        currentPlanName === 'Empresa Essencial'
+    ) && !user?.is_super_admin;
 
 
     // Task 2: Fetch units when modal opens
@@ -263,7 +270,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
             case 'street': case 'number': case 'neighborhood': case 'city': case 'state': case 'unit': case 'occupation': case 'startTime': case 'lunchStart': case 'lunchEnd': case 'endTime':
                 if (!value) error = t('errorRequired'); break;
             case 'commission':
-                if (!value && currentPlanName !== 'Plano Individual') error = t('errorRequired'); break;
+                if (!value && !isIndividualPlan) error = t('errorRequired'); break;
         }
         return error;
     }, [t]);
@@ -454,7 +461,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         e.preventDefault();
         const newErrors: { [key: string]: string } = {};
         const requiredFields: (keyof typeof initialFormData)[] = ['name', 'email', 'cpf', 'phone', 'birthdate', 'maritalStatus', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'unit', 'occupation', 'startTime', 'lunchStart', 'lunchEnd', 'endTime'];
-        if (currentPlanName !== 'Plano Individual') requiredFields.push('commission');
+        if (!isIndividualPlan) requiredFields.push('commission');
         requiredFields.forEach(field => { const error = validateField(field, formData[field as keyof typeof formData]); if (error) newErrors[field] = error; });
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
@@ -687,7 +694,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                         <div className="relative">
                             <label htmlFor="commission" className="flex items-center text-sm font-medium text-gray-700">
                                 {t('commissionPercentage')} *
-                                {currentPlanName === 'Plano Individual' && (
+                                {isIndividualPlan && (
                                     <div className="ml-2 flex items-center group relative cursor-help">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -710,11 +717,12 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                                 step="0.01"
                                 min="0"
                                 max="100"
-                                disabled={currentPlanName === 'Plano Individual'}
-
-                                className={`mt-1 block w-full p-2 border rounded-md shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.commission ? 'border-red-500' : 'border-gray-300'}`}
+                                disabled={isIndividualPlan}
+                                className={`w-full p-3 pl-10 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all ${
+                                    errors.commission ? 'border-red-300' : 'border-gray-200'
+                                } ${isIndividualPlan ? 'cursor-not-allowed opacity-75' : ''}`}
                                 placeholder="0.00"
-                                required={currentPlanName !== 'Plano Individual'}
+                                required={!isIndividualPlan}
                             />
                             {errors.commission && <p className="text-xs text-red-600 mt-1">{errors.commission}</p>}
                         </div>
