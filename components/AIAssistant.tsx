@@ -68,8 +68,8 @@ const AIAssistant: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Verificar se o usuário está no plano Essencial (simulado para demonstração)
-  const isEssentialPlan = true; // TODO: Obter do contexto do usuário atual
+  // No longer blocking based on plan for landing page demo
+  const isEssentialPlan = false; 
 
   // --- Function Declaration for Scheduling ---
   const scheduleAppointmentFunctionDeclaration: FunctionDeclaration = {
@@ -488,11 +488,6 @@ const AIAssistant: React.FC = () => {
       title={agent === 'Avançada' && isEssentialPlan ? 'Agente Avançada não disponível no plano Essencial' : ''}
     >
       {children}
-      {agent === 'Avançada' && isEssentialPlan && (
-        <svg className="w-4 h-4 ml-1 inline" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-        </svg>
-      )}
     </button>
   );
 
@@ -508,25 +503,6 @@ const AIAssistant: React.FC = () => {
                 <TabButton agent="Avançada">✨ {t('aiAdvancedTab')}</TabButton>
               </div>
 
-              {/* Mensagem de bloqueio para plano Essencial */}
-              {isEssentialPlan && activeAgent === 'Avançada' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3 text-center">
-                  <div className="flex items-center justify-center text-yellow-800">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm font-medium">
-                      A agente Avançada está disponível apenas nos planos Empresa Pro e Premium.
-                    </span>
-                  </div>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    Você pode usar a agente Básica no seu plano atual.
-                  </p>
-                  <button className="text-xs text-yellow-600 hover:text-yellow-800 underline mt-1">
-                    Fazer upgrade de plano
-                  </button>
-                </div>
-              )}
 
               {(activeAgent === 'Avançada' && !isEssentialPlan) ? (
                 <div className="border rounded-xl overflow-hidden flex flex-col h-[500px] sm:h-[550px] animate-fade-in">
