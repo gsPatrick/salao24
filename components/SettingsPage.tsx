@@ -183,9 +183,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     navigate
 }) => {
     const { t } = useLanguage();
-    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals, auditLogs, loading } = useData(); // Use DataContext
+    const { users, saveUser, deleteUser, units, saveUnit, deleteUnit, tenant, updateTenant, uploadTenantLogo, professionals, auditLogs, loading, refreshAuditLogs } = useData(); // Use DataContext
     const { updateUser } = useAuth(); // Get updateUser from AuthContext
     const [activeTab, setActiveTab] = useState('conta');
+
+    useEffect(() => {
+        if (activeTab === 'historico') {
+            refreshAuditLogs();
+        }
+    }, [activeTab, refreshAuditLogs]);
     const [notification, setNotification] = useState<string | null>(null);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<User | null>(null);

@@ -6,6 +6,7 @@ import { useData, Client as DataContextClient, mapClientFromAPI } from '../conte
 import ReminderModal from './ReminderModal';
 import SignatureModal from './SignatureModal';
 import ScheduleInternalModal from './ScheduleInternalModal';
+import UserAvatar from './UserAvatar';
 import ClassificationBadge from './common/ClassificationBadge';
 import { displayCurrency, displayDuration } from '../lib/formatUtils';
 
@@ -1545,15 +1546,13 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ isOpen, onClose, 
                     <div className="p-6 bg-secondary rounded-t-lg">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center space-x-4">
-                                {(localClient.photo || localClient.photoUrl || localClient.photo_url) && !(localClient.photo || localClient.photoUrl || localClient.photo_url).includes('pravatar') ? (
-                                    <img src={localClient.photo || localClient.photoUrl || localClient.photo_url} alt={localClient.name} className="w-20 h-20 rounded-full object-cover ring-4 ring-primary" />
-                                ) : (
-                                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 ring-4 ring-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                    </div>
-                                )}
+                                <UserAvatar
+                                    user={{
+                                        name: localClient.name,
+                                        photo: localClient.photo || localClient.photoUrl || localClient.photo_url
+                                    }}
+                                    className="w-20 h-20 rounded-full object-cover ring-4 ring-primary"
+                                />
                                 <div>
                                     <h3 className="text-2xl font-bold text-white" id="modal-title">
                                         {localClient.name}
