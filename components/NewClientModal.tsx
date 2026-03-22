@@ -138,6 +138,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const { t } = useLanguage();
   const { services: contextServices, contractTemplates, units, refreshUnits, salonPlans, packages } = useData();
   const [formData, setFormData] = useState(initialFormData);
+  const initializationRef = useRef<{isOpen: boolean, clientId: number | null}>({ isOpen: false, clientId: null });
 
   // State for dynamically fetched acquisition channels
   const [dynamicChannels, setDynamicChannels] = useState<any[]>([]);
@@ -421,69 +422,77 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   useEffect(() => {
     if (isOpen) {
-      if (clientToEdit) {
-        setFormData({
-          fullName: clientToEdit.legalName || clientToEdit.name || '',
-          socialName: clientToEdit.socialName || '',
-          birthdate: clientToEdit.birthdate ? clientToEdit.birthdate.split('T')[0] : '',
-          cpf: clientToEdit.cpf || '',
-          rg: clientToEdit.rg || '',
-          phone: clientToEdit.phone || '',
-          email: clientToEdit.email || '',
-          maritalStatus: clientToEdit.maritalStatus || '',
-          cep: clientToEdit.address?.cep || '',
-          street: clientToEdit.address?.street || '',
-          number: clientToEdit.address?.number || '',
-          complement: clientToEdit.address?.complement || '',
-          neighborhood: clientToEdit.address?.neighborhood || '',
-          city: clientToEdit.address?.city || '',
-          state: clientToEdit.address?.state || '',
-          team: clientToEdit.team || '',
-          preferredUnit: clientToEdit.preferredUnit || '',
-          observations: clientToEdit.observations || '',
-          gender: clientToEdit.gender || '',
-          indicatedBy: clientToEdit.indicatedBy || '',
-          howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
-          instagram: clientToEdit.instagram || '',
-          kinship: clientToEdit.kinship || '',
-          isCompleteRegistration: clientToEdit.isCompleteRegistration || false,
-          reminders: clientToEdit.reminders || [],
-          blocked: clientToEdit.blocked || { status: false, reason: '' },
-          packageId: clientToEdit.packageId || null,
-        });
+      // Only initialize if the modal just opened OR the client changed
+      const shouldInitialize = !initializationRef.current.isOpen || initializationRef.current.clientId !== (clientToEdit?.id || null);
 
-        const clientPhoto = clientToEdit.photo || clientToEdit.photoUrl || clientToEdit.photo_url;
-        if (clientPhoto) setPhoto(clientPhoto);
-        if (clientToEdit.procedurePhotos) setProcedurePhotos(clientToEdit.procedurePhotos);
-        if (clientToEdit.additionalPhones) setAdditionalPhones(clientToEdit.additionalPhones);
+      if (shouldInitialize) {
+        if (clientToEdit) {
+          setFormData({
+            fullName: clientToEdit.legalName || clientToEdit.name || '',
+            socialName: clientToEdit.socialName || '',
+            birthdate: clientToEdit.birthdate ? clientToEdit.birthdate.split('T')[0] : '',
+            cpf: clientToEdit.cpf || '',
+            rg: clientToEdit.rg || '',
+            phone: clientToEdit.phone || '',
+            email: clientToEdit.email || '',
+            maritalStatus: clientToEdit.maritalStatus || '',
+            cep: clientToEdit.address?.cep || '',
+            street: clientToEdit.address?.street || '',
+            number: clientToEdit.address?.number || '',
+            complement: clientToEdit.address?.complement || '',
+            neighborhood: clientToEdit.address?.neighborhood || '',
+            city: clientToEdit.address?.city || '',
+            state: clientToEdit.address?.state || '',
+            team: clientToEdit.team || '',
+            preferredUnit: clientToEdit.preferredUnit || '',
+            observations: clientToEdit.observations || '',
+            gender: clientToEdit.gender || '',
+            indicatedBy: clientToEdit.indicatedBy || '',
+            howTheyFoundUs: clientToEdit.howTheyFoundUs || '',
+            instagram: clientToEdit.instagram || '',
+            kinship: clientToEdit.kinship || '',
+            isCompleteRegistration: clientToEdit.isCompleteRegistration || false,
+            reminders: clientToEdit.reminders || [],
+            blocked: clientToEdit.blocked || { status: false, reason: '' },
+            packageId: clientToEdit.packageId || null,
+          });
 
-        // Use the explicit flag from mapping
-        setUseSocialName(!!clientToEdit.useSocialName);
-        setRelationships(clientToEdit.relationships || []);
-        setStagedDocuments(clientToEdit.documents?.filter((d: any) => d.id !== undefined && d.type !== 'Anexo') || []);
-        setAttachedDocuments(clientToEdit.documents?.filter((d: any) => d.type === 'Anexo').map((doc: any) => ({
-          title: doc.name,
-          fileName: doc.fileName || doc.name,
-          file: null,
-          content: doc.content // Map content back
-        })) || []);
-        setServicesOfInterest(clientToEdit.servicesOfInterest || []);
-        setUseSocialName(!!clientToEdit.socialName && clientToEdit.name === clientToEdit.socialName);
-        if (clientToEdit.indicatedBy) {
-          const indicator = existingClients.find(c => c.name === clientToEdit.indicatedBy);
-          if (indicator) {
-            setIndicatedByClient(indicator);
+          const clientPhoto = clientToEdit.photo || clientToEdit.photoUrl || clientToEdit.photo_url;
+          if (clientPhoto) setPhoto(clientPhoto);
+          if (clientToEdit.procedurePhotos) setProcedurePhotos(clientToEdit.procedurePhotos);
+          if (clientToEdit.additionalPhones) setAdditionalPhones(clientToEdit.additionalPhones);
+
+          // Use the explicit flag from mapping
+          setUseSocialName(!!clientToEdit.useSocialName);
+          setRelationships(clientToEdit.relationships || []);
+          setStagedDocuments(clientToEdit.documents?.filter((d: any) => d.id !== undefined && d.type !== 'Anexo') || []);
+          setAttachedDocuments(clientToEdit.documents?.filter((d: any) => d.type === 'Anexo').map((doc: any) => ({
+            title: doc.name,
+            fileName: doc.fileName || doc.name,
+            file: null,
+            content: doc.content // Map content back
+          })) || []);
+          setServicesOfInterest(clientToEdit.servicesOfInterest || []);
+          
+          if (clientToEdit.indicatedBy) {
+            const indicator = existingClients.find(c => c.name === clientToEdit.indicatedBy);
+            if (indicator) {
+              setIndicatedByClient(indicator);
+            }
+          } else {
+            setIndicatedByClient(null);
           }
         } else {
-          setIndicatedByClient(null);
+          resetForm();
+          // If not editing and there is only one unit, auto-select it
+          if (units.length === 1) {
+            setFormData(prev => ({ ...prev, preferredUnit: units[0].name }));
+          }
         }
-      } else {
-        resetForm();
-        // If not editing and there is only one unit, auto-select it
-        if (units.length === 1) {
-          setFormData(prev => ({ ...prev, preferredUnit: units[0].name }));
-        }
+        initializationRef.current = { isOpen: true, clientId: clientToEdit?.id || null };
       }
+    } else {
+      initializationRef.current = { isOpen: false, clientId: null };
     }
   }, [isOpen, clientToEdit, existingClients, units]);
 
@@ -954,11 +963,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
     try {
       const result = await onSave(finalData);
-      // Check if onSave returns a promise that resolves to null/false indicating failure
-      // or if it throws.
-      // If result is strictly null (and not undefined/void), it might indicate failure from DataContext
+      
       if (result === null || result === false) {
         alert(t('errorSavingClient') || 'Erro ao salvar cliente. Verifique os dados e tente novamente.');
+        return;
+      }
+
+      // If result is a string, it's an error message from the API
+      if (typeof result === 'string') {
+        alert(result);
         return;
       }
 

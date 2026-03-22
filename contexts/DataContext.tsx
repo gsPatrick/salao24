@@ -358,7 +358,7 @@ export interface DataContextType {
     refreshAll: () => Promise<void>;
 
     // CRUD handlers
-    saveClient: (client: Partial<Client>) => Promise<Client | null>;
+    saveClient: (client: Partial<Client>) => Promise<Client | string | null>;
     deleteClient: (id: number) => Promise<boolean>;
 
     saveProfessional: (professional: Partial<Professional>) => Promise<Professional | null>;
@@ -1090,12 +1090,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [isAuthenticated, selectedUnitId, refreshUnits, refreshTenant, refreshUsers]);
 
     // CRUD handlers
-    const saveClient = async (client: Partial<Client>): Promise<Client | null> => {
+    const saveClient = async (client: Partial<Client>): Promise<Client | string | null> => {
         try {
             // Map frontend fields (camelCase) to backend fields (snake_case)
             const apiData = {
                 ...client,
-                name: client.legalName || client.name, // Ensure we send the legal name
+                name: client.fullName || client.legalName || client.name, // Ensure we send the full name from any source
                 social_name: client.socialName,
                 birth_date: client.birthdate,
                 photo_url: client.photo,
@@ -1124,7 +1124,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (response && response.data) {
                 const savedClient = mapClientFromAPI(response.data);
 
-                // Optimistic update: Update local state immediately
+                // Optimistic update
                 setClients(prev => {
                     const exists = prev.find(c => c.id === savedClient.id);
                     if (exists) {
@@ -1132,16 +1132,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                     return [...prev, savedClient];
                 });
-                // Still trigger refresh to ensure consistency/sync with other potential updates
-                refreshClients(); // Fire and forget
+                refreshClients();
 
                 return savedClient;
             }
-
             return null;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving client:', error);
-            return null;
+            // Return the specific error message if available
+            return error.response?.data?.message || error.message || null;
         }
     };
 
