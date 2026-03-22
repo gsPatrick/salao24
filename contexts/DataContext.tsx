@@ -403,8 +403,8 @@ export interface DataContextType {
 
     updateTenant: (tenant: Partial<Tenant>) => Promise<Tenant | null>;
     uploadTenantLogo: (file: File) => Promise<string | null>;
-    addOccupation: (newOcc: string) => Promise<void>;
-    deleteOccupation: (occToDelete: string) => Promise<void>;
+    addOccupation: (newOcc: string, unitId?: number) => Promise<void>;
+    deleteOccupation: (occToDelete: string, unitId?: number) => Promise<void>;
 
     saveUnit: (unit: Partial<Unit>) => Promise<Unit | null>;
     uploadUnitLogo: (unitId: number, file: File) => Promise<string | null>;
@@ -727,12 +727,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (tenant?.settings?.custom_occupations) {
             tenant.settings.custom_occupations.forEach((occ: string) => occSet.add(occ));
         }
+
+        // Add occupations from units
+        units.forEach(u => {
+            if (u.settings?.custom_occupations) {
+                u.settings.custom_occupations.forEach((occ: string) => occSet.add(occ));
+            }
+        });
+
         if (tenant?.settings?.hidden_occupations) {
             tenant.settings.hidden_occupations.forEach((occ: string) => occSet.delete(occ));
         }
 
         setOccupations(Array.from(occSet).sort());
-    }, [services, packages, salonPlans, professionals, tenant]);
+    }, [services, packages, salonPlans, professionals, tenant, units]);
 
     // Loading state
     const [loading, setLoading] = useState({
@@ -1699,36 +1707,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addOccupation = useCallback(async (newOcc: string) => {
-        if (!tenant) return;
-        const currentCustom = tenant.settings?.custom_occupations || [];
-        if (!currentCustom.includes(newOcc)) {
-            const updatedCustom = [...currentCustom, newOcc];
-            await updateTenant({
-                settings: {
-                    ...tenant.settings,
-                    custom_occupations: updatedCustom
-                }
-            });
-        }
-    }, [tenant, updateTenant]);
-
-    const deleteOccupation = useCallback(async (occToDelete: string) => {
-        if (!tenant) return;
-        const currentHidden = tenant.settings?.hidden_occupations || [];
-        const currentCustom = tenant.settings?.custom_occupations || [];
-
-        const updatedCustom = currentCustom.filter((occ: string) => occ !== occToDelete);
-        const updatedHidden = !currentHidden.includes(occToDelete) ? [...currentHidden, occToDelete] : currentHidden;
-
-        await updateTenant({
-            settings: {
-                ...tenant.settings,
-                custom_occupations: updatedCustom,
-                hidden_occupations: updatedHidden
-            }
-        });
-    }, [tenant, updateTenant]);
 
     const uploadTenantLogo = async (file: File): Promise<string | null> => {
         if (!tenant?.id) return null;
@@ -1790,6 +1768,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return null;
         }
     }
+
+    const addOccupation = useCallback(async (newOcc: string, unitId?: number) => {
+        if (!tenant) return;
+
+        if (unitId && unitId > 0) {
+            const unit = units.find(u => u.id === unitId);
+            if (unit) {
+                const currentCustom = unit.settings?.custom_occupations || [];
+                if (!currentCustom.includes(newOcc)) {
+                    await saveUnit({
+                        id: unit.id,
+                        settings: {
+                            ...unit.settings,
+                            custom_occupations: [...currentCustom, newOcc]
+                        }
+                    });
+                }
+                return;
+            }
+        }
+
+        const currentCustom = tenant.settings?.custom_occupations || [];
+        if (!currentCustom.includes(newOcc)) {
+            const updatedCustom = [...currentCustom, newOcc];
+            await updateTenant({
+                settings: {
+                    ...tenant.settings,
+                    custom_occupations: updatedCustom
+                }
+            });
+        }
+    }, [tenant, units, updateTenant, saveUnit]);
+
+    const deleteOccupation = useCallback(async (occToDelete: string, unitId?: number) => {
+        if (!tenant) return;
+
+        if (unitId && unitId > 0) {
+            const unit = units.find(u => u.id === unitId);
+            if (unit) {
+                const currentCustom = unit.settings?.custom_occupations || [];
+                const updatedCustom = currentCustom.filter((occ: string) => occ !== occToDelete);
+                await saveUnit({
+                    id: unit.id,
+                    settings: {
+                        ...unit.settings,
+                        custom_occupations: updatedCustom
+                    }
+                });
+            }
+        }
+
+        const currentHidden = tenant.settings?.hidden_occupations || [];
+        const currentCustom = tenant.settings?.custom_occupations || [];
+
+        const updatedCustom = currentCustom.filter((occ: string) => occ !== occToDelete);
+        const updatedHidden = !currentHidden.includes(occToDelete) ? [...currentHidden, occToDelete] : currentHidden;
+
+        await updateTenant({
+            settings: {
+                ...tenant.settings,
+                custom_occupations: updatedCustom,
+                hidden_occupations: updatedHidden
+            }
+        });
+    }, [tenant, units, updateTenant, saveUnit]);
 
     const deleteUnit = async (id: number): Promise<boolean> => {
         try {

@@ -115,7 +115,7 @@ const initialFormData = {
 const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onClose, onSave, professionalToEdit }) => {
     const { t } = useLanguage();
     const { user } = useAuth();
-    const { units, refreshUnits, occupations, addOccupation, deleteOccupation } = useData();
+    const { units, refreshUnits, occupations, addOccupation, deleteOccupation, tenant, professionals } = useData();
     const [formData, setFormData] = useState(initialFormData);
     const { tenant: contextTenant } = useData();
     const currentPlanName = contextTenant?.plan?.name || user?.plan || 'Plano Individual';
@@ -201,6 +201,25 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const [newDocTitle, setNewDocTitle] = useState('');
     const [newDocFile, setNewDocFile] = useState<File | null>(null);
     const docFileInputRef = useRef<HTMLInputElement>(null);
+    
+    const filteredOccupations = useMemo(() => {
+        if (!formData.unit || formData.unit === 'Ambas' || formData.unit === 'Ambas as unidades') {
+            return occupations;
+        }
+        
+        const selectedUnitObj = units.find(u => u.name === formData.unit);
+        const unitCustomOccs = selectedUnitObj?.settings?.custom_occupations || [];
+        const tenantCustomOccs = tenant?.settings?.custom_occupations || [];
+        
+        return occupations.filter(occ => {
+            // Keep if it's a tenant-level custom role
+            if (tenantCustomOccs.includes(occ)) return true;
+            // Keep if it's a unit-level custom role
+            if (unitCustomOccs.includes(occ)) return true;
+            // Keep if any professional in this unit already has this role
+            return professionals.some(p => p.unit === formData.unit && p.occupation === occ);
+        });
+    }, [occupations, formData.unit, units, professionals, tenant]);
 
 
     const redrawCanvas = () => {
@@ -342,7 +361,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                 resetForm();
             }
         }
-    }, [isOpen, professionalToEdit, occupations]);
+    }, [isOpen, professionalToEdit]);
 
     const handleClose = () => { setIsExiting(true); handleStopCamera(); setTimeout(() => { onClose(); setIsExiting(false); }, 300); };
     const formatCPF = (value: string) => value.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
@@ -392,7 +411,8 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
     const handleOccupationChange = (e: React.ChangeEvent<HTMLSelectElement>) => { if (e.target.value === '__CREATE_NEW__') setIsCreatingOccupation(true); else { setIsCreatingOccupation(false); handleChange(e); } };
     const handleCreateOccupation = async () => {
         if (newOccupation.trim()) {
-            await addOccupation(newOccupation.trim());
+            const selectedUnitObj = units.find(u => u.name === formData.unit);
+            await addOccupation(newOccupation.trim(), selectedUnitObj?.id);
             setFormData({ ...formData, occupation: newOccupation.trim() });
             setNewOccupation('');
             setIsCreatingOccupation(false);
@@ -403,7 +423,8 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
         e.preventDefault();
         e.stopPropagation();
         if (window.confirm(`Deseja realmente excluir o cargo "${occ}"?`)) {
-            await deleteOccupation(occ);
+            const selectedUnitObj = units.find(u => u.name === formData.unit);
+            await deleteOccupation(occ, selectedUnitObj?.id);
             if (formData.occupation === occ) {
                 setFormData({ ...formData, occupation: '' });
             }
@@ -661,7 +682,7 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">Cargo *</label>
                             <select id="occupation" name="occupation" value={isCreatingOccupation ? '__CREATE_NEW__' : formData.occupation} onChange={handleOccupationChange} onBlur={handleBlur} required className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${errors.occupation ? 'border-red-500' : 'border-gray-300'}`}>
                                 <option value="">{t('selectOccupation')}</option>
-                                {occupations.map(occ => (
+                                {filteredOccupations.map(occ => (
                                     <option key={occ} value={occ}>{occ}</option>
                                 ))}
                                 <option value="__CREATE_NEW__" className="font-bold text-primary">-- Criar novo cargo --</option>
@@ -671,9 +692,9 @@ const NewProfessionalModal: React.FC<NewProfessionalModalProps> = ({ isOpen, onC
                             )}
 
                             {/* Role management list */}
-                            {!isCreatingOccupation && occupations.length > 0 && (
+                            {!isCreatingOccupation && filteredOccupations.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    {occupations.map(occ => (
+                                    {filteredOccupations.map(occ => (
                                         <span key={occ} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             {occ}
                                             <button
